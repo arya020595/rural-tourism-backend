@@ -137,19 +137,11 @@ app.post("/api/receipts/void-receipt", (req, res) => {
 // Start the server (remove HOST for running locally)
 const PORT = process.env.PORT || 3000;
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on port ${PORT}`);
-// });
-
 //uncomment for external host
 const HOST = "0.0.0.0"; //for local serve
 
-// app.listen(PORT, HOST, () => {
-//   console.log(`Server is running on port ${HOST}:${PORT}`);
-// });
-
-// app.listen(3000, '0.0.0.0', () => {
-//   console.log('Server running at 0.0.0.0:3000');
-// })
+app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+});
 
 module.exports = app;
