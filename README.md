@@ -50,18 +50,18 @@ A robust RESTful API backend built with **Node.js**, **Express.js**, and **Seque
 
 ## 🛠 Tech Stack
 
-| Technology | Purpose |
-|------------|---------|
-| **Node.js** | Runtime environment |
-| **Express.js** | Web framework |
-| **Sequelize** | ORM for MySQL |
-| **MySQL** | Database |
-| **JWT** | Authentication tokens |
-| **bcrypt** | Password hashing |
-| **Multer** | File upload handling |
-| **PDFKit** | PDF generation |
-| **Puppeteer** | Headless browser for PDF rendering |
-| **dotenv** | Environment variables |
+| Technology     | Purpose                            |
+| -------------- | ---------------------------------- |
+| **Node.js**    | Runtime environment                |
+| **Express.js** | Web framework                      |
+| **Sequelize**  | ORM for MySQL                      |
+| **MySQL**      | Database                           |
+| **JWT**        | Authentication tokens              |
+| **bcrypt**     | Password hashing                   |
+| **Multer**     | File upload handling               |
+| **PDFKit**     | PDF generation                     |
+| **Puppeteer**  | Headless browser for PDF rendering |
+| **dotenv**     | Environment variables              |
 
 ---
 
@@ -205,27 +205,27 @@ The application uses Sequelize ORM which will automatically sync/create tables o
 
 Edit `config/db.js` or use environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `3306` |
-| `DB_NAME` | Database name | - |
-| `DB_USER` | Database username | - |
-| `DB_PASSWORD` | Database password | - |
+| Variable      | Description       | Default     |
+| ------------- | ----------------- | ----------- |
+| `DB_HOST`     | Database host     | `localhost` |
+| `DB_PORT`     | Database port     | `3306`      |
+| `DB_NAME`     | Database name     | -           |
+| `DB_USER`     | Database username | -           |
+| `DB_PASSWORD` | Database password | -           |
 
 ### Server Configuration
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `3000` |
+| Variable   | Description      | Default       |
+| ---------- | ---------------- | ------------- |
+| `PORT`     | Server port      | `3000`        |
 | `NODE_ENV` | Environment mode | `development` |
 
 ### CORS Configuration
 
-| Variable | Description |
-|----------|-------------|
-| `CORS_ORIGIN` | Allowed origin for CORS |
-| `CORS_ORIGIN2` | Secondary allowed origin |
+| Variable               | Description                |
+| ---------------------- | -------------------------- |
+| `CORS_ORIGIN`          | Allowed origin for CORS    |
+| `CORS_ORIGIN2`         | Secondary allowed origin   |
 | `CORS_ORIGIN_EXTERNAL` | External/production origin |
 
 ---
@@ -279,98 +279,98 @@ Expected response:
 
 ### Authentication & Users
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/users` | Get all users |
-| `GET` | `/users/:id` | Get user by ID |
-| `POST` | `/users` | Create new user |
-| `PUT` | `/users/:id` | Update user |
-| `DELETE` | `/users/:id` | Delete user |
-| `POST` | `/users/login` | User login |
+| Method   | Endpoint       | Description     |
+| -------- | -------------- | --------------- |
+| `GET`    | `/users`       | Get all users   |
+| `GET`    | `/users/:id`   | Get user by ID  |
+| `POST`   | `/users`       | Create new user |
+| `PUT`    | `/users/:id`   | Update user     |
+| `DELETE` | `/users/:id`   | Delete user     |
+| `POST`   | `/users/login` | User login      |
 
 ### Tourist Users
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/tourists` | Get all tourists |
-| `POST` | `/tourists` | Create tourist |
-| `PUT` | `/tourists/:id` | Update tourist |
+| Method | Endpoint        | Description      |
+| ------ | --------------- | ---------------- |
+| `GET`  | `/tourists`     | Get all tourists |
+| `POST` | `/tourists`     | Create tourist   |
+| `PUT`  | `/tourists/:id` | Update tourist   |
 
 ### Accommodations
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/accom` | Get all accommodations |
-| `GET` | `/accom/:id` | Get accommodation by ID |
-| `POST` | `/accom` | Create accommodation |
-| `PUT` | `/accom/:id` | Update accommodation |
-| `DELETE` | `/accom/:id` | Delete accommodation |
+| Method   | Endpoint     | Description             |
+| -------- | ------------ | ----------------------- |
+| `GET`    | `/accom`     | Get all accommodations  |
+| `GET`    | `/accom/:id` | Get accommodation by ID |
+| `POST`   | `/accom`     | Create accommodation    |
+| `PUT`    | `/accom/:id` | Update accommodation    |
+| `DELETE` | `/accom/:id` | Delete accommodation    |
 
 ### Activities
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/activity` | Get all activities |
-| `GET` | `/activity/:id` | Get activity by ID |
-| `POST` | `/activity` | Create activity |
-| `PUT` | `/activity/:id` | Update activity |
-| `DELETE` | `/activity/:id` | Delete activity |
+| Method   | Endpoint        | Description        |
+| -------- | --------------- | ------------------ |
+| `GET`    | `/activity`     | Get all activities |
+| `GET`    | `/activity/:id` | Get activity by ID |
+| `POST`   | `/activity`     | Create activity    |
+| `PUT`    | `/activity/:id` | Update activity    |
+| `DELETE` | `/activity/:id` | Delete activity    |
 
 ### Activity Master Data
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/activity-master-data` | Get master data |
+| Method | Endpoint                | Description        |
+| ------ | ----------------------- | ------------------ |
+| `GET`  | `/activity-master-data` | Get master data    |
 | `POST` | `/activity-master-data` | Create master data |
 
 ### Operator Activities
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/operator-activities` | Get operator activities |
+| Method | Endpoint               | Description              |
+| ------ | ---------------------- | ------------------------ |
+| `GET`  | `/operator-activities` | Get operator activities  |
 | `POST` | `/operator-activities` | Create operator activity |
 
 ### Bookings - Activities
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/activity-booking` | Get activity bookings |
-| `POST` | `/activity-booking` | Create activity booking |
-| `PUT` | `/activity-booking/:id` | Update booking |
+| Method | Endpoint                | Description             |
+| ------ | ----------------------- | ----------------------- |
+| `GET`  | `/activity-booking`     | Get activity bookings   |
+| `POST` | `/activity-booking`     | Create activity booking |
+| `PUT`  | `/activity-booking/:id` | Update booking          |
 
 ### Bookings - Accommodations
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/accommodation-booking` | Get accommodation bookings |
-| `POST` | `/accommodation-booking` | Create booking |
-| `PUT` | `/accommodation-booking/:id` | Update booking |
+| Method | Endpoint                     | Description                |
+| ------ | ---------------------------- | -------------------------- |
+| `GET`  | `/accommodation-booking`     | Get accommodation bookings |
+| `POST` | `/accommodation-booking`     | Create booking             |
+| `PUT`  | `/accommodation-booking/:id` | Update booking             |
 
 ### Receipts
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/receipts` | Get all receipts |
+| Method | Endpoint    | Description          |
+| ------ | ----------- | -------------------- |
+| `GET`  | `/receipts` | Get all receipts     |
 | `POST` | `/receipts` | Generate receipt PDF |
 
 ### Forms
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/form` | Get forms |
-| `POST` | `/form` | Submit form |
+| ------ | -------- | ----------- |
+| `GET`  | `/form`  | Get forms   |
+| `POST` | `/form`  | Submit form |
 
 ### Notifications
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/notifications` | Get notifications |
+| Method | Endpoint         | Description         |
+| ------ | ---------------- | ------------------- |
+| `GET`  | `/notifications` | Get notifications   |
 | `POST` | `/notifications` | Create notification |
 
 ### Static Files
 
-| Endpoint | Description |
-|----------|-------------|
+| Endpoint     | Description                    |
+| ------------ | ------------------------------ |
 | `/uploads/*` | Uploaded files (logos, images) |
 
 ---
