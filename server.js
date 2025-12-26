@@ -62,6 +62,39 @@ app.get("/api/test", (req, res) => {
   });
 });
 
+// Health check endpoint
+app.get("/api/health", (req, res) => {
+  res.json({
+    success: true,
+    status: "healthy",
+    environment: process.env.NODE_ENV || "development",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
+});
+
+// API Info endpoint
+app.get("/api", (req, res) => {
+  res.json({
+    name: "RT Backend API",
+    version: "1.0.0",
+    description:
+      "Rural Tourism Backend - Tourism & Accommodation Management System",
+    endpoints: {
+      users: "/api/users",
+      tourists: "/api/tourists",
+      accommodations: "/api/accom",
+      activities: "/api/activity",
+      bookings: {
+        activity: "/api/activity-booking",
+        accommodation: "/api/accommodation-booking",
+      },
+      receipts: "/api/receipts",
+      notifications: "/api/notifications",
+    },
+  });
+});
+
 app.use("/api/users", userRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);

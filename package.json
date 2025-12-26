@@ -4,6 +4,9 @@
   "description": "Rural Tourism Backend API - Tourism & Accommodation Management System",
   "private": true,
   "main": "server.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node ./bin/www",
     "dev": "nodemon server.js",
@@ -29,5 +32,8 @@
     "pdfkit": "^0.15.1",
     "puppeteer": "^23.11.1",
     "sequelize": "^6.37.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
   }
 }
