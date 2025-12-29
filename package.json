@@ -11,6 +11,7 @@
     "start": "node ./bin/www",
     "dev": "nodemon server.js",
     "server": "node server.js",
+    "console": "node --experimental-repl-await scripts/console.js",
     "db:sync": "node -e \"require('./config/db')\"",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
