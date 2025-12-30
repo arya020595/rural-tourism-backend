@@ -1,0 +1,20 @@
+module.exports = {
+  testEnvironment: "node",
+  coverageDirectory: "coverage",
+  collectCoverageFrom: [
+    "middleware/**/*.js",
+    "routes/**/*.js",
+    "models/**/*.js",
+    "controllers/**/*.js",
+    "!**/node_modules/**",
+    "!**/tests/**",
+    "!**/coverage/**",
+  ],
+  testMatch: ["**/tests/**/*.test.js"],
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+  testTimeout: 10000,
+};
