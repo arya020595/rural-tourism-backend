@@ -14,7 +14,12 @@
     "console": "node --experimental-repl-await scripts/console.js",
     "db:sync": "node -e \"require('./config/db')\"",
     "lint": "eslint .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --coverage --verbose",
+    "test:watch": "jest --watch",
+    "test:unit": "jest tests/unit --coverage",
+    "test:integration": "jest tests/integration --coverage",
+    "test:middleware": "jest tests/unit/middleware",
+    "test:routes": "jest tests/integration/routes"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -32,9 +37,14 @@
     "mysql2": "^3.11.3",
     "pdfkit": "^0.15.1",
     "puppeteer": "^23.11.1",
-    "sequelize": "^6.37.5"
+    "qs": "^6.14.1",
+    "sequelize": "^6.37.5",
+    "sequelize-paginate": "^1.1.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.1.4"
   }
 }
