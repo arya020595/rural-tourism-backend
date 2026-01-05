@@ -10,7 +10,10 @@ const OperatorActivity = sequelize.define('operator_activities', {
   description: { type: DataTypes.TEXT, allowNull: false },
   address: { type: DataTypes.STRING, allowNull: true },
   district: { type: DataTypes.STRING, allowNull: false },
-  image: { type: DataTypes.TEXT, allowNull: true },
+  image: {
+  type: DataTypes.TEXT('long'),
+  allowNull: true
+},
   operator_logo: { type: DataTypes.TEXT, allowNull: true },
   services_provided: { type: DataTypes.JSON, allowNull: false },
   price_per_pax: { type: DataTypes.DECIMAL(10,2), allowNull: true },
