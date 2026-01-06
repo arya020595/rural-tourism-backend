@@ -105,7 +105,7 @@ module.exports = {
         type: Sequelize.INTEGER(11),
         allowNull: false,
         references: {
-          model: "accomodation_list",
+          model: "accommodation_list",
           key: "accommodation_id",
         },
         onUpdate: "CASCADE",
