@@ -1,5 +1,4 @@
 const Notification = require('../models/notificationModel');
-const { Op } = require('sequelize');
 
 // 1. Create a new notification
 exports.createNotification = async (req, res) => {
