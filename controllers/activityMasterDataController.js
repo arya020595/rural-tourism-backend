@@ -1,10 +1,45 @@
 const ActivityMaster = require("../models/activityMasterDataModel"); // Sequelize model
+const OperatorActivity = require("../models/operatorActivitiesModel");
 
 // 1️⃣ Get all activities
 exports.getAllActivities = async (req, res) => {
   try {
-    const activities = await ActivityMaster.findAll();
-    res.json(activities);
+    const activities = await ActivityMaster.findAll({
+      include: [
+        {
+          model: OperatorActivity,
+          as: "operator_activities",
+          attributes: ["available_dates"],
+        },
+      ],
+    });
+
+    // Merge available_dates from all operator activities
+    const activitiesWithDates = activities.map((activity) => {
+      const activityData = activity.toJSON();
+      let allAvailableDates = [];
+
+      if (
+        activityData.operator_activities &&
+        activityData.operator_activities.length > 0
+      ) {
+        activityData.operator_activities.forEach((op) => {
+          if (op.available_dates && Array.isArray(op.available_dates)) {
+            allAvailableDates = allAvailableDates.concat(op.available_dates);
+          }
+        });
+      }
+
+      // Remove duplicates and sort dates
+      allAvailableDates = [...new Set(allAvailableDates)].sort();
+
+      return {
+        ...activityData,
+        available_dates: allAvailableDates,
+      };
+    });
+
+    res.json(activitiesWithDates);
   } catch (err) {
     console.error("Error fetching activities:", err);
     res.status(500).json({ error: err.message });
