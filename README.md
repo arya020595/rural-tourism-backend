@@ -103,8 +103,8 @@ CORS_ORIGIN_EXTERNAL=http://192.168.1.8:8100
 
 - **Users**: `rt_users`, `tourist_users`
 - **Activities**: `activity_master_table`, `activity`, `operator_activities`
-- **Accommodations**: `accomodation_list`
-- **Bookings**: `activity_booking`, `accomodation_booking`
+- **Accommodations**: `accommodation_list`
+- **Bookings**: `activity_booking`, `accommodation_booking`
 - **Forms & Receipts**: `form_responses`
 - **Communications**: `notifications`, `messages`
 
