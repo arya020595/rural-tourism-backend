@@ -1,55 +1,48 @@
-const { DataTypes, Sequelize } = require('sequelize');
-const sequelize = require('../config/db'); // your Sequelize instance
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db');
 
-const Notification = sequelize.define(
-  'notification',
-  {
+const Notification = sequelize.define('notification', {
     id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
+        type: DataTypes.BIGINT,
+        autoIncrement: true,
+        primaryKey: true
     },
-
-    operator_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: 'References rt_user.user_id',
+    user_id: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
-
-    tourist_user_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: 'References tourist_user.tourist_user_id',
+    title: {
+        type: DataTypes.STRING,
+        allowNull: false
     },
-
-    booking_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      comment: 'References the accommodation booking ID',
-    },
-
     message: {
-      type: DataTypes.TEXT,
-      allowNull: false,
+        type: DataTypes.STRING,
+        allowNull: true
     },
-
-    read_status: {
-      type: DataTypes.TINYINT,
-      allowNull: false,
-      defaultValue: 0,
-      field: 'read_status',
-      get() {
-        return this.getDataValue('read_status') === 1;
-      },
-      set(value) {
-        this.setDataValue('read_status', value ? 1 : 0);
-      },
+    type: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
-  },
-  {
+    related_id: {
+        type: DataTypes.BIGINT,
+        allowNull: false
+    },
+    is_read: {
+        type: DataTypes.TINYINT,
+        allowNull: true,
+        defaultValue: 0,
+        get() {
+            return this.getDataValue('is_read') === 1;
+        },
+        set(value) {
+            this.setDataValue('is_read', value ? 1 : 0);
+        }
+    }
+}, {
     tableName: 'notifications',
-    timestamps: true, // createdAt and updatedAt
-  }
-);
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+});
 
 module.exports = Notification;
