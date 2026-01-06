@@ -4,7 +4,7 @@ const sequelize = require("../config/db");
 // const OperatorActivity = require('./operatorActivitiesModel'); // import but don’t use yet
 
 const User = sequelize.define(
-  "rt_user",
+  "rt_users", // Model name matches tableName for consistency
   {
     user_id: {
       type: DataTypes.STRING,

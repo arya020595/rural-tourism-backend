@@ -56,7 +56,7 @@ const Accom = sequelize.define(
         this.setDataValue("show_availability", value ? 1 : 0);
       },
     },
-    // Aliases for backward compatibility
+    // Virtual aliases for backward compatibility (read-only)
     id: {
       type: DataTypes.VIRTUAL,
       get() {
@@ -68,9 +68,7 @@ const Accom = sequelize.define(
       get() {
         return this.getDataValue("rt_user_id");
       },
-      set(value) {
-        this.setDataValue("rt_user_id", value);
-      },
+      // Note: To set user_id, use rt_user_id directly. VIRTUAL fields are read-only aliases.
     },
   },
   {
