@@ -83,8 +83,8 @@ module.exports = {
       },
     });
 
-    // Create accomodation_booking table
-    await queryInterface.createTable("accomodation_booking", {
+    // Create accommodation_booking table
+    await queryInterface.createTable("accommodation_booking", {
       id: {
         type: Sequelize.BIGINT,
         primaryKey: true,
@@ -101,12 +101,12 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
-      accomodation_id: {
+      accommodation_id: {
         type: Sequelize.INTEGER(11),
         allowNull: false,
         references: {
-          model: "accomodation_list",
-          key: "accomodation_id",
+          model: "accommodation_list",
+          key: "accommodation_id",
         },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
@@ -169,7 +169,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("accomodation_booking");
+    await queryInterface.dropTable("accommodation_booking");
     await queryInterface.dropTable("activity_booking");
   },
 };

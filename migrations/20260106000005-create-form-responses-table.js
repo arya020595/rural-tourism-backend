@@ -69,8 +69,8 @@ module.exports = {
         allowNull: true,
         defaultValue: null,
         references: {
-          model: "accomodation_list",
-          key: "accomodation_id",
+          model: "accommodation_list",
+          key: "accommodation_id",
         },
         onUpdate: "CASCADE",
         onDelete: "SET NULL",

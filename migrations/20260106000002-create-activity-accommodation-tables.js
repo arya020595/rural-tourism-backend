@@ -118,9 +118,9 @@ module.exports = {
       },
     });
 
-    // Create accomodation_list table
-    await queryInterface.createTable("accomodation_list", {
-      accomodation_id: {
+    // Create accommodation_list table
+    await queryInterface.createTable("accommodation_list", {
+      accommodation_id: {
         type: Sequelize.INTEGER(11),
         primaryKey: true,
         autoIncrement: true,
@@ -194,7 +194,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("accomodation_list");
+    await queryInterface.dropTable("accommodation_list");
     await queryInterface.dropTable("activity");
     await queryInterface.dropTable("activity_master_table");
   },

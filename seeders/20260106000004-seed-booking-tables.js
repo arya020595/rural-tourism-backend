@@ -67,12 +67,12 @@ module.exports = {
       },
     ]);
 
-    // Seed accomodation_booking
-    await queryInterface.bulkInsert("accomodation_booking", [
+    // Seed accommodation_booking
+    await queryInterface.bulkInsert("accommodation_booking", [
       {
         id: 1,
         tourist_user_id: "TU001",
-        accomodation_id: 1, // Kinabalu Mountain Lodge
+        accommodation_id: 1, // Kinabalu Mountain Lodge
         check_in: "2026-01-14",
         check_out: "2026-01-16",
         total_no_of_nights: 2,
@@ -89,7 +89,7 @@ module.exports = {
       {
         id: 2,
         tourist_user_id: "TU002",
-        accomodation_id: 2, // Riverside Chalet
+        accommodation_id: 2, // Riverside Chalet
         check_in: "2026-01-17",
         check_out: "2026-01-19",
         total_no_of_nights: 2,
@@ -106,7 +106,7 @@ module.exports = {
       {
         id: 3,
         tourist_user_id: "TU003",
-        accomodation_id: 3, // Beachfront Homestay
+        accommodation_id: 3, // Beachfront Homestay
         check_in: "2026-01-11",
         check_out: "2026-01-14",
         total_no_of_nights: 3,
@@ -123,7 +123,7 @@ module.exports = {
       {
         id: 4,
         tourist_user_id: "TU004",
-        accomodation_id: 4, // Longhouse Experience
+        accommodation_id: 4, // Longhouse Experience
         check_in: "2026-01-20",
         check_out: "2026-01-22",
         total_no_of_nights: 2,
@@ -141,7 +141,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete("accomodation_booking", null, {});
+    await queryInterface.bulkDelete("accommodation_booking", null, {});
     await queryInterface.bulkDelete("activity_booking", null, {});
   },
 };

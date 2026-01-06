@@ -98,10 +98,10 @@ module.exports = {
       },
     ]);
 
-    // Seed accomodation_list
-    await queryInterface.bulkInsert("accomodation_list", [
+    // Seed accommodation_list
+    await queryInterface.bulkInsert("accommodation_list", [
       {
-        accomodation_id: 1,
+        accommodation_id: 1,
         rt_user_id: "OP002",
         name: "Kinabalu Mountain Lodge",
         description:
@@ -117,7 +117,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        accomodation_id: 2,
+        accommodation_id: 2,
         rt_user_id: "OP002",
         name: "Riverside Chalet",
         description: "Traditional wooden chalet by the river",
@@ -132,7 +132,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        accomodation_id: 3,
+        accommodation_id: 3,
         rt_user_id: "OP003",
         name: "Beachfront Homestay",
         description: "Relax at our beachfront property with ocean views",
@@ -147,7 +147,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        accomodation_id: 4,
+        accommodation_id: 4,
         rt_user_id: "OP003",
         name: "Longhouse Experience",
         description: "Authentic Rungus longhouse stay experience",
@@ -165,7 +165,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.bulkDelete("accomodation_list", null, {});
+    await queryInterface.bulkDelete("accommodation_list", null, {});
     await queryInterface.bulkDelete("activity", null, {});
     await queryInterface.bulkDelete("activity_master_table", null, {});
   },
