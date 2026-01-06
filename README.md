@@ -37,7 +37,10 @@ cp .env.example .env
 npx sequelize-cli db:create
 npx sequelize-cli db:migrate
 
-# 4. Start server
+# 4. (Optional) Seed database with sample data
+npx sequelize-cli db:seed:all
+
+# 5. Start server
 npm start
 ```
 
@@ -123,6 +126,25 @@ npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db
 # Create new migration
 npx sequelize-cli migration:generate --name your-migration-name
 ```
+
+### Seeder Commands
+
+```bash
+# Run all seeders (populate database with sample data)
+npx sequelize-cli db:seed:all
+
+# Undo all seeders (remove sample data)
+npx sequelize-cli db:seed:undo:all
+
+# Fresh setup with sample data
+npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all
+```
+
+**Sample Data Includes:**
+
+- 3 operators and 4 tourists (password: `password123`)
+- 5 activities and 4 accommodations
+- Sample bookings, receipts, notifications, and messages
 
 > **Note**: Model relationships are defined in `models/associations.js`
 
