@@ -208,7 +208,7 @@ router.put(
     if (services_provided !== undefined)
       activity.services_provided = services_provided;
     if (things_to_know !== undefined)
-      activity.services_provided = things_to_know;
+      activity.things_to_know = things_to_know;
     if (available_dates !== undefined)
       activity.available_dates = available_dates;
     if (price !== undefined) activity.price_per_pax = price;

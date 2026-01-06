@@ -33,7 +33,8 @@ const AccommodationBooking = sequelize.define('accommodation_booking', {
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        defaultValue: 'pending'
     },
     no_of_pax: {
         type: DataTypes.INTEGER,
