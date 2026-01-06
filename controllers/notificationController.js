@@ -1,21 +1,22 @@
-const Notification = require('../models/notificationModel'); // import the notification model
+const Notification = require('../models/notificationModel');
 const { Op } = require('sequelize');
 
 // 1. Create a new notification
 exports.createNotification = async (req, res) => {
-  const { operator_id, tourist_user_id, booking_id, message } = req.body;
+  const { user_id, title, message, type, related_id } = req.body;
 
-  if (!operator_id || !tourist_user_id || !booking_id || !message) {
-    return res.status(400).json({ error: 'operator_id, tourist_user_id, booking_id, and message are required.' });
+  if (!user_id || !title || !related_id) {
+    return res.status(400).json({ error: 'user_id, title, and related_id are required.' });
   }
 
   try {
     const newNotification = await Notification.create({
-      operator_id,
-      tourist_user_id,
-      booking_id,
+      user_id,
+      title,
       message,
-      read_status: 0, // default unread
+      type,
+      related_id,
+      is_read: 0
     });
 
     res.status(201).json(newNotification);
@@ -25,14 +26,14 @@ exports.createNotification = async (req, res) => {
   }
 };
 
-// 2. Get all notifications for a specific operator
+// 2. Get all notifications for a specific user (operator or tourist)
 exports.getNotificationsByOperator = async (req, res) => {
   const { operator_id } = req.params;
 
   try {
     const notifications = await Notification.findAll({
-      where: { operator_id },
-      order: [['createdAt', 'DESC']],
+      where: { user_id: operator_id },
+      order: [['created_at', 'DESC']],
     });
 
     res.json(notifications);
@@ -42,16 +43,14 @@ exports.getNotificationsByOperator = async (req, res) => {
   }
 };
 
-// 3. Mark a notification as read
-// Mark all unread notifications as read for an operator
-// notificationController.js
+// 3. Mark all unread notifications as read for a user
 exports.markAllAsRead = async (req, res) => {
   const { operator_id } = req.params;
 
   try {
     const updated = await Notification.update(
-      { read_status: 1 },
-      { where: { operator_id, read_status: 0 } } // only unread
+      { is_read: 1 },
+      { where: { user_id: operator_id, is_read: 0 } }
     );
 
     res.json({ message: 'All notifications marked as read.', updated });
@@ -61,16 +60,14 @@ exports.markAllAsRead = async (req, res) => {
   }
 };
 
-
-// Mark a single notification as read
-// Mark a single notification as read
+// 4. Mark a single notification as read
 exports.markAsRead = async (req, res) => {
   const { id } = req.params;
 
   try {
     const [updated] = await Notification.update(
-      { read_status: 1 },
-      { where: { id, read_status: 0 } } // only update if unread
+      { is_read: 1 },
+      { where: { id, is_read: 0 } }
     );
 
     if (updated === 0) {
@@ -84,19 +81,16 @@ exports.markAsRead = async (req, res) => {
   }
 };
 
-
-
-
-// 4. Get unread notifications count for an operator
+// 5. Get unread notifications count for a user
 exports.getUnreadCount = async (req, res) => {
   const { operator_id } = req.params;
 
   try {
     const count = await Notification.count({
-      where: { operator_id, read_status: 0 },
+      where: { user_id: operator_id, is_read: 0 }
     });
 
-    res.json({ unread_count: count });
+    res.json({ unreadCount: count });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Database error while counting notifications.' });

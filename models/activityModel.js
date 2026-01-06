@@ -1,64 +1,68 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); // Your Sequelize instance
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db"); // Your Sequelize instance
 
-const activity = sequelize.define('activity_new', {
+const activity = sequelize.define(
+  "activity_new",
+  {
     activity_id: {
-        type: DataTypes.STRING,
-        primaryKey: true,
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
     activity_name: {
-        type: DataTypes.STRING,
+      type: DataTypes.STRING,
     },
-    description:{
-        type: DataTypes.TEXT,
+    description: {
+      type: DataTypes.TEXT,
     },
     address: {
-      type: DataTypes.STRING,
-      allowNull: true
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
 
     price: {
-        type: DataTypes.DECIMAL(10,2),
+      type: DataTypes.DECIMAL(10, 2),
     },
     image: {
-        type: DataTypes.TEXT, // Store base64 strings or image URLs
-        allowNull: true,
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
     },
     district: {
-        type: DataTypes.TEXT,
+      type: DataTypes.STRING(100),
     },
     location: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
-    
-    showInSuggestions: {
-    type: DataTypes.TINYINT,
-    allowNull: false,
-    defaultValue: 0,
-    field: 'show_in_suggestions', // 👈 maps camelCase to snake_case DB column
-    get() {
-        const rawValue = this.getDataValue('showInSuggestions');
+
+    show_in_suggestion: {
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      field: "show_in_suggestion",
+      get() {
+        const rawValue = this.getDataValue("show_in_suggestion");
         return rawValue === 1;
-    },
-    set(value) {
-        this.setDataValue('showInSuggestions', value ? 1 : 0);
-    }
+      },
+      set(value) {
+        this.setDataValue("show_in_suggestion", value ? 1 : 0);
+      },
     },
 
     things_to_know: {
-    type: DataTypes.TEXT,  // or DataTypes.JSON if supported
-    allowNull: true
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     user_id: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: true,
     },
-}, {
-    tableName: 'activity_new',
-    timestamps: false  // Explicitly define the table name here
-    
-    
-});
+  },
+  {
+    tableName: "activity",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  }
+);
 
 module.exports = activity;

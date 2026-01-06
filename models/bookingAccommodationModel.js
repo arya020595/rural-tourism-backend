@@ -1,5 +1,5 @@
-const { DataTypes, Sequelize } = require('sequelize');
-const sequelize = require('../config/db'); // Your Sequelize instance
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db');
 
 const AccommodationBooking = sequelize.define('accommodation_booking', {
     id: {
@@ -7,79 +7,59 @@ const AccommodationBooking = sequelize.define('accommodation_booking', {
         autoIncrement: true,
         primaryKey: true
     },
-
     tourist_user_id: {
-        type: DataTypes.STRING,  // CHAR or VARCHAR in MySQL
+        type: DataTypes.STRING,
         allowNull: false
     },
-
     accommodation_id: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-
-    operator_id: {
+    check_in: {
+        type: DataTypes.DATEONLY,
+        allowNull: false
+    },
+    check_out: {
+        type: DataTypes.DATEONLY,
+        allowNull: false
+    },
+    total_no_of_nights: {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-
-    accommodation_name: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-
-    operator_name: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-
-    location: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-
-    start_date: {
-        type: DataTypes.DATEONLY,
-        allowNull: true
-    },
-
-    end_date: {
-        type: DataTypes.DATEONLY,
-        allowNull: true
-    },
-
-    number_of_nights: {
-        type: DataTypes.INTEGER,
-        allowNull: true
-    },
-
-    no_of_rooms: {
-        type: DataTypes.INTEGER,
-        allowNull: true
-    },
-
     total_price: {
-        type: DataTypes.DECIMAL(10, 2),
+        type: DataTypes.STRING,
         allowNull: false
     },
-
     status: {
         type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'pending'
+        allowNull: false
     },
-
-    
     no_of_pax: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true
+    },
+    contact_name: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    contact_email: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    contact_phone: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    nationality: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
-
 }, {
     tableName: 'accommodation_booking',
-    timestamps: true, // adds createdAt and updatedAt
+    timestamps: true,
     createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    updatedAt: 'updated_at'
 });
 
 module.exports = AccommodationBooking;

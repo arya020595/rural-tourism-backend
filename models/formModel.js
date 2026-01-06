@@ -1,14 +1,14 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db'); // Your Sequelize instance
+const sequelize = require('../config/db');
 
-const form_rp = sequelize.define('form_responses', {
+const FormResponse = sequelize.define('form_responses', {
     receipt_id: {
         type: DataTypes.STRING,
         primaryKey: true,
     },
-    user_id: {
+    operator_user_id: {
         type: DataTypes.STRING,
-        primaryKey: true,
+        allowNull: false
     },
     citizenship: {
         type: DataTypes.STRING,
@@ -22,6 +22,10 @@ const form_rp = sequelize.define('form_responses', {
         type: DataTypes.STRING,
         allowNull: true
     },
+    tourist_user_id: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     homest_name: {
         type: DataTypes.STRING,
         allowNull: true
@@ -31,11 +35,11 @@ const form_rp = sequelize.define('form_responses', {
         allowNull: true
     },
     activity_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.BIGINT,
         allowNull: true
     },
     homest_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: true
     },
     total_rm: {
@@ -47,7 +51,7 @@ const form_rp = sequelize.define('form_responses', {
         allowNull: true
     },
     package: {
-        type: DataTypes.JSON,
+        type: DataTypes.TEXT('long'),
         allowNull: true
     },
     issuer: {
@@ -56,13 +60,17 @@ const form_rp = sequelize.define('form_responses', {
     },
     status: {
         type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: 'Active'
+        allowNull: true
     },
     date: {
         type: DataTypes.DATE,
         allowNull: true
     }
-})
+}, {
+    tableName: 'form_responses',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+});
 
-module.exports = form_rp;
+module.exports = FormResponse;
