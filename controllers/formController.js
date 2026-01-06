@@ -1,5 +1,4 @@
 const FormResp = require("../models/formModel"); // Import the User model
-const { Op } = require("sequelize"); // Sequelize operators for querying
 
 //get form/receipt by id
 exports.getRespById = async (req, res) => {
