@@ -1,0 +1,27 @@
+module.exports = {
+  testEnvironment: "node",
+  coverageDirectory: "coverage",
+  collectCoverageFrom: [
+    "middleware/**/*.js",
+    "routes/**/*.js",
+    "models/**/*.js",
+    "controllers/**/*.js",
+    "!**/node_modules/**",
+    "!**/tests/**",
+    "!**/coverage/**",
+  ],
+  testMatch: ["**/tests/**/*.test.js"],
+  roots: ["<rootDir>/tests"],
+  testPathIgnorePatterns: ["/node_modules/"],
+  verbose: true,
+  forceExit: true,
+  clearMocks: true,
+  resetMocks: true,
+  restoreMocks: true,
+  testTimeout: 10000,
+  // Display test names in tree structure by module
+  displayName: {
+    name: "RT-BACKEND",
+    color: "cyan",
+  },
+};
