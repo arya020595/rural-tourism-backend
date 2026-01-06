@@ -43,7 +43,7 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
-      homeest_name: {
+      homest_name: {
         type: Sequelize.STRING(255),
         allowNull: true,
         defaultValue: null,
