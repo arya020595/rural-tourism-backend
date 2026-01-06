@@ -6,7 +6,7 @@ module.exports = {
     // Seed form_responses
     await queryInterface.bulkInsert("form_responses", [
       {
-        reciept_id: "RCP-2026-0001",
+        receipt_id: "RCP-2026-0001",
         operator_user_id: "OP001",
         citizenship: "Malaysian",
         pax: 2,
@@ -29,7 +29,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        reciept_id: "RCP-2026-0002",
+        receipt_id: "RCP-2026-0002",
         operator_user_id: "OP002",
         citizenship: "Malaysian",
         pax: 2,
@@ -52,7 +52,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        reciept_id: "RCP-2026-0003",
+        receipt_id: "RCP-2026-0003",
         operator_user_id: "OP001",
         citizenship: "Singaporean",
         pax: 3,
@@ -75,7 +75,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        reciept_id: "RCP-2026-0004",
+        receipt_id: "RCP-2026-0004",
         operator_user_id: "OP003",
         citizenship: "Australian",
         pax: 4,
@@ -98,7 +98,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        reciept_id: "RCP-2026-0005",
+        receipt_id: "RCP-2026-0005",
         operator_user_id: "OP003",
         citizenship: "Australian",
         pax: 4,

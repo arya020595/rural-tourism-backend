@@ -82,7 +82,7 @@ module.exports = {
         type: Sequelize.ENUM("tourist", "operator"),
         allowNull: true,
       },
-      reciever_type: {
+      receiver_type: {
         type: Sequelize.ENUM("tourist", "operator"),
         allowNull: true,
       },

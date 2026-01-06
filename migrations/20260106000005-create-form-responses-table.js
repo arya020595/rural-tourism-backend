@@ -5,7 +5,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     // Create form_responses table
     await queryInterface.createTable("form_responses", {
-      reciept_id: {
+      receipt_id: {
         type: Sequelize.STRING(255),
         primaryKey: true,
         allowNull: false,
