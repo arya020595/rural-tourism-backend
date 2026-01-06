@@ -1,81 +1,84 @@
-const { DataTypes, Sequelize } = require('sequelize');
-const sequelize = require('../config/db'); // Your Sequelize instance
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db"); // Your Sequelize instance
 
-const Accom = sequelize.define('accommodation', {
+const Accom = sequelize.define(
+  "accommodation",
+  {
     accommodation_id: {
-        type: Sequelize.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-        field: 'accommodation_id'
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
     },
     rt_user_id: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        field: 'rt_user_id'
+      type: DataTypes.STRING,
+      allowNull: false,
+      field: "rt_user_id",
     },
     name: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     description: {
-        type: DataTypes.TEXT,
-        allowNull: false
+      type: DataTypes.TEXT,
+      allowNull: false,
     },
     price: {
-        type: DataTypes.DECIMAL(10, 2),
+      type: DataTypes.DECIMAL(10, 2),
     },
     image: {
-        type: DataTypes.TEXT('long'),
-        allowNull: true,
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
     },
     district: {
-        type: DataTypes.STRING(100),
+      type: DataTypes.STRING(100),
     },
     provided: {
-        type: DataTypes.TEXT,
-        allowNull: true
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     address: {
-        type: DataTypes.TEXT,
-        allowNull: true
+      type: DataTypes.TEXT,
+      allowNull: true,
     },
     location: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     show_availability: {
-        type: DataTypes.TINYINT,
-        allowNull: true,
-        field: 'show_availability',
-        get() {
-            const rawValue = this.getDataValue('show_availability');
-            return rawValue === 1;
-        },
-        set(value) {
-            this.setDataValue('show_availability', value ? 1 : 0);
-        }
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      field: "show_availability",
+      get() {
+        const rawValue = this.getDataValue("show_availability");
+        return rawValue === 1;
+      },
+      set(value) {
+        this.setDataValue("show_availability", value ? 1 : 0);
+      },
     },
     // Aliases for backward compatibility
     id: {
-        type: DataTypes.VIRTUAL,
-        get() {
-            return this.getDataValue('accommodation_id');
-        }
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.getDataValue("accommodation_id");
+      },
     },
     user_id: {
-        type: DataTypes.VIRTUAL,
-        get() {
-            return this.getDataValue('rt_user_id');
-        },
-        set(value) {
-            this.setDataValue('rt_user_id', value);
-        }
-    }
-}, {
-    tableName: 'accommodation_list',
+      type: DataTypes.VIRTUAL,
+      get() {
+        return this.getDataValue("rt_user_id");
+      },
+      set(value) {
+        this.setDataValue("rt_user_id", value);
+      },
+    },
+  },
+  {
+    tableName: "accommodation_list",
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
-});
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  }
+);
 
 module.exports = Accom;

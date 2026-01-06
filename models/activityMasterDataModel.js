@@ -6,25 +6,34 @@ const ActivityMasterData = sequelize.define(
   "activity_master_data",
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       autoIncrement: true,
       primaryKey: true,
     },
     activity_name: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
-    description: DataTypes.TEXT,
-    address: DataTypes.STRING,
-    things_to_know: DataTypes.JSON, // stores your JSON data
-    image: DataTypes.STRING,
-    created_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+    description: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
     },
-    updated_at: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
+    address: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    things_to_know: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    image: {
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
+    },
+    show_in_suggestions: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
     },
   },
   {
