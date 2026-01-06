@@ -19,15 +19,17 @@ const User = sequelize.define(
       allowNull: false,
       defaultValue: "Not Provided",
     },
-    security_Q1: {
+    // Using securityQ1/securityQ2 as model attribute names for backward compatibility
+    // with existing controller code, mapping to security_Q1/security_Q2 in database
+    securityQ1: {
       type: DataTypes.STRING,
       allowNull: true,
-      field: "security_Q1",
+      field: "security_Q1", // Maps to database column security_Q1
     },
-    security_Q2: {
+    securityQ2: {
       type: DataTypes.STRING,
       allowNull: true,
-      field: "security_Q2",
+      field: "security_Q2", // Maps to database column security_Q2
     },
     business_name: {
       type: DataTypes.STRING,

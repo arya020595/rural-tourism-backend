@@ -1,4 +1,5 @@
 const { DataTypes } = require("sequelize");
+const { v4: uuidv4 } = require("uuid");
 const sequelize = require("../config/db"); // Your Sequelize instance
 
 const TouristUser = sequelize.define(
@@ -7,6 +8,7 @@ const TouristUser = sequelize.define(
     tourist_user_id: {
       type: DataTypes.STRING,
       primaryKey: true,
+      defaultValue: () => uuidv4(), // Auto-generate UUID if not provided
     },
     username: {
       type: DataTypes.STRING,

@@ -8,12 +8,12 @@ const OperatorActivity = sequelize.define(
     id: { type: DataTypes.STRING, primaryKey: true },
     activity_id: { type: DataTypes.BIGINT, allowNull: false },
     rt_user_id: { type: DataTypes.STRING, allowNull: false },
-    description: { type: DataTypes.STRING, allowNull: false },
+    description: { type: DataTypes.TEXT, allowNull: true }, // Changed to TEXT for longer descriptions
     address: { type: DataTypes.STRING, allowNull: false },
     district: { type: DataTypes.STRING, allowNull: true },
     image: { type: DataTypes.TEXT("long"), allowNull: true },
-    services_provided: { type: DataTypes.STRING, allowNull: false },
-    available_dates: { type: DataTypes.JSON, allowNull: false },
+    services_provided: { type: DataTypes.TEXT, allowNull: true }, // Changed to TEXT for JSON data
+    available_dates: { type: DataTypes.JSON, allowNull: true },
     price_per_pax: { type: DataTypes.DECIMAL(10, 2), allowNull: true },
   },
   {
