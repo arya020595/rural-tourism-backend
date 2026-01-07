@@ -33,8 +33,11 @@ exports.getAllActivities = async (req, res) => {
       // Remove duplicates and sort dates
       allAvailableDates = [...new Set(allAvailableDates)].sort();
 
+      // Exclude operator_activities from the response to avoid exposing internal structure
+      const { operator_activities, ...activityWithoutOperators } = activityData;
+
       return {
-        ...activityData,
+        ...activityWithoutOperators,
         available_dates: allAvailableDates,
       };
     });
