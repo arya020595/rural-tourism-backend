@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const ActivityMasterData = require("../models/activityMasterDataModel");
+const OperatorActivity = require("../models/operatorActivitiesModel");
 const { ransackMiddleware } = require("../middleware/ransackSearch");
 
 // ✅ 1. Get all activities with search & filter (Ransack-like)
@@ -10,16 +11,54 @@ router.get("/", ransackMiddleware, async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
-    // Use sequelize-paginate (like Rails Kaminari/Pagy)
+    // Get activities with operator_activities to include available_dates
     const result = await ActivityMasterData.paginate({
       where,
       order,
       page,
       paginate: perPage,
+      include: [
+        {
+          model: OperatorActivity,
+          as: "operators",
+          attributes: ["available_dates"],
+        },
+      ],
+    });
+
+    // Merge available_dates from all operators for each activity
+    const activitiesWithDates = result.docs.map((activity) => {
+      const activityData = activity.toJSON();
+      let allAvailableDates = [];
+
+      if (activityData.operators && activityData.operators.length > 0) {
+        activityData.operators.forEach((op) => {
+          if (op.available_dates) {
+            // Parse if string, otherwise use as-is
+            const dates =
+              typeof op.available_dates === "string"
+                ? JSON.parse(op.available_dates)
+                : op.available_dates;
+            if (Array.isArray(dates)) {
+              allAvailableDates = allAvailableDates.concat(dates);
+            }
+          }
+        });
+      }
+
+      // Remove duplicates and sort dates
+      allAvailableDates = [...new Set(allAvailableDates)].sort();
+
+      // Remove operators array and add merged available_dates
+      delete activityData.operators;
+      return {
+        ...activityData,
+        available_dates: allAvailableDates,
+      };
     });
 
     res.json({
-      data: result.docs,
+      data: activitiesWithDates,
       pagination: {
         total: result.total,
         page: page,
