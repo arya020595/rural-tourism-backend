@@ -38,6 +38,7 @@ exports.createAccom = async (req, res) => {
     rt_user_id,
     district,
     show_availability,
+    available_dates,
   } = req.body;
 
   if (!name || !rt_user_id) {
@@ -56,6 +57,7 @@ exports.createAccom = async (req, res) => {
       rt_user_id,
       district,
       show_availability,
+      available_dates,
     });
 
     res.status(201).json(newAccommodation);
@@ -79,6 +81,7 @@ exports.updateAccom = async (req, res) => {
     rt_user_id,
     district,
     show_availability,
+    available_dates,
   } = req.body;
 
   try {
@@ -98,6 +101,8 @@ exports.updateAccom = async (req, res) => {
     if (district !== undefined) accommodation.district = district;
     if (show_availability !== undefined)
       accommodation.show_availability = show_availability;
+    if (available_dates !== undefined)
+      accommodation.available_dates = available_dates;
 
     await accommodation.save();
     res.json(accommodation);
