@@ -56,6 +56,22 @@ const Accom = sequelize.define(
         this.setDataValue("show_availability", value ? 1 : 0);
       },
     },
+    available_dates: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      field: "available_dates",
+      get() {
+        const rawValue = this.getDataValue("available_dates");
+        if (typeof rawValue === "string") {
+          try {
+            return JSON.parse(rawValue);
+          } catch {
+            return [];
+          }
+        }
+        return rawValue || [];
+      },
+    },
     // Virtual aliases for backward compatibility (read-only)
     id: {
       type: DataTypes.VIRTUAL,
