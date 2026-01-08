@@ -17,49 +17,52 @@ module.exports = {
       return dates;
     };
 
-    // Update accommodation 1 - Kinabalu Mountain Lodge
-    // Available for the next 30 days starting from today
-    await queryInterface.bulkUpdate(
-      "accommodation_list",
-      {
-        available_dates: JSON.stringify(generateAvailableDates(0, 30)),
-        updated_at: new Date(),
-      },
-      { accommodation_id: 1 }
-    );
+    // Update all accommodations concurrently for better performance
+    await Promise.all([
+      // Update accommodation 1 - Kinabalu Mountain Lodge
+      // Available for the next 30 days starting from today
+      queryInterface.bulkUpdate(
+        "accommodation_list",
+        {
+          available_dates: JSON.stringify(generateAvailableDates(0, 30)),
+          updated_at: new Date(),
+        },
+        { accommodation_id: 1 }
+      ),
 
-    // Update accommodation 2 - Riverside Homestay
-    // Available for 45 days starting from 5 days from now
-    await queryInterface.bulkUpdate(
-      "accommodation_list",
-      {
-        available_dates: JSON.stringify(generateAvailableDates(5, 45)),
-        updated_at: new Date(),
-      },
-      { accommodation_id: 2 }
-    );
+      // Update accommodation 2 - Riverside Homestay
+      // Available for 45 days starting from 5 days from now
+      queryInterface.bulkUpdate(
+        "accommodation_list",
+        {
+          available_dates: JSON.stringify(generateAvailableDates(5, 45)),
+          updated_at: new Date(),
+        },
+        { accommodation_id: 2 }
+      ),
 
-    // Update accommodation 3 - Island Beach Resort
-    // Available for the next 60 days (high demand resort)
-    await queryInterface.bulkUpdate(
-      "accommodation_list",
-      {
-        available_dates: JSON.stringify(generateAvailableDates(0, 60)),
-        updated_at: new Date(),
-      },
-      { accommodation_id: 3 }
-    );
+      // Update accommodation 3 - Island Beach Resort
+      // Available for the next 60 days (high demand resort)
+      queryInterface.bulkUpdate(
+        "accommodation_list",
+        {
+          available_dates: JSON.stringify(generateAvailableDates(0, 60)),
+          updated_at: new Date(),
+        },
+        { accommodation_id: 3 }
+      ),
 
-    // Update accommodation 4 - Firefly Village Retreat
-    // Available for 20 days starting from 10 days from now
-    await queryInterface.bulkUpdate(
-      "accommodation_list",
-      {
-        available_dates: JSON.stringify(generateAvailableDates(10, 20)),
-        updated_at: new Date(),
-      },
-      { accommodation_id: 4 }
-    );
+      // Update accommodation 4 - Firefly Village Retreat
+      // Available for 20 days starting from 10 days from now
+      queryInterface.bulkUpdate(
+        "accommodation_list",
+        {
+          available_dates: JSON.stringify(generateAvailableDates(10, 20)),
+          updated_at: new Date(),
+        },
+        { accommodation_id: 4 }
+      ),
+    ]);
   },
 
   async down(queryInterface, Sequelize) {

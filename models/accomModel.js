@@ -62,6 +62,11 @@ const Accom = sequelize.define(
       field: "available_dates",
       get() {
         const rawValue = this.getDataValue("available_dates");
+        // Return null if explicitly set to null
+        if (rawValue === null || rawValue === undefined) {
+          return null;
+        }
+        // Parse string values
         if (typeof rawValue === "string") {
           try {
             return JSON.parse(rawValue);
@@ -69,7 +74,8 @@ const Accom = sequelize.define(
             return [];
           }
         }
-        return rawValue || [];
+        // Return the value as-is (likely already an array)
+        return rawValue;
       },
     },
     // Virtual aliases for backward compatibility (read-only)
