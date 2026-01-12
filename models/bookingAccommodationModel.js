@@ -1,5 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const Accom = require("./accomModel");
+
+
 
 const AccommodationBooking = sequelize.define('accommodation_booking', {
     id: {
@@ -64,3 +67,8 @@ const AccommodationBooking = sequelize.define('accommodation_booking', {
 });
 
 module.exports = AccommodationBooking;
+
+AccommodationBooking.belongsTo(Accom, {
+  foreignKey: "accommodation_id",
+  targetKey: "accommodation_id",
+});

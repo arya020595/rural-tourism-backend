@@ -1,5 +1,9 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
+const Activity = require('./activityMasterDataModel');
+const User = require('./userModel');
+
+
 //const RtUser = require('./userModel'); // import the user model
 
 const OperatorActivity = sequelize.define(
@@ -30,3 +34,14 @@ const OperatorActivity = sequelize.define(
 // });
 
 module.exports = OperatorActivity;
+
+OperatorActivity.belongsTo(Activity, {
+  foreignKey: 'activity_id',
+  as: 'activity',
+});
+
+OperatorActivity.belongsTo(User, {
+  foreignKey: 'rt_user_id',
+  as: 'operator',
+});
+

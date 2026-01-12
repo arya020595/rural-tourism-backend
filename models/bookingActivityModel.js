@@ -1,5 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
+const OperatorActivities = require('./operatorActivitiesModel');
+
 
 const ActivityBooking = sequelize.define("activity_booking", {
     id: {
@@ -55,3 +57,9 @@ const ActivityBooking = sequelize.define("activity_booking", {
 });
 
 module.exports = ActivityBooking;
+
+
+ActivityBooking.belongsTo(OperatorActivities, {
+  foreignKey: 'operator_activity_id',
+  as: 'operatorActivity',
+});

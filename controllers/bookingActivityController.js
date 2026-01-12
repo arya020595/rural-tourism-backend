@@ -1,6 +1,7 @@
 const ActivityBooking = require("../models/bookingActivityModel");
 const OperatorActivities = require("../models/operatorActivitiesModel");
 
+
 // Create a new booking
 exports.createBooking = async (req, res) => {
   try {
@@ -14,6 +15,7 @@ exports.createBooking = async (req, res) => {
       contact_phone,
       nationality,
       total_price,
+      status,
     } = req.body;
 
     // Basic validation
@@ -52,6 +54,7 @@ exports.createBooking = async (req, res) => {
       contact_phone,
       nationality,
       total_price,
+      status: status || 'pending',
     });
 
     return res.status(201).json({
@@ -89,27 +92,61 @@ exports.getBookingById = async (req, res) => {
 };
 
 // Get all bookings for a specific tourist user
+
 exports.getBookingsByUser = async (req, res) => {
   try {
     const { tourist_user_id } = req.params;
+
     const bookings = await ActivityBooking.findAll({
       where: { tourist_user_id },
+      include: [
+        {
+          model: OperatorActivities,
+          as: 'operatorActivity',
+          include: [
+            {
+              model: Activity,
+              as: 'activity',
+              attributes: ['name'],
+            },
+            {
+              model: User,
+              as: 'operator',
+              attributes: ['full_name'],
+            },
+          ],
+        },
+      ],
     });
-
-    if (bookings.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "No bookings found for this user" });
-    }
 
     return res.json({ success: true, data: bookings });
   } catch (error) {
-    console.error("Error fetching bookings for user:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Server error while fetching bookings",
-      });
+    console.error(error);
+    return res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
+// exports.getBookingsByUser = async (req, res) => {
+//   try {
+//     const { tourist_user_id } = req.params;
+//     const bookings = await ActivityBooking.findAll({
+//       where: { tourist_user_id },
+//     });
+
+//     if (bookings.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "No bookings found for this user" });
+//     }
+
+//     return res.json({ success: true, data: bookings });
+//   } catch (error) {
+//     console.error("Error fetching bookings for user:", error);
+//     return res
+//       .status(500)
+//       .json({
+//         success: false,
+//         message: "Server error while fetching bookings",
+//       });
+//   }
+// };

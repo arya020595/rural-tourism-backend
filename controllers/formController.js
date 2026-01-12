@@ -13,31 +13,48 @@ exports.getRespById = async (req, res) => {
   }
 };
 
-// Create a form/receipt
 exports.createForm = async (req, res) => {
   try {
-    const newForm = await FormResp.create(req.body);
-    res.status(201).json(newForm);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Database query error." });
-  }
-};
+    const {
+      operator_user_id,
+      tourist_user_id,
+      no_of_pax,
+      date,
+      contact_name,
+      contact_phone,
+      nationality,
+      total_price,
+      booking_id,
+    } = req.body;
 
-//get form/receipt by user id
-exports.getFormByUser = async (req, res) => {
-  const { user_id } = req.params;
-  try {
-    const form = await FormResp.findAll({
-      where: { operator_user_id: user_id },
-    });
-
-    if (!form) {
-      return res.status(404).json({ error: "forms not found." });
+    // Validate required fields
+    if (!operator_user_id || !tourist_user_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Operator ID and Tourist ID are required",
+      });
     }
 
-    res.json(form);
+    // Create form/receipt
+    const newForm = await FormResp.create({
+      operator_user_id,
+      tourist_user_id,
+      no_of_pax,
+      date,
+      contact_name,
+      contact_phone,
+      nationality,
+      total_price,
+      booking_id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Form created successfully",
+      data: newForm,
+    });
   } catch (err) {
+    console.error("Error creating form:", err);
     res.status(500).json({ error: "Database query error." });
   }
 };
