@@ -377,7 +377,7 @@ User makes request
 1. **Always Filters** - Even without date filter, booked dates are removed
 2. **Accurate** - Uses real-time booking data from database
 3. **Performant** - Parallel processing with Promise.all()
-4. **Safe** - Excludes cancelled bookings automatically
+4. **Safe** - Only confirmed and completed bookings block dates
 5. **Flexible** - Supports single date or range filtering
 
 ### What Makes It Special
