@@ -33,7 +33,7 @@ async function getBookedDatesForActivity(operatorActivityId) {
 
     return bookings
       .map((booking) => booking.date)
-      .filter((date) => date != null)
+      .filter((date) => date !== null && date !== undefined)
       .map((date) => {
         const d = new Date(date);
         return d.toISOString().split("T")[0];
