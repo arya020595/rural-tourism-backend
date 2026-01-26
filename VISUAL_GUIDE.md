@@ -283,7 +283,7 @@ activityRoutes.js
          │    │    ├─► ActivityBooking.findAll({
          │    │    │     where: {
          │    │    │       operator_activity_id,
-         │    │    │       status: { [Op.ne]: 'cancelled' }
+         │    │    │       status: { [Op.in]: ['confirmed', 'completed'] }
          │    │    │     }
          │    │    │   })
          │    │    │
