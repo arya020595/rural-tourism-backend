@@ -1,5 +1,9 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
+const OperatorActivities = require('./operatorActivitiesModel');
+const User = require('./userModel'); // <-- add this at the top
+
+
 
 const ActivityBooking = sequelize.define("activity_booking", {
     id: {
@@ -31,6 +35,11 @@ const ActivityBooking = sequelize.define("activity_booking", {
         type: DataTypes.DATEONLY,
         allowNull: true
     },
+
+    time: {
+        type: DataTypes.STRING, // or Sequelize.TIME if you want strict time type
+        allowNull: true
+    },
     contact_name: {
         type: DataTypes.STRING,
         allowNull: true
@@ -55,3 +64,15 @@ const ActivityBooking = sequelize.define("activity_booking", {
 });
 
 module.exports = ActivityBooking;
+
+
+ActivityBooking.belongsTo(OperatorActivities, {
+  foreignKey: 'operator_activity_id',
+  as: 'operatorActivity',
+});
+
+
+ActivityBooking.belongsTo(User, {
+  foreignKey: 'tourist_user_id',
+  as: 'tourist',
+});
