@@ -13,4 +13,19 @@ router.get('/:id', asyncHandler(accommodationBookingController.getAccommodationB
 // Get all accommodation bookings for a specific tourist
 router.get('/user/:tourist_user_id', asyncHandler(accommodationBookingController.getAccommodationBookingsByUser));
 
+// PATCH /api/accommodation-booking/mark-paid/:id
+router.patch('/mark-paid/:id', async (req, res) => {
+  try {
+    const booking = await AccommodationBooking.findByPk(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    booking.status = 'Paid';
+    await booking.save();
+    return res.json({ success: true, booking });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
 module.exports = router;

@@ -23,7 +23,7 @@ exports.login = async (req, res) => {
       tourist_user_id: user.tourist_user_id,
       username: user.username,
       full_name: user.full_name,
-      user_email: user.user_email,
+      user_email: user.email,
       nationality: user.nationality || '',
       contact_no: user.contact_no,
       profileImage: user.profileImage || null, // if you have this field or similar
@@ -88,9 +88,10 @@ exports.login = async (req, res) => {
 
 exports.registerTourist = async (req, res) => {
   try {
-    const { username, user_email, password, full_name, contact_no, nationality } = req.body;
+    const { username, email, password, full_name, contact_no, nationality } = req.body;
 
-    if (!username || !user_email || !password || !full_name || !contact_no || !nationality) {
+
+    if (!username || !email || !password || !full_name || !contact_no || !nationality) {
       return res.status(400).json({ error: 'All fields are required.' });
     }
 
@@ -98,7 +99,7 @@ exports.registerTourist = async (req, res) => {
     const existingUser = await TouristUser.findOne({ where: { username } });
     if (existingUser) return res.status(400).json({ error: 'Username already taken.' });
 
-    const existingEmail = await TouristUser.findOne({ where: { user_email } });
+    const existingEmail = await TouristUser.findOne({ where: { email } });
     if (existingEmail) return res.status(400).json({ error: 'Email already registered.' });
 
     // Hash password
@@ -107,7 +108,7 @@ exports.registerTourist = async (req, res) => {
     // Create new tourist
     const newUser = await TouristUser.create({
       username,
-      user_email,
+      email,
       password: hashedPassword,
       full_name,
       contact_no,

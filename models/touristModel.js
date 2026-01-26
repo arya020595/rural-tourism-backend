@@ -6,7 +6,7 @@ const TouristUser = sequelize.define(
   "tourist_user",
   {
     tourist_user_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(36),
       primaryKey: true,
       defaultValue: () => uuidv4(), // Auto-generate UUID if not provided
     },
