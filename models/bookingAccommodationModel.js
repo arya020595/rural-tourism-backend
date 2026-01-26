@@ -72,3 +72,9 @@ AccommodationBooking.belongsTo(Accom, {
   foreignKey: "accommodation_id",
   targetKey: "accommodation_id",
 });
+
+
+
+
+
+
