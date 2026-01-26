@@ -1,6 +1,8 @@
 const OperatorActivity = require("../models/operatorActivitiesModel"); // updated import
 const RtUser = require("../models/userModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
+const ActivityBooking = require("../models/bookingActivityModel");
+const { Op } = require("sequelize");
 
 // Helper to safely parse JSON fields
 function parseJSONField(field) {
@@ -15,8 +17,46 @@ function parseJSONField(field) {
 // 1️⃣ Get all operator activities
 exports.getAllOperatorActivities = async (req, res) => {
   try {
+    const { startDate, endDate, date } = req.query;
+
     const activities = await OperatorActivity.findAll();
-    res.json(activities);
+
+    // Process each activity to filter out booked dates
+    const processedActivities = await Promise.all(
+      activities.map(async (activity) => {
+        const bookedDates = await getBookedDatesForActivity(activity.id);
+        const originalAvailableDates = parseJSONField(activity.available_dates);
+        const actualAvailableDates = filterAvailableDates(
+          originalAvailableDates,
+          bookedDates,
+        );
+
+        // Apply date filter if provided
+        if (date || startDate || endDate) {
+          const filterStart = date || startDate;
+          const filterEnd = date || endDate;
+
+          if (
+            !matchesDateFilter(actualAvailableDates, filterStart, filterEnd)
+          ) {
+            return null; // Exclude this activity from results
+          }
+        }
+
+        return {
+          ...activity.dataValues,
+          available_dates: actualAvailableDates,
+          available_dates_list: actualAvailableDates,
+        };
+      }),
+    );
+
+    // Filter out null entries (activities that didn't match the date filter)
+    const filteredActivities = processedActivities.filter(
+      (activity) => activity !== null,
+    );
+
+    res.json(filteredActivities);
   } catch (err) {
     console.error("Error fetching operator activities:", err);
     res.status(500).json({ error: err.message });
@@ -26,6 +66,7 @@ exports.getAllOperatorActivities = async (req, res) => {
 // 2️⃣ Get operator activity by activity_id and include business_name from rt_user
 exports.getOperatorsByActivityId = async (req, res) => {
   const { activity_id } = req.params;
+  const { startDate, endDate, date } = req.query;
 
   try {
     const operators = await OperatorActivity.findAll({
@@ -159,9 +200,10 @@ exports.deleteOperatorActivity = async (req, res) => {
   }
 };
 
-// 6️⃣ Get all operator activities by user (includes activity_name from activity_master_table)
+// 6️⃣ Get all operator activities by user (includes activity_name from activity_master_table) with booking-aware filtering
 exports.getAllOperatorActivitiesByUser = async (req, res) => {
   const { rt_user_id } = req.params;
+  const { startDate, endDate, date } = req.query;
 
   try {
     const activities = await OperatorActivity.findAll({
