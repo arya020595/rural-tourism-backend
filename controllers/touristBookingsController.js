@@ -3,11 +3,7 @@ const AccommodationBooking = require("../models/bookingAccommodationModel");
 const Accom = require("../models/accomModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const User = require("../models/userModel");
-const ActivityMasterData = require("../models/activityMasterDataModel"); // <-- add this
-
-
-
-
+const ActivityMasterData = require("../models/activityMasterDataModel"); 
 
 
 /**
