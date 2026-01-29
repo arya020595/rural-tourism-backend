@@ -50,7 +50,7 @@ module.exports = {
           "2D1N Mount Kinabalu climbing package with experienced guide",
         services_provided: "Transport, Guide, Meals, Accommodation, Permits",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(0, 2, morningSlots),
+          generateDatesWithSlots(0, 5, morningSlots),
         ),
         price_per_pax: 850.0,
         created_at: new Date(),
@@ -67,7 +67,7 @@ module.exports = {
           "Budget-friendly Mount Kinabalu climb with local expert guide",
         services_provided: "Guide, Meals, Permits, First Aid Kit",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(1, 2, morningSlots),
+          generateDatesWithSlots(1, 5, morningSlots),
         ),
         price_per_pax: 750.0,
         created_at: new Date(),
@@ -84,7 +84,7 @@ module.exports = {
         description: "Full day white water rafting adventure with BBQ lunch",
         services_provided: "Transport, Equipment, Guide, Lunch, Insurance",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(2, 2, afternoonSlots),
+          generateDatesWithSlots(2, 4, afternoonSlots),
         ),
         price_per_pax: 280.0,
         created_at: new Date(),
@@ -102,7 +102,7 @@ module.exports = {
         services_provided:
           "Transport, Equipment, Guide, Lunch, Insurance, Photos",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(0, 2, morningSlots),
+          generateDatesWithSlots(0, 5, morningSlots),
         ),
         price_per_pax: 320.0,
         created_at: new Date(),
@@ -119,7 +119,7 @@ module.exports = {
         description: "Evening cruise with dinner and proboscis monkey spotting",
         services_provided: "Transport, Boat Ride, Dinner, Guide",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(0, 2, morningSlots),
+          generateDatesWithSlots(0, 5, morningSlots),
         ),
         price_per_pax: 180.0,
         created_at: new Date(),
@@ -137,7 +137,7 @@ module.exports = {
         services_provided:
           "Transport, Boat Ride, Buffet Dinner, Guide, Binoculars",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(1, 2, morningSlots),
+          generateDatesWithSlots(1, 5, morningSlots),
         ),
         price_per_pax: 220.0,
         created_at: new Date(),
@@ -155,7 +155,7 @@ module.exports = {
           "Visit 3 beautiful islands with snorkeling and beach activities",
         services_provided: "Boat Transfer, Snorkeling Gear, Lunch, Guide",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(2, 2, afternoonSlots),
+          generateDatesWithSlots(2, 4, afternoonSlots),
         ),
         price_per_pax: 200.0,
         created_at: new Date(),
@@ -173,7 +173,7 @@ module.exports = {
         services_provided:
           "Boat Transfer, Snorkeling Gear, BBQ Lunch, Guide, GoPro Rental",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(0, 2, morningSlots),
+          generateDatesWithSlots(0, 5, morningSlots),
         ),
         price_per_pax: 280.0,
         created_at: new Date(),
@@ -190,7 +190,7 @@ module.exports = {
         description: "Half day tour exploring 5 traditional ethnic houses",
         services_provided: "Transport, Entrance Fee, Guide, Traditional Snacks",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(0, 2, morningSlots),
+          generateDatesWithSlots(0, 5, morningSlots),
         ),
         price_per_pax: 150.0,
         created_at: new Date(),
@@ -208,7 +208,7 @@ module.exports = {
         services_provided:
           "Transport, Entrance Fee, Guide, Traditional Lunch, Costume Rental",
         available_dates: JSON.stringify(
-          generateDatesWithSlots(1, 2, morningSlots),
+          generateDatesWithSlots(1, 5, morningSlots),
         ),
         price_per_pax: 200.0,
         created_at: new Date(),

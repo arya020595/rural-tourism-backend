@@ -45,12 +45,12 @@ module.exports = {
     // Update all accommodations concurrently for better performance
     await Promise.all([
       // Update accommodation 1 - Kinabalu Mountain Lodge
-      // Available for the next 4 days starting from today with morning slots
+      // Available for the next 7 days starting from today with morning slots
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
           available_dates: JSON.stringify(
-            generateAvailableDates(0, 4, morningSlots, 30),
+            generateAvailableDates(0, 7, morningSlots, 30),
           ),
           updated_at: new Date(),
         },
@@ -58,12 +58,12 @@ module.exports = {
       ),
 
       // Update accommodation 2 - Riverside Homestay
-      // Available for 2 days starting from 2 days from now with afternoon slots
+      // Available for 5 days starting from 2 days from now with afternoon slots
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
           available_dates: JSON.stringify(
-            generateAvailableDates(2, 2, afternoonSlots, 45),
+            generateAvailableDates(2, 5, afternoonSlots, 45),
           ),
           updated_at: new Date(),
         },
@@ -71,12 +71,12 @@ module.exports = {
       ),
 
       // Update accommodation 3 - Island Beach Resort
-      // Available for 4 days starting from today with morning slots
+      // Available for 7 days starting from today with morning slots
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
           available_dates: JSON.stringify(
-            generateAvailableDates(0, 4, morningSlots, 30),
+            generateAvailableDates(0, 7, morningSlots, 30),
           ),
           updated_at: new Date(),
         },
@@ -84,12 +84,12 @@ module.exports = {
       ),
 
       // Update accommodation 4 - Firefly Village Retreat
-      // Available for 2 days starting from 2 days from now with afternoon slots
+      // Available for 5 days starting from 2 days from now with afternoon slots
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
           available_dates: JSON.stringify(
-            generateAvailableDates(2, 2, afternoonSlots, 45),
+            generateAvailableDates(2, 5, afternoonSlots, 45),
           ),
           updated_at: new Date(),
         },
