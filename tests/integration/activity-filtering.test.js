@@ -9,18 +9,6 @@ const OperatorActivity = require("../../models/operatorActivitiesModel");
 const ActivityBooking = require("../../models/bookingActivityModel");
 
 describe("Activity Booking-Aware Filtering - Integration Tests", () => {
-  let testActivityId;
-
-  afterAll(async () => {
-    // Clean up test data if needed
-    if (testActivityId) {
-      await ActivityBooking.destroy({
-        where: { operator_activity_id: testActivityId },
-      });
-      await OperatorActivity.destroy({ where: { id: testActivityId } });
-    }
-  });
-
   describe("GET /api/activity - Basic Functionality", () => {
     it("should return all activities without filters", async () => {
       const response = await request(app)
