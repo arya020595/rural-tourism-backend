@@ -88,8 +88,9 @@ class OperatorActivityService {
   }
 
   /**
-   * Filter out fully booked dates from available dates
+   * Filter out fully booked dates AND individual booked slots from available dates
    * A date is excluded only when ALL time slots are booked
+   * Individual booked slots are always filtered out
    * @param {array} availableDates - Array of available date slots
    * @param {object} bookedSlots - Booked slots grouped by date
    * @returns {array} Filtered available dates
@@ -129,11 +130,25 @@ class OperatorActivityService {
       }
     });
 
-    // Filter out slots for fully booked dates
+    // Filter out:
+    // 1. Slots for fully booked dates
+    // 2. Individual slots that are booked
     return availableDates.filter((slot) => {
-      if (!slot || !slot.date) return false;
+      if (!slot || !slot.date || !slot.time) return false;
       const normalized = this.normalizeDate(slot.date);
-      return normalized && !fullyBookedDates.has(normalized);
+
+      // Exclude if entire date is fully booked
+      if (normalized && fullyBookedDates.has(normalized)) {
+        return false;
+      }
+
+      // Exclude if this specific time slot is booked
+      const bookedSlotsForDate = bookedSlots[normalized] || [];
+      if (bookedSlotsForDate.includes(slot.time)) {
+        return false;
+      }
+
+      return true;
     });
   }
 
