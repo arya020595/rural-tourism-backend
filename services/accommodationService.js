@@ -47,7 +47,7 @@ class AccommodationService {
         for (
           let d = new Date(checkIn);
           d <= checkOut;
-          d.setDate(d.getDate() + 1)
+          d = new Date(d.getTime() + 86400000)
         ) {
           const dateStr = d.toISOString().split("T")[0];
           bookedDatesMap[accommodationId].add(dateStr);
