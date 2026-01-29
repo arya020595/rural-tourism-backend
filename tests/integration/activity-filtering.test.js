@@ -51,7 +51,10 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
         if (activity.available_dates && activity.available_dates.length > 0) {
           const dates = activity.available_dates.map((d) => d.date);
           dates.forEach((date) => {
-            expect(date >= "2026-01-29" && date <= "2026-01-31").toBe(true);
+            const currentDate = new Date(date);
+            const startDate = new Date("2026-01-29");
+            const endDate = new Date("2026-01-31");
+            expect(currentDate >= startDate && currentDate <= endDate).toBe(true);
           });
         }
       });
