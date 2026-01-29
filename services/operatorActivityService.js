@@ -1,5 +1,4 @@
 const ActivityBooking = require("../models/bookingActivityModel");
-const OperatorActivity = require("../models/operatorActivitiesModel");
 const { Op } = require("sequelize");
 
 /**
