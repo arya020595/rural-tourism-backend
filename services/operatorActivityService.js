@@ -282,10 +282,14 @@ class OperatorActivityService {
         }
       }
 
+      // Return the original activity instance with updated available_dates
+      // This preserves Sequelize associations like activity_master
       return {
         ...activity.dataValues,
         available_dates: actualAvailableDates,
         available_dates_list: actualAvailableDates,
+        // Preserve associations explicitly
+        activity_master: activity.activity_master,
       };
     });
 

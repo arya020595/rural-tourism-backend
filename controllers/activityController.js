@@ -39,18 +39,15 @@ exports.getAllActivities = async (req, res) => {
         endDate,
       });
 
-    // Create Map for O(1) lookups instead of O(n) find() operations
-    const activitiesMap = new Map(activities.map((a) => [a.id, a]));
-
     // Format response for frontend
+    // Note: Service now preserves associations, no need for lookup
     const result = filteredActivities.map((activity) => {
-      const original = activitiesMap.get(activity.id);
       return {
         ...activity,
-        activity_name: original?.activity_master
-          ? original.activity_master.activity_name
+        activity_name: activity.activity_master
+          ? activity.activity_master.activity_name
           : "Unknown",
-        location: original?.address,
+        location: activity.address,
       };
     });
 
