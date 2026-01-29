@@ -6,7 +6,6 @@
 const request = require("supertest");
 const app = require("../../server");
 const OperatorActivity = require("../../models/operatorActivitiesModel");
-const ActivityBooking = require("../../models/bookingActivityModel");
 
 describe("Activity Booking-Aware Filtering - Integration Tests", () => {
   describe("GET /api/activity - Basic Functionality", () => {
