@@ -117,7 +117,6 @@ class OperatorActivityService {
     // Determine which dates are fully booked
     const fullyBookedDates = new Set();
     Object.keys(slotsPerDate).forEach((date) => {
-      const totalSlots = slotsPerDate[date].length;
       const bookedSlotsForDate = bookedSlots[date] || [];
 
       // Check if all slots are booked
