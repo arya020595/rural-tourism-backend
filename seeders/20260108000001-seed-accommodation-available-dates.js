@@ -3,12 +3,11 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Generate available dates with time slots and prices
+    // Generate available dates with prices (accommodations have dates + prices, no time slots)
     const generateAvailableDates = (
       startDaysFromNow,
       daysCount,
-      timeSlots,
-      basePrice,
+      pricePerNight,
     ) => {
       const dates = [];
       const today = new Date();
@@ -17,80 +16,55 @@ module.exports = {
         const date = new Date(today);
         date.setDate(today.getDate() + startDaysFromNow + i);
         const dateStr = date.toISOString().split("T")[0];
-
-        // Add each time slot for this date
-        timeSlots.forEach((slot) => {
-          dates.push({
-            date: dateStr,
-            time: slot.time,
-            price: slot.price || basePrice,
-          });
+        dates.push({
+          date: dateStr,
+          price: pricePerNight,
         });
       }
       return dates;
     };
 
-    // Define time slots based on current time patterns
-    const morningSlots = [
-      { time: "08:00 - 09:00", price: 30 },
-      { time: "09:00 - 10:00", price: 30 },
-      { time: "10:00 - 11:00", price: 30 },
-    ];
-
-    const afternoonSlots = [
-      { time: "09:00 - 10:00", price: 45 },
-      { time: "10:00 - 11:30", price: 45 },
-    ];
-
     // Update all accommodations concurrently for better performance
     await Promise.all([
-      // Update accommodation 1 - Kinabalu Mountain Lodge
-      // Available for the next 7 days starting from today with morning slots
+      // Update accommodation 1 - Kinabalu Mountain Lodge (RM250/night)
+      // Available for the next 7 days starting from today
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
-          available_dates: JSON.stringify(
-            generateAvailableDates(0, 7, morningSlots, 30),
-          ),
+          available_dates: JSON.stringify(generateAvailableDates(0, 7, 250)),
           updated_at: new Date(),
         },
         { accommodation_id: 1 },
       ),
 
-      // Update accommodation 2 - Riverside Homestay
-      // Available for 5 days starting from 2 days from now with afternoon slots
+      // Update accommodation 2 - Riverside Homestay (RM180/night)
+      // Available for 5 days starting from 2 days from now
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
-          available_dates: JSON.stringify(
-            generateAvailableDates(2, 5, afternoonSlots, 45),
-          ),
+          available_dates: JSON.stringify(generateAvailableDates(2, 5, 180)),
           updated_at: new Date(),
         },
         { accommodation_id: 2 },
       ),
 
-      // Update accommodation 3 - Island Beach Resort
-      // Available for 7 days starting from today with morning slots
+      // Update accommodation 3 - Island Beach Resort (RM320/night)
+      // Available for 7 days starting from today
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
-          available_dates: JSON.stringify(
-            generateAvailableDates(0, 7, morningSlots, 30),
-          ),
+          available_dates: JSON.stringify(generateAvailableDates(0, 7, 320)),
           updated_at: new Date(),
         },
         { accommodation_id: 3 },
       ),
 
-      // Update accommodation 4 - Firefly Village Retreat
-      // Available for 5 days starting from 2 days from now with afternoon slots
+      // Update accommodation 4 - Firefly Village Retreat (RM150/night)
+      // Available for 5 days starting from 2 days from now
       queryInterface.bulkUpdate(
         "accommodation_list",
         {
-          available_dates: JSON.stringify(
-            generateAvailableDates(2, 5, afternoonSlots, 45),
-          ),
+          available_dates: JSON.stringify(generateAvailableDates(2, 5, 150)),
           updated_at: new Date(),
         },
         { accommodation_id: 4 },

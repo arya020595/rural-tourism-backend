@@ -31,14 +31,14 @@ Models (Accom, AccommodationBooking)
 
 ```javascript
 available_dates: [
-  {"date": "2026-02-01", "time": "08:00 - 09:00", "price": 30},
-  {"date": "2026-02-01", "time": "09:00 - 10:00", "price": 30},
-  {"date": "2026-02-02", "time": "08:00 - 09:00", "price": 30},
+  {date: "2026-02-01", price: 250},
+  {date: "2026-02-02", price: 250},
+  {date: "2026-02-03", price: 250},
   ...
 ]
 ```
 
-**Note:** Similar to activities (has time slots), but filtering logic treats it differently - filters by date only, not by individual time slots.
+**Note:** Objects with date and price (no time slots). Each date has an associated price per night.
 
 ### 2. Accommodation Booking Model
 
@@ -72,27 +72,27 @@ Blocked dates: ["2026-02-01", "2026-02-02", "2026-02-03"]
 
 ```javascript
 Available: [
-  {date: "2026-02-01", time: "08:00", price: 30},
-  {date: "2026-02-02", time: "08:00", price: 30},
-  {date: "2026-02-03", time: "08:00", price: 30}
+  {date: "2026-02-01", price: 250},
+  {date: "2026-02-02", price: 250},
+  {date: "2026-02-03", price: 250},
+  {date: "2026-02-04", price: 250}
 ];
 Booked dates: ["2026-02-02"];
 Result: [
-  {date: "2026-02-01", time: "08:00", price: 30},
-  {date: "2026-02-03", time: "08:00", price: 30}
+  {date: "2026-02-01", price: 250},
+  {date: "2026-02-03", price: 250},
+  {date: "2026-02-04", price: 250}
 ];
 ```
-
-**Note:** Removes ALL items for booked dates (entire date is blocked, regardless of time slot).
 
 **Step 4: Apply date range filter (if provided)**
 
 ```javascript
 Query: ?startDate=2026-02-01&endDate=2026-02-03
 Result: [
-  {date: "2026-02-01", time: "08:00", price: 30},
-  {date: "2026-02-03", time: "08:00", price: 30}
-]  // Only items with dates in range
+  {date: "2026-02-01", price: 250},
+  {date: "2026-02-03", price: 250}
+]  // Only dates in range
 ```
 
 ## API Endpoints
@@ -128,9 +128,9 @@ curl http://localhost:3000/api/accom?startDate=2026-02-01&endDate=2026-02-10
     "accommodation_id": 1,
     "name": "Cozy Homestay",
     "available_dates": [
-      { "date": "2026-02-01", "time": "08:00 - 09:00", "price": 30 },
-      { "date": "2026-02-03", "time": "08:00 - 09:00", "price": 30 },
-      { "date": "2026-02-04", "time": "08:00 - 09:00", "price": 30 }
+      { "date": "2026-02-01", "price": 250 },
+      { "date": "2026-02-03", "price": 250 },
+      { "date": "2026-02-04", "price": 250 }
     ],
     "price": "150.00",
     "user_id": "OP001",
@@ -168,13 +168,20 @@ Fetches all booked dates for multiple accommodations in **one optimized query**.
 
 #### `filterAvailableDates(availableDates, bookedDates)`
 
-Removes booked dates from available dates.
+Removes booked dates from available dates. Handles both string and object formats.
 
 ```javascript
-Input: availableDates: ["2026-02-01", "2026-02-02", "2026-02-03"];
+Input: availableDates: [
+  { date: "2026-02-01", price: 250 },
+  { date: "2026-02-02", price: 250 },
+  { date: "2026-02-03", price: 250 },
+];
 bookedDates: ["2026-02-02"];
 
-Output: ["2026-02-01", "2026-02-03"];
+Output: [
+  { date: "2026-02-01", price: 250 },
+  { date: "2026-02-03", price: 250 },
+];
 ```
 
 #### `applyBookingAwareFiltering(accommodations, filters)`
@@ -207,11 +214,11 @@ const filtered = await accommodationService.applyBookingAwareFiltering(
   accommodation_id: 1,
   name: "Mountain View Homestay",
   available_dates: [
-    {date: "2026-02-01", time: "08:00 - 09:00", price: 30},
-    {date: "2026-02-02", time: "08:00 - 09:00", price: 30},
-    {date: "2026-02-03", time: "08:00 - 09:00", price: 30},
-    {date: "2026-02-04", time: "08:00 - 09:00", price: 30},
-    {date: "2026-02-05", time: "08:00 - 09:00", price: 30}
+    {date: "2026-02-01", price: 250},
+    {date: "2026-02-02", price: 250},
+    {date: "2026-02-03", price: 250},
+    {date: "2026-02-04", price: 250},
+    {date: "2026-02-05", price: 250}
   ]
 }
 ```
@@ -238,9 +245,9 @@ const filtered = await accommodationService.applyBookingAwareFiltering(
   accommodation_id: 1,
   name: "Mountain View Homestay",
   available_dates: [
-    {date: "2026-02-01", time: "08:00 - 09:00", price: 30},
-    {date: "2026-02-04", time: "08:00 - 09:00", price: 30},
-    {date: "2026-02-05", time: "08:00 - 09:00", price: 30}
+    {date: "2026-02-01", price: 250},
+    {date: "2026-02-04", price: 250},
+    {date: "2026-02-05", price: 250}
   ]
 }
 ```
@@ -311,18 +318,19 @@ curl "http://localhost:3000/api/accom?date=2026-02-05"
 
 ### Differences:
 
-- ✅ **Has time slot data but ignores it** (data structure includes time/price, but filtering works by date only)
-- ✅ **Simpler logic** (blocks entire date when booked, not individual time slots)
+- ❌ **NO time slots** (accommodations only have dates)
+- ✅ **Simpler logic** (blocks entire date when booked)
 - ✅ **Date range expansion** (check-in to check-out creates blocked dates)
-- ✅ **Preserves full data** (returns all time slots for available dates with price/time info)
+- ✅ **Clean data structure** (array of date strings)
 
 ## Summary
 
 The accommodation filtering is a **simplified version** of activity filtering:
 
 - **Activities**: "Exclude date when ALL time slots for that date are booked" (slot-level filtering)
+  - Data: `{date, time, price}` objects
 - **Accommodations**: "Exclude entire date when any booking exists" (date-level filtering)
-- **Data Structure**: Both have `{date, time, price}` format, but accommodations filter by date only
-- **Result**: Accommodations return all time slots for available dates, maintaining price/time information
+  - Data: `{date, price}` objects (no time slots)
+- **Result**: Different data structures for different use cases - activities have time slots, accommodations have per-night pricing
 
 Both follow the same SOLID architecture and optimization strategies, ensuring consistent, maintainable code.

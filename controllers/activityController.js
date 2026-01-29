@@ -106,6 +106,9 @@ exports.getActivitiesByUser = async (req, res) => {
  * Get single activity by ID
  * @route GET /api/activity/:id
  * @param {string} id - Activity ID
+ * @query {string} date - Optional single date filter (YYYY-MM-DD)
+ * @query {string} startDate - Optional start of date range (YYYY-MM-DD)
+ * @query {string} endDate - Optional end of date range (YYYY-MM-DD)
  */
 exports.getActivityById = async (req, res) => {
   try {
@@ -126,13 +129,32 @@ exports.getActivityById = async (req, res) => {
       return res.status(404).json({ error: "Activity not found." });
     }
 
+    // Apply booking-aware filtering (including date filters if provided)
+    const filters = {
+      date: req.query.date,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+    };
+
+    const [filtered] = await operatorActivityService.applyBookingAwareFiltering(
+      [activity],
+      filters,
+    );
+
+    // If filtered out (no available dates match), return 404
+    if (!filtered) {
+      return res.status(404).json({
+        error: "Activity not available for the specified dates",
+      });
+    }
+
     res.json({
-      ...activity.dataValues,
+      ...filtered,
       activity_name: activity.activity_master
         ? activity.activity_master.activity_name
         : "Unknown",
-      location: activity.address,
-      user_id: activity.rt_user_id,
+      location: filtered.address,
+      user_id: filtered.rt_user_id,
     });
   } catch (err) {
     console.error("Error fetching activity by ID:", err);

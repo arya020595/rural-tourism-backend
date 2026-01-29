@@ -32,8 +32,9 @@ module.exports = {
     ];
 
     const afternoonSlots = [
-      { time: "09:00 - 10:00", price: 45 },
-      { time: "10:00 - 11:30", price: 45 },
+      { time: "14:00 - 15:00", price: 45 },
+      { time: "15:00 - 16:00", price: 45 },
+      { time: "16:00 - 17:00", price: 45 },
     ];
 
     // Seed operator_activities - Each activity has 2 different operators
