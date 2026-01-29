@@ -124,7 +124,7 @@ class OperatorActivityService {
         bookedSlotsForDate.includes(availableTime),
       );
 
-      if (allSlotsBooked && totalSlots === bookedSlotsForDate.length) {
+      if (allSlotsBooked) {
         fullyBookedDates.add(date);
       }
     });
