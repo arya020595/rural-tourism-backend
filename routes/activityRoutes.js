@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const activityController = require("../controllers/activityController");
-const { v4: uuidv4 } = require("uuid");
 
 // Helper for async error handling
 const asyncHandler = (fn) => (req, res, next) =>
