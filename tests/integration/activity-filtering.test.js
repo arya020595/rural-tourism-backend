@@ -9,18 +9,6 @@ const OperatorActivity = require("../../models/operatorActivitiesModel");
 const ActivityBooking = require("../../models/bookingActivityModel");
 
 describe("Activity Booking-Aware Filtering - Integration Tests", () => {
-  let testActivityId;
-
-  afterAll(async () => {
-    // Clean up test data if needed
-    if (testActivityId) {
-      await ActivityBooking.destroy({
-        where: { operator_activity_id: testActivityId },
-      });
-      await OperatorActivity.destroy({ where: { id: testActivityId } });
-    }
-  });
-
   describe("GET /api/activity - Basic Functionality", () => {
     it("should return all activities without filters", async () => {
       const response = await request(app)
@@ -51,7 +39,10 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
         if (activity.available_dates && activity.available_dates.length > 0) {
           const dates = activity.available_dates.map((d) => d.date);
           dates.forEach((date) => {
-            expect(date >= "2026-01-29" && date <= "2026-01-31").toBe(true);
+            const currentDate = new Date(date);
+            const startDate = new Date("2026-01-29");
+            const endDate = new Date("2026-01-31");
+            expect(currentDate >= startDate && currentDate <= endDate).toBe(true);
           });
         }
       });

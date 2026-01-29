@@ -1,5 +1,4 @@
 const ActivityBooking = require("../models/bookingActivityModel");
-const OperatorActivity = require("../models/operatorActivitiesModel");
 const { Op } = require("sequelize");
 
 /**
@@ -125,7 +124,7 @@ class OperatorActivityService {
         bookedSlotsForDate.includes(availableTime),
       );
 
-      if (allSlotsBooked && totalSlots === bookedSlotsForDate.length) {
+      if (allSlotsBooked) {
         fullyBookedDates.add(date);
       }
     });
