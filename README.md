@@ -188,29 +188,6 @@ npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db
 - **Logging**: Morgan for HTTP requests, console for database
 - **Model relationships**: Defined in `models/associations.js`
 
-### 🆕 New Features
-
-#### Booking-Aware Date Filtering
-
-Automatically excludes booked dates from activity availability. See [BOOKING_AWARE_FILTERING.md](./BOOKING_AWARE_FILTERING.md) for details.
-
-**Quick Usage:**
-
-```bash
-# Filter activities by date
-GET /api/activity?date=2025-01-15
-
-# Filter by date range
-GET /api/activity?startDate=2025-01-10&endDate=2025-01-20
-```
-
-**Documentation:**
-
-- 📘 [Complete Documentation](./BOOKING_AWARE_FILTERING.md)
-- 📗 [API Quick Reference](./API_QUICK_REFERENCE.md)
-- 📙 [Implementation Summary](./IMPLEMENTATION_SUMMARY.md)
-- 🧪 [Test Suite](./tests/bookingAwareFiltering.test.js)
-
 ---
 
 **License**: Private and proprietary
