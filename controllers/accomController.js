@@ -39,6 +39,10 @@ exports.getAllAccommodations = async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error("Error fetching accommodations:", err);
+    // Return 400 for invalid date filters
+    if (err.message && err.message.includes("Invalid")) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
@@ -125,6 +129,10 @@ exports.getAccommodationById = async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching accommodation by ID:", err);
+    // Return 400 for invalid date filters
+    if (err.message && err.message.includes("Invalid")) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };

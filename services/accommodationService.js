@@ -95,6 +95,7 @@ class AccommodationService {
    * @param {string} filterStartDate - Start date filter
    * @param {string} filterEndDate - End date filter
    * @returns {boolean} True if accommodation matches filter
+   * @throws {Error} If date filter is invalid
    */
   matchesDateFilter(actualAvailableDates, filterStartDate, filterEndDate) {
     if (!filterStartDate && !filterEndDate) return true;
@@ -103,6 +104,17 @@ class AccommodationService {
 
     const normalizedStart = this.normalizeDate(filterStartDate);
     const normalizedEnd = this.normalizeDate(filterEndDate);
+
+    if (filterStartDate && !normalizedStart) {
+      throw new Error(
+        `Invalid startDate filter: ${filterStartDate}. Expected format: YYYY-MM-DD`,
+      );
+    }
+    if (filterEndDate && !normalizedEnd) {
+      throw new Error(
+        `Invalid endDate filter: ${filterEndDate}. Expected format: YYYY-MM-DD`,
+      );
+    }
 
     return actualAvailableDates.some((item) => {
       // Handle both string dates and date objects {date, time, price}
@@ -121,9 +133,32 @@ class AccommodationService {
    * @param {array} accommodations - Array of accommodations
    * @param {object} filters - Filter options { date, startDate, endDate }
    * @returns {array} Filtered accommodations with actual available dates
+   * @throws {Error} If date filter is invalid
    */
   async applyBookingAwareFiltering(accommodations, filters = {}) {
     const { date, startDate, endDate } = filters;
+
+    // Validate date filters early
+    const filterStart = date || startDate;
+    const filterEnd = date || endDate;
+
+    if (filterStart) {
+      const normalized = this.normalizeDate(filterStart);
+      if (!normalized) {
+        throw new Error(
+          `Invalid ${date ? "date" : "startDate"} filter: ${filterStart}. Expected format: YYYY-MM-DD`,
+        );
+      }
+    }
+
+    if (filterEnd && !date) {
+      const normalized = this.normalizeDate(filterEnd);
+      if (!normalized) {
+        throw new Error(
+          `Invalid endDate filter: ${filterEnd}. Expected format: YYYY-MM-DD`,
+        );
+      }
+    }
 
     // Optimize: Fetch all bookings in ONE query
     const accommodationIds = accommodations.map((a) => a.accommodation_id);

@@ -143,6 +143,7 @@ class OperatorActivityService {
    * @param {string} filterStartDate - Start date filter
    * @param {string} filterEndDate - End date filter
    * @returns {boolean} True if activity matches filter
+   * @throws {Error} If date filter is invalid
    */
   matchesDateFilter(actualAvailableDates, filterStartDate, filterEndDate) {
     if (!filterStartDate && !filterEndDate) return true;
@@ -152,8 +153,16 @@ class OperatorActivityService {
     const filterStart = filterStartDate ? new Date(filterStartDate) : null;
     const filterEnd = filterEndDate ? new Date(filterEndDate) : null;
 
-    if (filterStart && isNaN(filterStart.getTime())) return true;
-    if (filterEnd && isNaN(filterEnd.getTime())) return true;
+    if (filterStart && isNaN(filterStart.getTime())) {
+      throw new Error(
+        `Invalid startDate filter: ${filterStartDate}. Expected format: YYYY-MM-DD`,
+      );
+    }
+    if (filterEnd && isNaN(filterEnd.getTime())) {
+      throw new Error(
+        `Invalid endDate filter: ${filterEndDate}. Expected format: YYYY-MM-DD`,
+      );
+    }
 
     if (filterStart) filterStart.setHours(0, 0, 0, 0);
     if (filterEnd) filterEnd.setHours(23, 59, 59, 999);
@@ -187,9 +196,32 @@ class OperatorActivityService {
    * @param {array} activities - Array of activities
    * @param {object} filters - Filter options { date, startDate, endDate }
    * @returns {array} Filtered activities with actual available dates
+   * @throws {Error} If date filter is invalid
    */
   async applyBookingAwareFiltering(activities, filters = {}) {
     const { date, startDate, endDate } = filters;
+
+    // Validate date filters early
+    const filterStart = date || startDate;
+    const filterEnd = date || endDate;
+
+    if (filterStart) {
+      const testDate = new Date(filterStart);
+      if (isNaN(testDate.getTime())) {
+        throw new Error(
+          `Invalid ${date ? "date" : "startDate"} filter: ${filterStart}. Expected format: YYYY-MM-DD`,
+        );
+      }
+    }
+
+    if (filterEnd && !date) {
+      const testDate = new Date(filterEnd);
+      if (isNaN(testDate.getTime())) {
+        throw new Error(
+          `Invalid endDate filter: ${filterEnd}. Expected format: YYYY-MM-DD`,
+        );
+      }
+    }
 
     // Optimize: Fetch all bookings in ONE query
     const activityIds = activities.map((a) => a.id);

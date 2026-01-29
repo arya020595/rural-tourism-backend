@@ -54,6 +54,10 @@ exports.getAllActivities = async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error("Error fetching activities:", err);
+    // Return 400 for invalid date filters
+    if (err.message && err.message.includes("Invalid")) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
@@ -158,6 +162,10 @@ exports.getActivityById = async (req, res) => {
     });
   } catch (err) {
     console.error("Error fetching activity by ID:", err);
+    // Return 400 for invalid date filters
+    if (err.message && err.message.includes("Invalid")) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
