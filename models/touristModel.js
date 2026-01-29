@@ -34,13 +34,22 @@ const TouristUser = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
+    suspended_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "tourist_users",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-  }
+  },
 );
 
 module.exports = TouristUser;
