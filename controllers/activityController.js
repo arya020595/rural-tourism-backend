@@ -39,9 +39,12 @@ exports.getAllActivities = async (req, res) => {
         endDate,
       });
 
+    // Create Map for O(1) lookups instead of O(n) find() operations
+    const activitiesMap = new Map(activities.map((a) => [a.id, a]));
+
     // Format response for frontend
     const result = filteredActivities.map((activity) => {
-      const original = activities.find((a) => a.id === activity.id);
+      const original = activitiesMap.get(activity.id);
       return {
         ...activity,
         activity_name: original?.activity_master
