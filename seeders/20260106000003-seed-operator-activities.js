@@ -3,6 +3,40 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Helper function to generate dates dynamically
+    const generateDatesWithSlots = (startDaysFromNow, daysCount, timeSlots) => {
+      const dates = [];
+      const today = new Date();
+
+      for (let i = 0; i < daysCount; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + startDaysFromNow + i);
+        const dateStr = date.toISOString().split("T")[0];
+
+        timeSlots.forEach((slot) => {
+          dates.push({
+            date: dateStr,
+            time: slot.time,
+            price: slot.price,
+          });
+        });
+      }
+      return dates;
+    };
+
+    // Define time slot patterns
+    const morningSlots = [
+      { time: "08:00 - 09:00", price: 30 },
+      { time: "09:00 - 10:00", price: 30 },
+      { time: "10:00 - 11:00", price: 30 },
+    ];
+
+    const afternoonSlots = [
+      { time: "14:00 - 15:00", price: 45 },
+      { time: "15:00 - 16:00", price: 45 },
+      { time: "16:00 - 17:00", price: 45 },
+    ];
+
     // Seed operator_activities - Each activity has 2 different operators
     await queryInterface.bulkInsert("operator_activities", [
       // Mount Kinabalu Climbing - 2 operators
@@ -16,14 +50,9 @@ module.exports = {
         description:
           "2D1N Mount Kinabalu climbing package with experienced guide",
         services_provided: "Transport, Guide, Meals, Accommodation, Permits",
-        available_dates: JSON.stringify([
-          "2026-01-10",
-          "2026-01-15",
-          "2026-01-20",
-          "2026-01-25",
-          "2026-02-01",
-          "2026-02-10",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(0, 5, morningSlots),
+        ),
         price_per_pax: 850.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -38,14 +67,9 @@ module.exports = {
         description:
           "Budget-friendly Mount Kinabalu climb with local expert guide",
         services_provided: "Guide, Meals, Permits, First Aid Kit",
-        available_dates: JSON.stringify([
-          "2026-01-12",
-          "2026-01-17",
-          "2026-01-22",
-          "2026-01-27",
-          "2026-02-05",
-          "2026-02-15",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(1, 5, morningSlots),
+        ),
         price_per_pax: 750.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -60,14 +84,9 @@ module.exports = {
         image: "operator-rafting-1.jpg",
         description: "Full day white water rafting adventure with BBQ lunch",
         services_provided: "Transport, Equipment, Guide, Lunch, Insurance",
-        available_dates: JSON.stringify([
-          "2026-01-11",
-          "2026-01-12",
-          "2026-01-18",
-          "2026-01-19",
-          "2026-01-25",
-          "2026-01-26",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(2, 4, afternoonSlots),
+        ),
         price_per_pax: 280.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -83,14 +102,9 @@ module.exports = {
           "Extreme white water rafting with professional safety team",
         services_provided:
           "Transport, Equipment, Guide, Lunch, Insurance, Photos",
-        available_dates: JSON.stringify([
-          "2026-01-13",
-          "2026-01-14",
-          "2026-01-20",
-          "2026-01-21",
-          "2026-01-27",
-          "2026-01-28",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(0, 5, morningSlots),
+        ),
         price_per_pax: 320.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -105,14 +119,9 @@ module.exports = {
         image: "operator-firefly-1.jpg",
         description: "Evening cruise with dinner and proboscis monkey spotting",
         services_provided: "Transport, Boat Ride, Dinner, Guide",
-        available_dates: JSON.stringify([
-          "2026-01-10",
-          "2026-01-11",
-          "2026-01-12",
-          "2026-01-13",
-          "2026-01-14",
-          "2026-01-15",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(0, 5, morningSlots),
+        ),
         price_per_pax: 180.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -128,14 +137,9 @@ module.exports = {
           "Sunset river cruise with traditional Sabahan dinner buffet",
         services_provided:
           "Transport, Boat Ride, Buffet Dinner, Guide, Binoculars",
-        available_dates: JSON.stringify([
-          "2026-01-16",
-          "2026-01-17",
-          "2026-01-18",
-          "2026-01-19",
-          "2026-01-20",
-          "2026-01-21",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(1, 5, morningSlots),
+        ),
         price_per_pax: 220.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -151,15 +155,9 @@ module.exports = {
         description:
           "Visit 3 beautiful islands with snorkeling and beach activities",
         services_provided: "Boat Transfer, Snorkeling Gear, Lunch, Guide",
-        available_dates: JSON.stringify([
-          "2026-01-10",
-          "2026-01-11",
-          "2026-01-12",
-          "2026-01-13",
-          "2026-01-14",
-          "2026-01-15",
-          "2026-01-16",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(2, 4, afternoonSlots),
+        ),
         price_per_pax: 200.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -175,14 +173,9 @@ module.exports = {
           "Premium island hopping with 5 islands and underwater photography",
         services_provided:
           "Boat Transfer, Snorkeling Gear, BBQ Lunch, Guide, GoPro Rental",
-        available_dates: JSON.stringify([
-          "2026-01-11",
-          "2026-01-13",
-          "2026-01-15",
-          "2026-01-17",
-          "2026-01-19",
-          "2026-01-21",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(0, 5, morningSlots),
+        ),
         price_per_pax: 280.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -197,13 +190,9 @@ module.exports = {
         image: "operator-cultural-1.jpg",
         description: "Half day tour exploring 5 traditional ethnic houses",
         services_provided: "Transport, Entrance Fee, Guide, Traditional Snacks",
-        available_dates: JSON.stringify([
-          "2026-01-10",
-          "2026-01-11",
-          "2026-01-12",
-          "2026-01-13",
-          "2026-01-14",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(0, 5, morningSlots),
+        ),
         price_per_pax: 150.0,
         created_at: new Date(),
         updated_at: new Date(),
@@ -219,13 +208,9 @@ module.exports = {
           "Full day immersive cultural experience with hands-on activities",
         services_provided:
           "Transport, Entrance Fee, Guide, Traditional Lunch, Costume Rental",
-        available_dates: JSON.stringify([
-          "2026-01-15",
-          "2026-01-16",
-          "2026-01-17",
-          "2026-01-18",
-          "2026-01-19",
-        ]),
+        available_dates: JSON.stringify(
+          generateDatesWithSlots(1, 5, morningSlots),
+        ),
         price_per_pax: 200.0,
         created_at: new Date(),
         updated_at: new Date(),
