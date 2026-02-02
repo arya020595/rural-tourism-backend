@@ -191,7 +191,7 @@ describe("Booking Status Update Integration Test", () => {
       contact_name: "Test Tourist",
       contact_no: "1234567890",
       date: "2026-03-20",
-      pax: 3,
+      no_of_pax: 3,
       total_price: 450.0,
       status: "booked",
       nationality: "Malaysian",
