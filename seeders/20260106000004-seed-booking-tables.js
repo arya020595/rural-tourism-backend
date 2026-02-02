@@ -3,13 +3,44 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Fetch IDs dynamically
+    const tourists = await queryInterface.sequelize.query(
+      `SELECT tourist_user_id FROM tourist_users ORDER BY tourist_user_id LIMIT 4`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const activities = await queryInterface.sequelize.query(
+      `SELECT id FROM activity_master_table ORDER BY id LIMIT 5`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const operatorActivities = await queryInterface.sequelize.query(
+      `SELECT id FROM operator_activities ORDER BY id`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const accommodations = await queryInterface.sequelize.query(
+      `SELECT accommodation_id FROM accommodation_list ORDER BY accommodation_id`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const tourist1 = tourists[0].tourist_user_id;
+    const tourist2 = tourists[1].tourist_user_id;
+    const tourist3 = tourists[2].tourist_user_id;
+    const tourist4 = tourists[3].tourist_user_id;
+
+    const activity1 = activities[0].id;
+    const activity2 = activities[1].id;
+    const activity3 = activities[2].id;
+    const activity4 = activities[3].id;
+
     // Seed activity_booking (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("activity_booking", [
       {
-        // id: 1 (auto-generated)
-        tourist_user_id: 1, // Alice Tourist
-        activity_id: 1, // Mount Kinabalu
-        operator_activity_id: 1, // first operator_activity
+        // id: auto-generated
+        tourist_user_id: tourist1,
+        activity_id: activity1,
+        operator_activity_id: operatorActivities[0].id, // First Mt Kinabalu operator
         total_price: 850.0,
         no_of_pax: 2,
         date: "2026-02-01",
@@ -23,9 +54,9 @@ module.exports = {
       },
       {
         // id: 2 (auto-generated)
-        tourist_user_id: 1, // Alice Tourist
-        activity_id: 1, // Mount Kinabalu
-        operator_activity_id: 1,
+        tourist_user_id: tourist1, // Alice Tourist
+        activity_id: activity1, // Mount Kinabalu
+        operator_activity_id: operatorActivities[0].id, // First Mt Kinabalu operator
         total_price: 850.0,
         no_of_pax: 2,
         date: "2026-02-01",
@@ -39,9 +70,9 @@ module.exports = {
       },
       {
         // id: 3 (auto-generated)
-        tourist_user_id: 2, // Bob Traveler
-        activity_id: 2, // River Rafting
-        operator_activity_id: 3, // river rafting operator
+        tourist_user_id: tourist2, // Bob Traveler
+        activity_id: activity2, // River Rafting
+        operator_activity_id: operatorActivities[2].id, // First River Rafting operator
         total_price: 280.0,
         no_of_pax: 3,
         date: "2026-02-01",
@@ -55,9 +86,9 @@ module.exports = {
       },
       {
         // id: 4 (auto-generated)
-        tourist_user_id: 3, // Charlie Explorer
-        activity_id: 4, // Island Hopping
-        operator_activity_id: 7, // island hopping operator
+        tourist_user_id: tourist3, // Charlie Explorer
+        activity_id: activity4, // Island Hopping
+        operator_activity_id: operatorActivities[6].id, // First Island Hopping operator
         total_price: 200.0,
         no_of_pax: 4,
         date: "2026-02-02",
@@ -71,9 +102,9 @@ module.exports = {
       },
       {
         // id: 5 (auto-generated)
-        tourist_user_id: 4, // Diana Adventurer
-        activity_id: 3, // Firefly Watching
-        operator_activity_id: 5, // firefly operator
+        tourist_user_id: tourist4, // Diana Adventurer
+        activity_id: activity3, // Firefly Watching
+        operator_activity_id: operatorActivities[4].id, // First Firefly operator
         total_price: 180.0,
         no_of_pax: 2,
         date: "2026-02-01",
@@ -91,8 +122,8 @@ module.exports = {
     await queryInterface.bulkInsert("accommodation_booking", [
       {
         // id: 1 (auto-generated)
-        tourist_user_id: 1, // Alice Tourist
-        accommodation_id: 1, // Kinabalu Mountain Lodge
+        tourist_user_id: tourist1, // Alice Tourist
+        accommodation_id: accommodations[0].accommodation_id, // First accommodation
         check_in: "2026-01-30",
         check_out: "2026-02-01",
         total_no_of_nights: 2,
@@ -108,8 +139,8 @@ module.exports = {
       },
       {
         // id: 2 (auto-generated)
-        tourist_user_id: 2, // Bob Traveler
-        accommodation_id: 2, // Riverside Homestay
+        tourist_user_id: tourist2, // Bob Traveler
+        accommodation_id: accommodations[1].accommodation_id, // Second accommodation
         check_in: "2026-02-01",
         check_out: "2026-02-02",
         total_no_of_nights: 1,
@@ -125,8 +156,8 @@ module.exports = {
       },
       {
         // id: 3 (auto-generated)
-        tourist_user_id: 3, // Charlie Explorer
-        accommodation_id: 3, // Island Beach Resort
+        tourist_user_id: tourist3, // Charlie Explorer
+        accommodation_id: accommodations[2].accommodation_id, // Third accommodation
         check_in: "2026-02-03",
         check_out: "2026-02-04",
         total_no_of_nights: 1,
@@ -142,8 +173,8 @@ module.exports = {
       },
       {
         // id: 4 (auto-generated)
-        tourist_user_id: 4, // Diana Adventurer
-        accommodation_id: 1, // Kinabalu Mountain Lodge
+        tourist_user_id: tourist4, // Diana Adventurer
+        accommodation_id: accommodations[0].accommodation_id, // First accommodation
         check_in: "2026-02-02",
         check_out: "2026-02-03",
         total_no_of_nights: 1,

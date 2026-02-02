@@ -34,7 +34,7 @@ exports.getAllBookingsForOperator = async (req, res) => {
             {
               model: User,
               as: "operator",
-              attributes: ["user_id", "business_name"],
+              attributes: ["user_id", "full_name", "username"],
             },
           ],
         },
@@ -60,7 +60,9 @@ exports.getAllBookingsForOperator = async (req, res) => {
         type: "activity",
         activity_name: b.operatorActivity?.activity?.activity_name,
         activityName: b.operatorActivity?.activity?.activity_name,
-        operatorName: b.operatorActivity?.operator?.business_name,
+        operatorName:
+          b.operatorActivity?.operator?.full_name ||
+          b.operatorActivity?.operator?.username,
         location: b.operatorActivity?.address || "",
         citizenship: b.nationality || "",
       })),
