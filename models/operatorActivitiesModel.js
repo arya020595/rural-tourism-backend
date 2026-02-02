@@ -1,17 +1,16 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
-const Activity = require('./activityMasterDataModel');
-const User = require('./userModel');
-
+const Activity = require("./activityMasterDataModel");
+const User = require("./userModel");
 
 //const RtUser = require('./userModel'); // import the user model
 
 const OperatorActivity = sequelize.define(
   "operator_activities",
   {
-    id: { type: DataTypes.STRING, primaryKey: true },
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     activity_id: { type: DataTypes.BIGINT, allowNull: false },
-    rt_user_id: { type: DataTypes.STRING, allowNull: false },
+    rt_user_id: { type: DataTypes.INTEGER, allowNull: false },
     description: { type: DataTypes.TEXT, allowNull: true }, // Changed to TEXT for longer descriptions
     address: { type: DataTypes.STRING, allowNull: false },
     district: { type: DataTypes.STRING, allowNull: true },
@@ -25,7 +24,7 @@ const OperatorActivity = sequelize.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-  }
+  },
 );
 
 // OperatorActivity.belongsTo(RtUser, {
@@ -36,12 +35,11 @@ const OperatorActivity = sequelize.define(
 module.exports = OperatorActivity;
 
 OperatorActivity.belongsTo(Activity, {
-  foreignKey: 'activity_id',
-  as: 'activity',
+  foreignKey: "activity_id",
+  as: "activity",
 });
 
 OperatorActivity.belongsTo(User, {
-  foreignKey: 'rt_user_id',
-  as: 'operator',
+  foreignKey: "rt_user_id",
+  as: "operator",
 });
-

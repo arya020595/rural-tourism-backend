@@ -1,5 +1,4 @@
 const { DataTypes } = require("sequelize");
-const { v4: uuidv4 } = require("uuid");
 const sequelize = require("../config/db");
 // const OperatorActivity = require('./operatorActivitiesModel'); // import but don’t use yet
 
@@ -7,9 +6,9 @@ const User = sequelize.define(
   "rt_users", // Model name matches tableName for consistency
   {
     user_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       primaryKey: true,
-      defaultValue: () => uuidv4(),
+      autoIncrement: true,
     },
     username: { type: DataTypes.STRING, allowNull: false },
     user_email: { type: DataTypes.STRING, allowNull: false, unique: true },
@@ -43,7 +42,7 @@ const User = sequelize.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-  }
+  },
 );
 
 // Associations should be set after exporting or in a separate file
