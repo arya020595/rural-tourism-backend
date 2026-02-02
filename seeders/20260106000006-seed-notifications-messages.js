@@ -18,7 +18,6 @@ module.exports = {
       { type: Sequelize.QueryTypes.SELECT },
     );
     const operator1 = operators[0].user_id;
-    const operator2 = operators[1].user_id;
     const operator3 = operators[2].user_id;
 
     // Seed notifications (all IDs use auto-increment / PostgreSQL SERIAL style)
