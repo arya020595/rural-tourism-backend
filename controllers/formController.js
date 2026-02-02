@@ -23,6 +23,8 @@ exports.createForm = async (req, res) => {
       total_night,
       issuer,
       date,
+      activity_booking_id,
+      accommodation_booking_id,
     } = req.body;
 
     // Trim IDs to remove extra spaces
@@ -42,7 +44,8 @@ exports.createForm = async (req, res) => {
     if (!tourist) {
       return res.status(400).json({
         success: false,
-        message: "Tourist not found. Make sure the ID exists and matches exactly.",
+        message:
+          "Tourist not found. Make sure the ID exists and matches exactly.",
       });
     }
 
@@ -79,7 +82,8 @@ exports.createForm = async (req, res) => {
       issuer: issuer || null,
       date: date || null,
       operator_user_id: req.body.operator_user_id || "Unknown Operator",
-      status: "SUBMITTED",
+      activity_booking_id: activity_booking_id || null,
+      accommodation_booking_id: accommodation_booking_id || null,
     });
 
     return res.status(201).json({ success: true, data: newForm });
