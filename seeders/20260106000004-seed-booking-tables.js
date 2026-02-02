@@ -33,7 +33,6 @@ module.exports = {
     const activity2 = activities[1].id;
     const activity3 = activities[2].id;
     const activity4 = activities[3].id;
-    const activity5 = activities[4].id;
 
     // Seed activity_booking (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("activity_booking", [
