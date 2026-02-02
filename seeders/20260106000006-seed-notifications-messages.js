@@ -3,11 +3,12 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed notifications
+    // Seed notifications (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("notifications", [
       {
-        id: 1,
-        user_id: "TU001",
+        // id: auto-generated
+        user_id: 1, // tourist 1 (Alice)
+        user_type: "tourist",
         title: "Booking Confirmed",
         message: "Your Mount Kinabalu climbing booking has been confirmed!",
         type: "booking",
@@ -17,8 +18,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 2,
-        user_id: "TU001",
+        // id: auto-generated
+        user_id: 1, // tourist 1 (Alice)
+        user_type: "tourist",
         title: "Accommodation Confirmed",
         message: "Your stay at Kinabalu Mountain Lodge is confirmed.",
         type: "accommodation",
@@ -28,8 +30,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 3,
-        user_id: "TU002",
+        // id: auto-generated
+        user_id: 2, // tourist 2 (Bob)
+        user_type: "tourist",
         title: "Booking Pending",
         message: "Your River Rafting booking is pending confirmation.",
         type: "booking",
@@ -39,8 +42,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 4,
-        user_id: "OP001",
+        // id: auto-generated
+        user_id: 1, // operator 1 (John)
+        user_type: "operator",
         title: "New Booking",
         message: "You have received a new booking for Mount Kinabalu.",
         type: "booking",
@@ -50,8 +54,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 5,
-        user_id: "OP001",
+        // id: auto-generated
+        user_id: 1, // operator 1 (John)
+        user_type: "operator",
         title: "New Booking",
         message: "You have received a new booking for River Rafting.",
         type: "booking",
@@ -61,8 +66,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 6,
-        user_id: "TU003",
+        // id: auto-generated
+        user_id: 3, // tourist 3 (Charlie)
+        user_type: "tourist",
         title: "Booking Confirmed",
         message: "Your Island Hopping trip has been confirmed!",
         type: "booking",
@@ -72,8 +78,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 7,
-        user_id: "TU004",
+        // id: auto-generated
+        user_id: 4, // tourist 4 (Diana)
+        user_type: "tourist",
         title: "Booking Cancelled",
         message: "Your Longhouse Experience booking has been cancelled.",
         type: "accommodation",
@@ -84,12 +91,12 @@ module.exports = {
       },
     ]);
 
-    // Seed messages
+    // Seed messages (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("messages", [
       {
-        id: 1,
-        tourist_user_id: "TU001",
-        rt_user_id: "OP001",
+        // id: auto-generated
+        tourist_user_id: 1, // Alice
+        rt_user_id: 1, // operator1
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -99,9 +106,9 @@ module.exports = {
         updated_at: new Date("2026-01-05 10:00:00"),
       },
       {
-        id: 2,
-        tourist_user_id: "TU001",
-        rt_user_id: "OP001",
+        // id: auto-generated
+        tourist_user_id: 1, // Alice
+        rt_user_id: 1, // operator1
         sender_type: "operator",
         receiver_type: "tourist",
         message:
@@ -111,9 +118,9 @@ module.exports = {
         updated_at: new Date("2026-01-05 10:30:00"),
       },
       {
-        id: 3,
-        tourist_user_id: "TU001",
-        rt_user_id: "OP001",
+        // id: auto-generated
+        tourist_user_id: 1, // Alice
+        rt_user_id: 1, // operator1
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -123,9 +130,9 @@ module.exports = {
         updated_at: new Date("2026-01-05 11:00:00"),
       },
       {
-        id: 4,
-        tourist_user_id: "TU002",
-        rt_user_id: "OP001",
+        // id: auto-generated
+        tourist_user_id: 2, // Bob
+        rt_user_id: 1, // operator1
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -135,9 +142,9 @@ module.exports = {
         updated_at: new Date("2026-01-06 09:00:00"),
       },
       {
-        id: 5,
-        tourist_user_id: "TU002",
-        rt_user_id: "OP001",
+        // id: auto-generated
+        tourist_user_id: 2, // Bob
+        rt_user_id: 1, // operator1
         sender_type: "operator",
         receiver_type: "tourist",
         message:
@@ -147,9 +154,9 @@ module.exports = {
         updated_at: new Date("2026-01-06 09:15:00"),
       },
       {
-        id: 6,
-        tourist_user_id: "TU003",
-        rt_user_id: "OP003",
+        // id: auto-generated
+        tourist_user_id: 3, // Charlie
+        rt_user_id: 3, // operator3
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -159,9 +166,9 @@ module.exports = {
         updated_at: new Date("2026-01-04 14:00:00"),
       },
       {
-        id: 7,
-        tourist_user_id: "TU003",
-        rt_user_id: "OP003",
+        // id: auto-generated
+        tourist_user_id: 3, // Charlie
+        rt_user_id: 3, // operator3
         sender_type: "operator",
         receiver_type: "tourist",
         message:

@@ -3,11 +3,12 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create rt_users table
+    // Create rt_users table - using INTEGER AUTO_INCREMENT (PostgreSQL SERIAL style)
     await queryInterface.createTable("rt_users", {
       user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         primaryKey: true,
+        autoIncrement: true,
         allowNull: false,
       },
       username: {
@@ -54,16 +55,17 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
 
-    // Create tourist_users table
+    // Create tourist_users table - using INTEGER AUTO_INCREMENT (PostgreSQL SERIAL style)
     await queryInterface.createTable("tourist_users", {
       tourist_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         primaryKey: true,
+        autoIncrement: true,
         allowNull: false,
       },
       full_name: {
@@ -99,7 +101,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });

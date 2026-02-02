@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create notifications table
+    // Create notifications table - using INTEGER for user_id (PostgreSQL SERIAL style)
     await queryInterface.createTable("notifications", {
       id: {
         type: Sequelize.BIGINT,
@@ -12,8 +12,12 @@ module.exports = {
         allowNull: false,
       },
       user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
+      },
+      user_type: {
+        type: Sequelize.ENUM("tourist", "operator"),
+        allowNull: true,
       },
       title: {
         type: Sequelize.STRING(255),
@@ -45,12 +49,12 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
 
-    // Create messages table
+    // Create messages table - using INTEGER for foreign keys (PostgreSQL SERIAL style)
     await queryInterface.createTable("messages", {
       id: {
         type: Sequelize.BIGINT,
@@ -59,7 +63,7 @@ module.exports = {
         allowNull: false,
       },
       tourist_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "tourist_users",
@@ -69,7 +73,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       rt_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "rt_users",
@@ -104,7 +108,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });

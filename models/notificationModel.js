@@ -1,48 +1,56 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
 
-const Notification = sequelize.define('notification', {
+const Notification = sequelize.define(
+  "notification",
+  {
     id: {
-        type: DataTypes.BIGINT,
-        autoIncrement: true,
-        primaryKey: true
+      type: DataTypes.BIGINT,
+      autoIncrement: true,
+      primaryKey: true,
     },
     user_id: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    user_type: {
+      type: DataTypes.ENUM("tourist", "operator"),
+      allowNull: true,
     },
     title: {
-        type: DataTypes.STRING,
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
     message: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     type: {
-        type: DataTypes.STRING,
-        allowNull: true
+      type: DataTypes.STRING,
+      allowNull: true,
     },
     related_id: {
-        type: DataTypes.BIGINT,
-        allowNull: false
+      type: DataTypes.BIGINT,
+      allowNull: false,
     },
     is_read: {
-        type: DataTypes.TINYINT,
-        allowNull: true,
-        defaultValue: 0,
-        get() {
-            return this.getDataValue('is_read') === 1;
-        },
-        set(value) {
-            this.setDataValue('is_read', value ? 1 : 0);
-        }
-    }
-}, {
-    tableName: 'notifications',
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      defaultValue: 0,
+      get() {
+        return this.getDataValue("is_read") === 1;
+      },
+      set(value) {
+        this.setDataValue("is_read", value ? 1 : 0);
+      },
+    },
+  },
+  {
+    tableName: "notifications",
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
-});
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
+);
 
 module.exports = Notification;

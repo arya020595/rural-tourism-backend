@@ -37,13 +37,14 @@ module.exports = {
       { time: "16:00 - 17:00", price: 45 },
     ];
 
-    // Seed operator_activities - Each activity has 2 different operators
+    // Seed operator_activities - id uses auto-increment (PostgreSQL SERIAL style)
+    // Each activity has 2 different operators
     await queryInterface.bulkInsert("operator_activities", [
       // Mount Kinabalu Climbing - 2 operators
       {
-        id: "OA001",
+        // id: 1 (auto-generated)
         activity_id: 1,
-        rt_user_id: "OP001",
+        rt_user_id: 1, // operator1
         address: "Kinabalu National Park, Ranau, Sabah",
         district: "Ranau",
         image: "operator-kinabalu-1.jpg",
@@ -58,9 +59,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: "OA006",
+        // id: 2 (auto-generated)
         activity_id: 1,
-        rt_user_id: "OP002",
+        rt_user_id: 2, // operator2
         address: "Kinabalu National Park, Ranau, Sabah",
         district: "Ranau",
         image: "operator-kinabalu-2.jpg",
@@ -76,9 +77,9 @@ module.exports = {
       },
       // River Rafting - 2 operators
       {
-        id: "OA002",
+        // id: 3 (auto-generated)
         activity_id: 2,
-        rt_user_id: "OP001",
+        rt_user_id: 1, // operator1
         address: "Padas River, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-rafting-1.jpg",
@@ -92,9 +93,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: "OA007",
+        // id: 4 (auto-generated)
         activity_id: 2,
-        rt_user_id: "OP003",
+        rt_user_id: 3, // operator3
         address: "Padas River, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-rafting-2.jpg",
@@ -111,9 +112,9 @@ module.exports = {
       },
       // Firefly Watching - 2 operators
       {
-        id: "OA003",
+        // id: 5 (auto-generated)
         activity_id: 3,
-        rt_user_id: "OP002",
+        rt_user_id: 2, // operator2
         address: "Klias Wetland, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-firefly-1.jpg",
@@ -127,9 +128,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: "OA008",
+        // id: 6 (auto-generated)
         activity_id: 3,
-        rt_user_id: "OP001",
+        rt_user_id: 1, // operator1
         address: "Klias Wetland, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-firefly-2.jpg",
@@ -146,9 +147,9 @@ module.exports = {
       },
       // Island Hopping - 2 operators
       {
-        id: "OA004",
+        // id: 7 (auto-generated)
         activity_id: 4,
-        rt_user_id: "OP003",
+        rt_user_id: 3, // operator3
         address: "Jesselton Point, Kota Kinabalu, Sabah",
         district: "Kota Kinabalu",
         image: "operator-island-1.jpg",
@@ -163,9 +164,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: "OA009",
+        // id: 8 (auto-generated)
         activity_id: 4,
-        rt_user_id: "OP002",
+        rt_user_id: 2, // operator2
         address: "Jesselton Point, Kota Kinabalu, Sabah",
         district: "Kota Kinabalu",
         image: "operator-island-2.jpg",
@@ -182,9 +183,9 @@ module.exports = {
       },
       // Cultural Village Tour - 2 operators
       {
-        id: "OA005",
+        // id: 9 (auto-generated)
         activity_id: 5,
-        rt_user_id: "OP003",
+        rt_user_id: 3, // operator3
         address: "Mari Mari Cultural Village, Kota Kinabalu",
         district: "Kota Kinabalu",
         image: "operator-cultural-1.jpg",
@@ -198,9 +199,9 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: "OA010",
+        // id: 10 (auto-generated)
         activity_id: 5,
-        rt_user_id: "OP001",
+        rt_user_id: 1, // operator1
         address: "Mari Mari Cultural Village, Kota Kinabalu",
         district: "Kota Kinabalu",
         image: "operator-cultural-2.jpg",

@@ -24,9 +24,9 @@ module.exports = {
       return dates;
     };
 
-    // Update all accommodations concurrently for better performance
+    // Update all accommodations using name as reference (more robust for auto-generated IDs)
     await Promise.all([
-      // Update accommodation 1 - Kinabalu Mountain Lodge (RM250/night)
+      // Update Kinabalu Mountain Lodge (RM250/night)
       // Available for the next 7 days starting from today
       queryInterface.bulkUpdate(
         "accommodation_list",
@@ -34,10 +34,10 @@ module.exports = {
           available_dates: JSON.stringify(generateAvailableDates(0, 7, 250)),
           updated_at: new Date(),
         },
-        { accommodation_id: 1 },
+        { name: "Kinabalu Mountain Lodge" },
       ),
 
-      // Update accommodation 2 - Riverside Homestay (RM180/night)
+      // Update Riverside Homestay (RM180/night)
       // Available for 5 days starting from 2 days from now
       queryInterface.bulkUpdate(
         "accommodation_list",
@@ -45,10 +45,10 @@ module.exports = {
           available_dates: JSON.stringify(generateAvailableDates(2, 5, 180)),
           updated_at: new Date(),
         },
-        { accommodation_id: 2 },
+        { name: "Riverside Homestay" },
       ),
 
-      // Update accommodation 3 - Island Beach Resort (RM320/night)
+      // Update Island Beach Resort (RM320/night)
       // Available for 7 days starting from today
       queryInterface.bulkUpdate(
         "accommodation_list",
@@ -56,10 +56,10 @@ module.exports = {
           available_dates: JSON.stringify(generateAvailableDates(0, 7, 320)),
           updated_at: new Date(),
         },
-        { accommodation_id: 3 },
+        { name: "Island Beach Resort" },
       ),
 
-      // Update accommodation 4 - Firefly Village Retreat (RM150/night)
+      // Update Firefly Village Retreat (RM150/night)
       // Available for 5 days starting from 2 days from now
       queryInterface.bulkUpdate(
         "accommodation_list",
@@ -67,7 +67,7 @@ module.exports = {
           available_dates: JSON.stringify(generateAvailableDates(2, 5, 150)),
           updated_at: new Date(),
         },
-        { accommodation_id: 4 },
+        { name: "Firefly Village Retreat" },
       ),
     ]);
   },

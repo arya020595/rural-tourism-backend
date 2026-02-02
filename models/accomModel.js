@@ -10,7 +10,7 @@ const Accom = sequelize.define(
       primaryKey: true,
     },
     rt_user_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
       field: "rt_user_id",
     },
@@ -98,7 +98,7 @@ const Accom = sequelize.define(
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-  }
+  },
 );
 
 module.exports = Accom;

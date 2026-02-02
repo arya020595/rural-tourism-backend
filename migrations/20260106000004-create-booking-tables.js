@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create activity_booking table
+    // Create activity_booking table - using INTEGER for foreign keys (PostgreSQL SERIAL style)
     await queryInterface.createTable("activity_booking", {
       id: {
         type: Sequelize.BIGINT,
@@ -12,7 +12,7 @@ module.exports = {
         allowNull: false,
       },
       tourist_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "tourist_users",
@@ -32,7 +32,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       operator_activity_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "operator_activities",
@@ -78,12 +78,12 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
 
-    // Create accommodation_booking table
+    // Create accommodation_booking table - using INTEGER for foreign keys (PostgreSQL SERIAL style)
     await queryInterface.createTable("accommodation_booking", {
       id: {
         type: Sequelize.BIGINT,
@@ -92,7 +92,7 @@ module.exports = {
         allowNull: false,
       },
       tourist_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "tourist_users",
@@ -102,7 +102,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       accommodation_id: {
-        type: Sequelize.INTEGER(11),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "accommodation_list",
@@ -162,7 +162,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
