@@ -109,8 +109,6 @@ describe("Booking Status Update Integration Test", () => {
       tourist_user_id: touristUser.tourist_user_id,
       citizenship: "Malaysian",
       pax: 2,
-      pax_domestik: 2,
-      pax_antarabangsa: 0,
       activity_id: activityMaster.id,
       activity_name: "Island Hopping",
       location: "Kota Kinabalu",
