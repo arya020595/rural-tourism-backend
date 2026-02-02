@@ -157,7 +157,7 @@ describe("Booking Status Update Integration Test", () => {
     expect(booking.status).toBe("booked"); // ✅ Should not change
   });
 
-  test("Frontend should exclude 'paid' bookings from tourist list", async () => {
+  test("Should filter out 'paid' bookings from operator bookings list", async () => {
     // Mark booking as paid
     await activityBooking.update({ status: "paid" });
 
