@@ -3,8 +3,8 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Remove status column from form_responses table
-    await queryInterface.removeColumn("form_responses", "status");
+    // Intentionally left as a no-op: retain the `status` column on form_responses
+    // because existing application code still depends on it.
   },
 
   async down(queryInterface, Sequelize) {
