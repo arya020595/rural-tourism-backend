@@ -8,6 +8,7 @@ const FormResponse = require("../models/formModel");
 const TouristUser = require("../models/touristModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
+const { bookingService } = require("./bookingService");
 
 /**
  * Custom error classes for better error handling
@@ -77,7 +78,19 @@ class FormService {
     };
 
     // Create and return the form
-    return await FormResponse.create(formData);
+    const newForm = await FormResponse.create(formData);
+
+    // Delegate booking status update to BookingService (SOLID: Single Responsibility)
+    if (data.activity_booking_id) {
+      await bookingService.markActivityBookingAsPaid(data.activity_booking_id);
+    }
+    if (data.accommodation_booking_id) {
+      await bookingService.markAccommodationBookingAsPaid(
+        data.accommodation_booking_id,
+      );
+    }
+
+    return newForm;
   }
 
   /**
