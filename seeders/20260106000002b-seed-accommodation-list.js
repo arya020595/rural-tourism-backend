@@ -3,11 +3,11 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed accommodation_list (accommodation_id uses AUTO_INCREMENT)
+    // Seed accommodation_list (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("accommodation_list", [
       {
         // accommodation_id: auto-generated
-        rt_user_id: "OP001",
+        rt_user_id: 1, // operator1
         name: "Kinabalu Mountain Lodge",
         description:
           "Cozy mountain lodge near Mount Kinabalu with stunning views",
@@ -23,7 +23,7 @@ module.exports = {
       },
       {
         // accommodation_id: auto-generated
-        rt_user_id: "OP002",
+        rt_user_id: 2, // operator2
         name: "Riverside Homestay",
         description:
           "Traditional Sabahan homestay by the river with authentic experience",
@@ -39,7 +39,7 @@ module.exports = {
       },
       {
         // accommodation_id: auto-generated
-        rt_user_id: "OP003",
+        rt_user_id: 3, // operator3
         name: "Island Beach Resort",
         description:
           "Beachfront resort on Manukan Island with water sports facilities",
@@ -55,7 +55,7 @@ module.exports = {
       },
       {
         // accommodation_id: auto-generated
-        rt_user_id: "OP002",
+        rt_user_id: 2, // operator2
         name: "Firefly Village Retreat",
         description:
           "Peaceful retreat near Klias wetland, perfect for nature lovers",

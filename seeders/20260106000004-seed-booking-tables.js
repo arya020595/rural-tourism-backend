@@ -3,13 +3,13 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed activity_booking (id uses AUTO_INCREMENT)
+    // Seed activity_booking (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("activity_booking", [
       {
         // id: 1 (auto-generated)
-        tourist_user_id: "TU001",
+        tourist_user_id: 1, // Alice Tourist
         activity_id: 1, // Mount Kinabalu
-        operator_activity_id: "OA001",
+        operator_activity_id: 1, // first operator_activity
         total_price: 850.0,
         no_of_pax: 2,
         date: "2026-02-01",
@@ -23,9 +23,9 @@ module.exports = {
       },
       {
         // id: 2 (auto-generated)
-        tourist_user_id: "TU001",
+        tourist_user_id: 1, // Alice Tourist
         activity_id: 1, // Mount Kinabalu
-        operator_activity_id: "OA001",
+        operator_activity_id: 1,
         total_price: 850.0,
         no_of_pax: 2,
         date: "2026-02-01",
@@ -39,9 +39,9 @@ module.exports = {
       },
       {
         // id: 3 (auto-generated)
-        tourist_user_id: "TU002",
+        tourist_user_id: 2, // Bob Traveler
         activity_id: 2, // River Rafting
-        operator_activity_id: "OA002",
+        operator_activity_id: 3, // river rafting operator
         total_price: 280.0,
         no_of_pax: 3,
         date: "2026-02-01",
@@ -55,9 +55,9 @@ module.exports = {
       },
       {
         // id: 4 (auto-generated)
-        tourist_user_id: "TU003",
+        tourist_user_id: 3, // Charlie Explorer
         activity_id: 4, // Island Hopping
-        operator_activity_id: "OA004",
+        operator_activity_id: 7, // island hopping operator
         total_price: 200.0,
         no_of_pax: 4,
         date: "2026-02-02",
@@ -71,9 +71,9 @@ module.exports = {
       },
       {
         // id: 5 (auto-generated)
-        tourist_user_id: "TU004",
+        tourist_user_id: 4, // Diana Adventurer
         activity_id: 3, // Firefly Watching
-        operator_activity_id: "OA003",
+        operator_activity_id: 5, // firefly operator
         total_price: 180.0,
         no_of_pax: 2,
         date: "2026-02-01",
@@ -87,11 +87,11 @@ module.exports = {
       },
     ]);
 
-    // Seed accommodation_booking (id uses AUTO_INCREMENT)
+    // Seed accommodation_booking (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("accommodation_booking", [
       {
         // id: 1 (auto-generated)
-        tourist_user_id: "TU001",
+        tourist_user_id: 1, // Alice Tourist
         accommodation_id: 1, // Kinabalu Mountain Lodge
         check_in: "2026-01-30",
         check_out: "2026-02-01",
@@ -108,7 +108,7 @@ module.exports = {
       },
       {
         // id: 2 (auto-generated)
-        tourist_user_id: "TU002",
+        tourist_user_id: 2, // Bob Traveler
         accommodation_id: 2, // Riverside Homestay
         check_in: "2026-02-01",
         check_out: "2026-02-02",
@@ -125,7 +125,7 @@ module.exports = {
       },
       {
         // id: 3 (auto-generated)
-        tourist_user_id: "TU003",
+        tourist_user_id: 3, // Charlie Explorer
         accommodation_id: 3, // Island Beach Resort
         check_in: "2026-02-03",
         check_out: "2026-02-04",
@@ -142,7 +142,7 @@ module.exports = {
       },
       {
         // id: 4 (auto-generated)
-        tourist_user_id: "TU004",
+        tourist_user_id: 4, // Diana Adventurer
         accommodation_id: 1, // Kinabalu Mountain Lodge
         check_in: "2026-02-02",
         check_out: "2026-02-03",

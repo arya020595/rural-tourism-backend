@@ -4,15 +4,15 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Seed form_responses (receipts)
-    // Note: status column has been removed, using activity_booking_id/accommodation_booking_id instead
+    // All IDs use auto-increment (PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("form_responses", [
       {
         receipt_id: "RCP-2026-0001",
-        operator_user_id: "OP001",
+        operator_user_id: 1, // operator1
         citizenship: "Malaysian",
         pax: 2,
         activity_name: "Mount Kinabalu Climbing",
-        tourist_user_id: "TU001",
+        tourist_user_id: 1, // Alice Tourist
         homest_name: null,
         location: "Kinabalu National Park",
         activity_id: 1,
@@ -32,11 +32,11 @@ module.exports = {
       },
       {
         receipt_id: "RCP-2026-0002",
-        operator_user_id: "OP002",
+        operator_user_id: 2, // operator2
         citizenship: "Malaysian",
         pax: 2,
         activity_name: null,
-        tourist_user_id: "TU001",
+        tourist_user_id: 1, // Alice Tourist
         homest_name: "Kinabalu Mountain Lodge",
         location: "Ranau",
         activity_id: null,
@@ -56,11 +56,11 @@ module.exports = {
       },
       {
         receipt_id: "RCP-2026-0003",
-        operator_user_id: "OP001",
+        operator_user_id: 1, // operator1
         citizenship: "Singaporean",
         pax: 3,
         activity_name: "River Rafting",
-        tourist_user_id: "TU002",
+        tourist_user_id: 2, // Bob Traveler
         homest_name: null,
         location: "Beaufort",
         activity_id: 2,
@@ -80,11 +80,11 @@ module.exports = {
       },
       {
         receipt_id: "RCP-2026-0004",
-        operator_user_id: "OP003",
+        operator_user_id: 3, // operator3
         citizenship: "Australian",
         pax: 4,
         activity_name: "Island Hopping",
-        tourist_user_id: "TU003",
+        tourist_user_id: 3, // Charlie Explorer
         homest_name: null,
         location: "Kota Kinabalu",
         activity_id: 4,
@@ -104,11 +104,11 @@ module.exports = {
       },
       {
         receipt_id: "RCP-2026-0005",
-        operator_user_id: "OP003",
+        operator_user_id: 3, // operator3
         citizenship: "Australian",
         pax: 4,
         activity_name: null,
-        tourist_user_id: "TU003",
+        tourist_user_id: 3, // Charlie Explorer
         homest_name: "Island Beach Resort",
         location: "Kota Kinabalu",
         activity_id: null,

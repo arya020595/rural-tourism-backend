@@ -3,11 +3,12 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create operator_activities table
+    // Create operator_activities table - using INTEGER AUTO_INCREMENT (PostgreSQL SERIAL style)
     await queryInterface.createTable("operator_activities", {
       id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         primaryKey: true,
+        autoIncrement: true,
         allowNull: false,
       },
       activity_id: {
@@ -21,7 +22,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       rt_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "rt_users",
@@ -67,7 +68,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
