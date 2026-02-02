@@ -3,11 +3,28 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Fetch dynamic IDs
+    const tourists = await queryInterface.sequelize.query(
+      `SELECT tourist_user_id FROM tourist_users ORDER BY tourist_user_id LIMIT 4`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+    const tourist1 = tourists[0].tourist_user_id;
+    const tourist2 = tourists[1].tourist_user_id;
+    const tourist3 = tourists[2].tourist_user_id;
+    const tourist4 = tourists[3].tourist_user_id;
+
+    const operators = await queryInterface.sequelize.query(
+      `SELECT user_id FROM rt_users ORDER BY user_id LIMIT 3`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+    const operator1 = operators[0].user_id;
+    const operator2 = operators[1].user_id;
+    const operator3 = operators[2].user_id;
+
     // Seed notifications (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("notifications", [
       {
-        // id: auto-generated
-        user_id: 1, // tourist 1 (Alice)
+        user_id: tourist1,
         user_type: "tourist",
         title: "Booking Confirmed",
         message: "Your Mount Kinabalu climbing booking has been confirmed!",
@@ -18,8 +35,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        // id: auto-generated
-        user_id: 1, // tourist 1 (Alice)
+        user_id: tourist1,
         user_type: "tourist",
         title: "Accommodation Confirmed",
         message: "Your stay at Kinabalu Mountain Lodge is confirmed.",
@@ -30,8 +46,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        // id: auto-generated
-        user_id: 2, // tourist 2 (Bob)
+        user_id: tourist2,
         user_type: "tourist",
         title: "Booking Pending",
         message: "Your River Rafting booking is pending confirmation.",
@@ -42,8 +57,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        // id: auto-generated
-        user_id: 1, // operator 1 (John)
+        user_id: operator1,
         user_type: "operator",
         title: "New Booking",
         message: "You have received a new booking for Mount Kinabalu.",
@@ -54,8 +68,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        // id: auto-generated
-        user_id: 1, // operator 1 (John)
+        user_id: operator1,
         user_type: "operator",
         title: "New Booking",
         message: "You have received a new booking for River Rafting.",
@@ -66,8 +79,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        // id: auto-generated
-        user_id: 3, // tourist 3 (Charlie)
+        user_id: tourist3,
         user_type: "tourist",
         title: "Booking Confirmed",
         message: "Your Island Hopping trip has been confirmed!",
@@ -78,8 +90,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        // id: auto-generated
-        user_id: 4, // tourist 4 (Diana)
+        user_id: tourist4,
         user_type: "tourist",
         title: "Booking Cancelled",
         message: "Your Longhouse Experience booking has been cancelled.",
@@ -94,9 +105,8 @@ module.exports = {
     // Seed messages (all IDs use auto-increment / PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("messages", [
       {
-        // id: auto-generated
-        tourist_user_id: 1, // Alice
-        rt_user_id: 1, // operator1
+        tourist_user_id: tourist1,
+        rt_user_id: operator1,
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -106,9 +116,8 @@ module.exports = {
         updated_at: new Date("2026-01-05 10:00:00"),
       },
       {
-        // id: auto-generated
-        tourist_user_id: 1, // Alice
-        rt_user_id: 1, // operator1
+        tourist_user_id: tourist1,
+        rt_user_id: operator1,
         sender_type: "operator",
         receiver_type: "tourist",
         message:
@@ -118,9 +127,8 @@ module.exports = {
         updated_at: new Date("2026-01-05 10:30:00"),
       },
       {
-        // id: auto-generated
-        tourist_user_id: 1, // Alice
-        rt_user_id: 1, // operator1
+        tourist_user_id: tourist1,
+        rt_user_id: operator1,
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -130,9 +138,8 @@ module.exports = {
         updated_at: new Date("2026-01-05 11:00:00"),
       },
       {
-        // id: auto-generated
-        tourist_user_id: 2, // Bob
-        rt_user_id: 1, // operator1
+        tourist_user_id: tourist2,
+        rt_user_id: operator1,
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -142,9 +149,8 @@ module.exports = {
         updated_at: new Date("2026-01-06 09:00:00"),
       },
       {
-        // id: auto-generated
-        tourist_user_id: 2, // Bob
-        rt_user_id: 1, // operator1
+        tourist_user_id: tourist2,
+        rt_user_id: operator1,
         sender_type: "operator",
         receiver_type: "tourist",
         message:
@@ -154,9 +160,8 @@ module.exports = {
         updated_at: new Date("2026-01-06 09:15:00"),
       },
       {
-        // id: auto-generated
-        tourist_user_id: 3, // Charlie
-        rt_user_id: 3, // operator3
+        tourist_user_id: tourist3,
+        rt_user_id: operator3,
         sender_type: "tourist",
         receiver_type: "operator",
         message:
@@ -166,9 +171,8 @@ module.exports = {
         updated_at: new Date("2026-01-04 14:00:00"),
       },
       {
-        // id: auto-generated
-        tourist_user_id: 3, // Charlie
-        rt_user_id: 3, // operator3
+        tourist_user_id: tourist3,
+        rt_user_id: operator3,
         sender_type: "operator",
         receiver_type: "tourist",
         message:

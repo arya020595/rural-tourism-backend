@@ -3,6 +3,27 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Fetch operator and activity master IDs dynamically
+    const operators = await queryInterface.sequelize.query(
+      `SELECT user_id FROM rt_users ORDER BY user_id LIMIT 3`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const activities = await queryInterface.sequelize.query(
+      `SELECT id FROM activity_master_table ORDER BY id LIMIT 5`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const operator1 = operators[0].user_id;
+    const operator2 = operators[1].user_id;
+    const operator3 = operators[2].user_id;
+
+    const activity1 = activities[0].id; // Mount Kinabalu
+    const activity2 = activities[1].id; // River Rafting
+    const activity3 = activities[2].id; // Firefly Watching
+    const activity4 = activities[3].id; // Island Hopping
+    const activity5 = activities[4].id; // Cultural Village
+
     // Helper function to generate dates dynamically
     const generateDatesWithSlots = (startDaysFromNow, daysCount, timeSlots) => {
       const dates = [];
@@ -43,8 +64,8 @@ module.exports = {
       // Mount Kinabalu Climbing - 2 operators
       {
         // id: 1 (auto-generated)
-        activity_id: 1,
-        rt_user_id: 1, // operator1
+        activity_id: activity1,
+        rt_user_id: operator1, // operator1
         address: "Kinabalu National Park, Ranau, Sabah",
         district: "Ranau",
         image: "operator-kinabalu-1.jpg",
@@ -60,8 +81,8 @@ module.exports = {
       },
       {
         // id: 2 (auto-generated)
-        activity_id: 1,
-        rt_user_id: 2, // operator2
+        activity_id: activity1,
+        rt_user_id: operator2, // operator2
         address: "Kinabalu National Park, Ranau, Sabah",
         district: "Ranau",
         image: "operator-kinabalu-2.jpg",
@@ -78,8 +99,8 @@ module.exports = {
       // River Rafting - 2 operators
       {
         // id: 3 (auto-generated)
-        activity_id: 2,
-        rt_user_id: 1, // operator1
+        activity_id: activity2,
+        rt_user_id: operator1, // operator1
         address: "Padas River, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-rafting-1.jpg",
@@ -94,8 +115,8 @@ module.exports = {
       },
       {
         // id: 4 (auto-generated)
-        activity_id: 2,
-        rt_user_id: 3, // operator3
+        activity_id: activity2,
+        rt_user_id: operator3, // operator3
         address: "Padas River, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-rafting-2.jpg",
@@ -113,8 +134,8 @@ module.exports = {
       // Firefly Watching - 2 operators
       {
         // id: 5 (auto-generated)
-        activity_id: 3,
-        rt_user_id: 2, // operator2
+        activity_id: activity3,
+        rt_user_id: operator2, // operator2
         address: "Klias Wetland, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-firefly-1.jpg",
@@ -129,8 +150,8 @@ module.exports = {
       },
       {
         // id: 6 (auto-generated)
-        activity_id: 3,
-        rt_user_id: 1, // operator1
+        activity_id: activity3,
+        rt_user_id: operator1, // operator1
         address: "Klias Wetland, Beaufort, Sabah",
         district: "Beaufort",
         image: "operator-firefly-2.jpg",
@@ -148,8 +169,8 @@ module.exports = {
       // Island Hopping - 2 operators
       {
         // id: 7 (auto-generated)
-        activity_id: 4,
-        rt_user_id: 3, // operator3
+        activity_id: activity4,
+        rt_user_id: operator3, // operator3
         address: "Jesselton Point, Kota Kinabalu, Sabah",
         district: "Kota Kinabalu",
         image: "operator-island-1.jpg",
@@ -165,8 +186,8 @@ module.exports = {
       },
       {
         // id: 8 (auto-generated)
-        activity_id: 4,
-        rt_user_id: 2, // operator2
+        activity_id: activity4,
+        rt_user_id: operator2, // operator2
         address: "Jesselton Point, Kota Kinabalu, Sabah",
         district: "Kota Kinabalu",
         image: "operator-island-2.jpg",
@@ -184,8 +205,8 @@ module.exports = {
       // Cultural Village Tour - 2 operators
       {
         // id: 9 (auto-generated)
-        activity_id: 5,
-        rt_user_id: 3, // operator3
+        activity_id: activity5,
+        rt_user_id: operator3, // operator3
         address: "Mari Mari Cultural Village, Kota Kinabalu",
         district: "Kota Kinabalu",
         image: "operator-cultural-1.jpg",
@@ -200,8 +221,8 @@ module.exports = {
       },
       {
         // id: 10 (auto-generated)
-        activity_id: 5,
-        rt_user_id: 1, // operator1
+        activity_id: activity5,
+        rt_user_id: operator1, // operator1
         address: "Mari Mari Cultural Village, Kota Kinabalu",
         district: "Kota Kinabalu",
         image: "operator-cultural-2.jpg",
