@@ -3,65 +3,65 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed activity_booking
+    // Seed activity_booking (id uses AUTO_INCREMENT)
     await queryInterface.bulkInsert("activity_booking", [
       {
-        id: 1,
+        // id: 1 (auto-generated)
         tourist_user_id: "TU001",
         activity_id: 1, // Mount Kinabalu
         operator_activity_id: "OA001",
         total_price: 850.0,
         no_of_pax: 2,
         date: "2026-02-01",
-        time: "08:00 - 09:00", // ← ADDED: Morning slot
+        time: "08:00 - 09:00",
         contact_name: "Alice Tourist",
         contact_phone: "+60123456789",
         nationality: "Malaysian",
-        status: "booked", // ← lowercase for consistency
+        status: "booked",
         created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        id: 2,
+        // id: 2 (auto-generated)
         tourist_user_id: "TU001",
         activity_id: 1, // Mount Kinabalu
         operator_activity_id: "OA001",
         total_price: 850.0,
         no_of_pax: 2,
         date: "2026-02-01",
-        time: "09:00 - 10:00", // ← ADDED: Another morning slot (same day, different time)
+        time: "09:00 - 10:00",
         contact_name: "Alice Tourist",
         contact_phone: "+60123456789",
         nationality: "Malaysian",
-        status: "paid", // ← This one is paid
+        status: "paid",
         created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        id: 3,
+        // id: 3 (auto-generated)
         tourist_user_id: "TU002",
         activity_id: 2, // River Rafting
         operator_activity_id: "OA002",
         total_price: 280.0,
         no_of_pax: 3,
         date: "2026-02-01",
-        time: "14:00 - 15:00", // ← ADDED: Afternoon slot
+        time: "14:00 - 15:00",
         contact_name: "Bob Traveler",
         contact_phone: "+60198765432",
         nationality: "Singaporean",
-        status: "pending", // ← pending = NOT blocked
+        status: "pending",
         created_at: new Date(),
         updated_at: new Date(),
       },
       {
-        id: 4,
+        // id: 4 (auto-generated)
         tourist_user_id: "TU003",
         activity_id: 4, // Island Hopping
         operator_activity_id: "OA004",
         total_price: 200.0,
         no_of_pax: 4,
         date: "2026-02-02",
-        time: "10:00 - 11:00", // ← ADDED
+        time: "10:00 - 11:00",
         contact_name: "Charlie Explorer",
         contact_phone: "+60112233445",
         nationality: "Australian",
@@ -70,34 +70,34 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 5,
+        // id: 5 (auto-generated)
         tourist_user_id: "TU004",
         activity_id: 3, // Firefly Watching
         operator_activity_id: "OA003",
         total_price: 180.0,
         no_of_pax: 2,
         date: "2026-02-01",
-        time: "15:00 - 16:00", // ← ADDED
+        time: "15:00 - 16:00",
         contact_name: "Diana Adventurer",
         contact_phone: "+60155667788",
         nationality: "British",
-        status: "cancelled", // ← cancelled = NOT blocked
+        status: "cancelled",
         created_at: new Date(),
         updated_at: new Date(),
       },
     ]);
 
-    // Seed accommodation_booking
+    // Seed accommodation_booking (id uses AUTO_INCREMENT)
     await queryInterface.bulkInsert("accommodation_booking", [
       {
-        id: 1,
+        // id: 1 (auto-generated)
         tourist_user_id: "TU001",
-        accommodation_id: 1, // Kinabalu Mountain Lodge (has dates 2026-01-29 to 2026-02-04)
+        accommodation_id: 1, // Kinabalu Mountain Lodge
         check_in: "2026-01-30",
-        check_out: "2026-02-01", // Blocks: Jan 30, 31, Feb 1
+        check_out: "2026-02-01",
         total_no_of_nights: 2,
         total_price: "500.00",
-        status: "booked", // ← lowercase, will BLOCK these dates
+        status: "booked",
         no_of_pax: 2,
         contact_name: "Alice Tourist",
         contact_email: "alice@tourist.com",
@@ -107,14 +107,14 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 2,
+        // id: 2 (auto-generated)
         tourist_user_id: "TU002",
-        accommodation_id: 2, // Riverside Homestay (has dates 2026-01-31 to 2026-02-04)
+        accommodation_id: 2, // Riverside Homestay
         check_in: "2026-02-01",
-        check_out: "2026-02-02", // Blocks: Feb 1, 2
+        check_out: "2026-02-02",
         total_no_of_nights: 1,
         total_price: "180.00",
-        status: "paid", // ← Will BLOCK these dates
+        status: "paid",
         no_of_pax: 3,
         contact_name: "Bob Traveler",
         contact_email: "bob@traveler.com",
@@ -124,14 +124,14 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 3,
+        // id: 3 (auto-generated)
         tourist_user_id: "TU003",
-        accommodation_id: 3, // Island Beach Resort (has dates 2026-01-29 to 2026-02-04)
+        accommodation_id: 3, // Island Beach Resort
         check_in: "2026-02-03",
-        check_out: "2026-02-04", // Blocks: Feb 3, 4
+        check_out: "2026-02-04",
         total_no_of_nights: 1,
         total_price: "320.00",
-        status: "pending", // ← Will NOT block (pending)
+        status: "pending",
         no_of_pax: 4,
         contact_name: "Charlie Explorer",
         contact_email: "charlie@explorer.com",
@@ -141,14 +141,14 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 4,
+        // id: 4 (auto-generated)
         tourist_user_id: "TU004",
-        accommodation_id: 1, // Kinabalu Mountain Lodge again
+        accommodation_id: 1, // Kinabalu Mountain Lodge
         check_in: "2026-02-02",
-        check_out: "2026-02-03", // Blocks: Feb 2, 3
+        check_out: "2026-02-03",
         total_no_of_nights: 1,
         total_price: "250.00",
-        status: "cancelled", // ← Will NOT block (cancelled)
+        status: "cancelled",
         no_of_pax: 2,
         contact_name: "Diana Adventurer",
         contact_email: "diana@adventure.com",

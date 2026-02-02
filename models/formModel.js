@@ -27,7 +27,7 @@ const FormResponse = sequelize.define(
     tableName: "form_responses",
     timestamps: true,
     createdAt: "created_at",
-    updatedAt: "updated_at", // ✅ fixed capitalization
+    updatedAt: "updated_at",
   },
 );
 

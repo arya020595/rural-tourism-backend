@@ -3,10 +3,10 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed activity_master_table with sample activities
+    // Seed activity_master_table (id uses AUTO_INCREMENT)
     await queryInterface.bulkInsert("activity_master_table", [
       {
-        id: 1,
+        // id: auto-generated
         activity_name: "Mount Kinabalu Climbing",
         description: "Climb Southeast Asia's highest peak at 4,095 meters",
         address: "Kinabalu National Park, Ranau, Sabah",
@@ -17,7 +17,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 2,
+        // id: auto-generated
         activity_name: "River Rafting",
         description: "White water rafting adventure on Padas River",
         address: "Padas River, Beaufort, Sabah",
@@ -28,7 +28,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 3,
+        // id: auto-generated
         activity_name: "Firefly Watching",
         description: "Evening river cruise to see magical fireflies",
         address: "Klias Wetland, Beaufort, Sabah",
@@ -39,7 +39,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 4,
+        // id: auto-generated
         activity_name: "Island Hopping",
         description: "Visit multiple islands with snorkeling activities",
         address: "Tunku Abdul Rahman Marine Park, Kota Kinabalu",
@@ -50,7 +50,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 5,
+        // id: auto-generated
         activity_name: "Cultural Village Tour",
         description: "Experience traditional Sabahan cultures and customs",
         address: "Mari Mari Cultural Village, Kota Kinabalu",

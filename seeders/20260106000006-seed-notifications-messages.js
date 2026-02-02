@@ -3,10 +3,10 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed notifications
+    // Seed notifications (id uses AUTO_INCREMENT)
     await queryInterface.bulkInsert("notifications", [
       {
-        id: 1,
+        // id: auto-generated
         user_id: "TU001",
         title: "Booking Confirmed",
         message: "Your Mount Kinabalu climbing booking has been confirmed!",
@@ -17,7 +17,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 2,
+        // id: auto-generated
         user_id: "TU001",
         title: "Accommodation Confirmed",
         message: "Your stay at Kinabalu Mountain Lodge is confirmed.",
@@ -28,7 +28,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 3,
+        // id: auto-generated
         user_id: "TU002",
         title: "Booking Pending",
         message: "Your River Rafting booking is pending confirmation.",
@@ -39,7 +39,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 4,
+        // id: auto-generated
         user_id: "OP001",
         title: "New Booking",
         message: "You have received a new booking for Mount Kinabalu.",
@@ -50,7 +50,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 5,
+        // id: auto-generated
         user_id: "OP001",
         title: "New Booking",
         message: "You have received a new booking for River Rafting.",
@@ -61,7 +61,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 6,
+        // id: auto-generated
         user_id: "TU003",
         title: "Booking Confirmed",
         message: "Your Island Hopping trip has been confirmed!",
@@ -72,7 +72,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        id: 7,
+        // id: auto-generated
         user_id: "TU004",
         title: "Booking Cancelled",
         message: "Your Longhouse Experience booking has been cancelled.",
@@ -84,10 +84,10 @@ module.exports = {
       },
     ]);
 
-    // Seed messages
+    // Seed messages (id uses AUTO_INCREMENT)
     await queryInterface.bulkInsert("messages", [
       {
-        id: 1,
+        // id: auto-generated
         tourist_user_id: "TU001",
         rt_user_id: "OP001",
         sender_type: "tourist",
@@ -99,7 +99,7 @@ module.exports = {
         updated_at: new Date("2026-01-05 10:00:00"),
       },
       {
-        id: 2,
+        // id: auto-generated
         tourist_user_id: "TU001",
         rt_user_id: "OP001",
         sender_type: "operator",
@@ -111,7 +111,7 @@ module.exports = {
         updated_at: new Date("2026-01-05 10:30:00"),
       },
       {
-        id: 3,
+        // id: auto-generated
         tourist_user_id: "TU001",
         rt_user_id: "OP001",
         sender_type: "tourist",
@@ -123,7 +123,7 @@ module.exports = {
         updated_at: new Date("2026-01-05 11:00:00"),
       },
       {
-        id: 4,
+        // id: auto-generated
         tourist_user_id: "TU002",
         rt_user_id: "OP001",
         sender_type: "tourist",
@@ -135,7 +135,7 @@ module.exports = {
         updated_at: new Date("2026-01-06 09:00:00"),
       },
       {
-        id: 5,
+        // id: auto-generated
         tourist_user_id: "TU002",
         rt_user_id: "OP001",
         sender_type: "operator",
@@ -147,7 +147,7 @@ module.exports = {
         updated_at: new Date("2026-01-06 09:15:00"),
       },
       {
-        id: 6,
+        // id: auto-generated
         tourist_user_id: "TU003",
         rt_user_id: "OP003",
         sender_type: "tourist",
@@ -159,7 +159,7 @@ module.exports = {
         updated_at: new Date("2026-01-04 14:00:00"),
       },
       {
-        id: 7,
+        // id: auto-generated
         tourist_user_id: "TU003",
         rt_user_id: "OP003",
         sender_type: "operator",

@@ -3,7 +3,8 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed form_responses
+    // Seed form_responses (receipts)
+    // Note: status column has been removed, using activity_booking_id/accommodation_booking_id instead
     await queryInterface.bulkInsert("form_responses", [
       {
         receipt_id: "RCP-2026-0001",
@@ -24,7 +25,7 @@ module.exports = {
         }),
         issuer: "John Operator",
         date: new Date("2026-01-15"),
-        activity_booking_id: 1, // Linked to activity booking ID 1
+        activity_booking_id: 1, // Links to activity_booking.id = 1
         accommodation_booking_id: null,
         created_at: new Date(),
         updated_at: new Date(),
@@ -49,7 +50,7 @@ module.exports = {
         issuer: "Jane Operator",
         date: new Date("2026-01-14"),
         activity_booking_id: null,
-        accommodation_booking_id: 1, // Linked to accommodation booking ID 1
+        accommodation_booking_id: 1, // Links to accommodation_booking.id = 1
         created_at: new Date(),
         updated_at: new Date(),
       },
@@ -72,7 +73,7 @@ module.exports = {
         }),
         issuer: "John Operator",
         date: new Date("2026-01-18"),
-        activity_booking_id: 2, // Linked to activity booking ID 2
+        activity_booking_id: 3, // Links to activity_booking.id = 3
         accommodation_booking_id: null,
         created_at: new Date(),
         updated_at: new Date(),
@@ -96,7 +97,7 @@ module.exports = {
         }),
         issuer: "Ahmad Operator",
         date: new Date("2026-01-12"),
-        activity_booking_id: 3, // Linked to activity booking ID 3
+        activity_booking_id: 4, // Links to activity_booking.id = 4
         accommodation_booking_id: null,
         created_at: new Date(),
         updated_at: new Date(),
@@ -108,8 +109,8 @@ module.exports = {
         pax: 4,
         activity_name: null,
         tourist_user_id: "TU003",
-        homest_name: "Beachfront Homestay",
-        location: "Kota Belud",
+        homest_name: "Island Beach Resort",
+        location: "Kota Kinabalu",
         activity_id: null,
         homest_id: 3,
         total_rm: "960.00",
@@ -121,7 +122,7 @@ module.exports = {
         issuer: "Ahmad Operator",
         date: new Date("2026-01-11"),
         activity_booking_id: null,
-        accommodation_booking_id: 3, // Linked to accommodation booking ID 3
+        accommodation_booking_id: 3, // Links to accommodation_booking.id = 3
         created_at: new Date(),
         updated_at: new Date(),
       },

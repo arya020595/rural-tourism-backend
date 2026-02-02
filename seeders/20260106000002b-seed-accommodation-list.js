@@ -3,10 +3,10 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Seed accommodation_list with sample accommodations
+    // Seed accommodation_list (accommodation_id uses AUTO_INCREMENT)
     await queryInterface.bulkInsert("accommodation_list", [
       {
-        accommodation_id: 1,
+        // accommodation_id: auto-generated
         rt_user_id: "OP001",
         name: "Kinabalu Mountain Lodge",
         description:
@@ -22,7 +22,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        accommodation_id: 2,
+        // accommodation_id: auto-generated
         rt_user_id: "OP002",
         name: "Riverside Homestay",
         description:
@@ -38,7 +38,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        accommodation_id: 3,
+        // accommodation_id: auto-generated
         rt_user_id: "OP003",
         name: "Island Beach Resort",
         description:
@@ -54,7 +54,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        accommodation_id: 4,
+        // accommodation_id: auto-generated
         rt_user_id: "OP002",
         name: "Firefly Village Retreat",
         description:
