@@ -40,7 +40,7 @@ exports.createAccommodationBooking = async (req, res) => {
       check_out,
       total_no_of_nights,
       total_price,
-      status: status || "pending",
+      status: (status || "pending").toLowerCase(),
       no_of_pax,
       contact_name,
       contact_email,
