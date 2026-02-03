@@ -115,7 +115,7 @@ exports.getBookedDatesByAccommodation = async (req, res) => {
       where: {
         accommodation_id,
         status: {
-          [Op.in]: ["booked", "paid", "pending"],
+          [Op.in]: ["booked", "paid"],
         },
       },
       attributes: ["check_in", "check_out"],
