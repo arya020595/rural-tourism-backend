@@ -1,4 +1,5 @@
 const AccommodationBooking = require("../models/bookingAccommodationModel");
+const { Op } = require("sequelize");
 
 // Create a new accommodation booking
 exports.createAccommodationBooking = async (req, res) => {
@@ -39,7 +40,7 @@ exports.createAccommodationBooking = async (req, res) => {
       check_out,
       total_no_of_nights,
       total_price,
-      status: status || "pending",
+      status: (status || "pending").toLowerCase(),
       no_of_pax,
       contact_name,
       contact_email,
@@ -98,11 +99,55 @@ exports.getAccommodationBookingsByUser = async (req, res) => {
     return res.json({ success: true, data: bookings });
   } catch (error) {
     console.error("Error fetching accommodation bookings for user:", error);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: "Server error while fetching bookings",
-      });
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching bookings",
+    });
+  }
+};
+
+// Get all booked dates for a specific accommodation
+exports.getBookedDatesByAccommodation = async (req, res) => {
+  try {
+    const { accommodation_id } = req.params;
+
+    const bookings = await AccommodationBooking.findAll({
+      where: {
+        accommodation_id,
+        status: {
+          [Op.in]: ["booked", "paid"],
+        },
+      },
+      attributes: ["check_in", "check_out"],
+      raw: true,
+    });
+
+    // Expand date ranges to individual dates
+    const bookedDates = new Set();
+
+    bookings.forEach((booking) => {
+      const checkIn = new Date(booking.check_in);
+      const checkOut = new Date(booking.check_out);
+
+      // Generate all dates between check_in and check_out (inclusive)
+      for (
+        let d = new Date(checkIn);
+        d <= checkOut;
+        d = new Date(d.getTime() + 86400000)
+      ) {
+        bookedDates.add(d.toISOString().split("T")[0]);
+      }
+    });
+
+    return res.json({
+      success: true,
+      data: Array.from(bookedDates),
+    });
+  } catch (error) {
+    console.error("Error fetching booked dates:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching booked dates",
+    });
   }
 };
