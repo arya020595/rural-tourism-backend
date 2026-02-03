@@ -292,6 +292,178 @@ exports.updateActivity = async (req, res) => {
 };
 
 /**
+ * Get all operator activities by activity master ID
+ * @route GET /api/operator-activities/activity/:activityId
+ * @param {string} activityId - Activity Master ID
+ */
+exports.getOperatorActivitiesByActivityId = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+    const User = require("../models/userModel");
+
+    const activities = await OperatorActivity.findAll({
+      where: { activity_id: activityId },
+      include: [
+        {
+          model: ActivityMasterData,
+          as: "activity_master",
+          attributes: ["id", "activity_name", "description"],
+        },
+        {
+          model: User,
+          as: "operator",
+          attributes: ["user_id", "business_name", "full_name", "company_logo"],
+        },
+      ],
+    });
+
+    // Format response for frontend
+    const result = activities.map((activity) => {
+      // Parse available_dates safely
+      let availableDates = [];
+      if (activity.available_dates) {
+        try {
+          availableDates = Array.isArray(activity.available_dates)
+            ? activity.available_dates
+            : JSON.parse(activity.available_dates);
+        } catch {
+          availableDates = [];
+        }
+      }
+
+      // Parse services_provided safely
+      let servicesList = [];
+      if (activity.services_provided) {
+        try {
+          servicesList = Array.isArray(activity.services_provided)
+            ? activity.services_provided
+            : JSON.parse(activity.services_provided);
+        } catch {
+          servicesList = [];
+        }
+      }
+
+      return {
+        ...activity.dataValues,
+        activity_name: activity.activity_master
+          ? activity.activity_master.activity_name
+          : "Unknown",
+        location: activity.address,
+        // Include business_name from operator association
+        business_name: activity.operator?.business_name || "No Business Name",
+        operator_name:
+          activity.operator?.business_name ||
+          activity.operator?.full_name ||
+          "Unknown Operator",
+        // Include parsed arrays for frontend
+        available_dates_list: availableDates,
+        activity_slots: availableDates,
+        services_provided_list: servicesList,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching operator activities by activity ID:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Get single operator activity by ID
+ * @route GET /api/operator-activities/:id
+ * @param {string} id - Operator Activity ID
+ * @query {boolean} includeUser - Whether to include user data
+ */
+exports.getOperatorActivityById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const includeUser = req.query.includeUser === "true";
+    const User = require("../models/userModel");
+
+    const includeOptions = [
+      {
+        model: ActivityMasterData,
+        as: "activity_master",
+        attributes: ["id", "activity_name", "description"],
+      },
+    ];
+
+    if (includeUser) {
+      includeOptions.push({
+        model: User,
+        as: "operator",
+        attributes: ["user_id", "business_name", "full_name", "company_logo"],
+      });
+    }
+
+    const activity = await OperatorActivity.findOne({
+      where: { id },
+      include: includeOptions,
+    });
+
+    if (!activity) {
+      return res.status(404).json({ error: "Operator activity not found." });
+    }
+
+    // Parse available_dates safely
+    let availableDates = [];
+    if (activity.available_dates) {
+      try {
+        availableDates = Array.isArray(activity.available_dates)
+          ? activity.available_dates
+          : JSON.parse(activity.available_dates);
+      } catch {
+        availableDates = [];
+      }
+    }
+
+    // Parse services_provided safely
+    let servicesList = [];
+    if (activity.services_provided) {
+      try {
+        servicesList = Array.isArray(activity.services_provided)
+          ? activity.services_provided
+          : JSON.parse(activity.services_provided);
+      } catch {
+        servicesList = [];
+      }
+    }
+
+    const result = {
+      ...activity.dataValues,
+      activity_name: activity.activity_master
+        ? activity.activity_master.activity_name
+        : "Unknown",
+      location: activity.address,
+      // Include business_name from operator association
+      business_name: activity.operator?.business_name || "No Business Name",
+      operator_name:
+        activity.operator?.business_name ||
+        activity.operator?.full_name ||
+        "Unknown Operator",
+      rt_user: activity.operator
+        ? {
+            user_id: activity.operator.user_id,
+            business_name: activity.operator.business_name,
+            full_name: activity.operator.full_name,
+            company_logo: activity.operator.company_logo,
+          }
+        : null,
+      // Include parsed arrays for frontend
+      available_dates_list: availableDates,
+      activity_slots: availableDates,
+      services_provided_list: servicesList,
+    };
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching operator activity by ID:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
  * Delete an activity
  * @route DELETE /api/activity/:id
  * @param {string} id - Activity ID
