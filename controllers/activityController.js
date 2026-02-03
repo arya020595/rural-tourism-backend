@@ -1,5 +1,6 @@
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
+const User = require("../models/userModel");
 const operatorActivityService = require("../services/operatorActivityService");
 const { v4: uuidv4 } = require("uuid");
 
@@ -299,7 +300,6 @@ exports.updateActivity = async (req, res) => {
 exports.getOperatorActivitiesByActivityId = async (req, res) => {
   try {
     const { activityId } = req.params;
-    const User = require("../models/userModel");
 
     const activities = await OperatorActivity.findAll({
       where: { activity_id: activityId },
@@ -319,29 +319,13 @@ exports.getOperatorActivitiesByActivityId = async (req, res) => {
 
     // Format response for frontend
     const result = activities.map((activity) => {
-      // Parse available_dates safely
-      let availableDates = [];
-      if (activity.available_dates) {
-        try {
-          availableDates = Array.isArray(activity.available_dates)
-            ? activity.available_dates
-            : JSON.parse(activity.available_dates);
-        } catch {
-          availableDates = [];
-        }
-      }
-
-      // Parse services_provided safely
-      let servicesList = [];
-      if (activity.services_provided) {
-        try {
-          servicesList = Array.isArray(activity.services_provided)
-            ? activity.services_provided
-            : JSON.parse(activity.services_provided);
-        } catch {
-          servicesList = [];
-        }
-      }
+      // Parse JSON fields using shared helper
+      const availableDates = operatorActivityService.parseJSONField(
+        activity.available_dates,
+      );
+      const servicesList = operatorActivityService.parseJSONField(
+        activity.services_provided,
+      );
 
       return {
         ...activity.dataValues,
@@ -379,7 +363,6 @@ exports.getOperatorActivityById = async (req, res) => {
   try {
     const { id } = req.params;
     const includeUser = req.query.includeUser === "true";
-    const User = require("../models/userModel");
 
     const includeOptions = [
       {
@@ -406,29 +389,13 @@ exports.getOperatorActivityById = async (req, res) => {
       return res.status(404).json({ error: "Operator activity not found." });
     }
 
-    // Parse available_dates safely
-    let availableDates = [];
-    if (activity.available_dates) {
-      try {
-        availableDates = Array.isArray(activity.available_dates)
-          ? activity.available_dates
-          : JSON.parse(activity.available_dates);
-      } catch {
-        availableDates = [];
-      }
-    }
-
-    // Parse services_provided safely
-    let servicesList = [];
-    if (activity.services_provided) {
-      try {
-        servicesList = Array.isArray(activity.services_provided)
-          ? activity.services_provided
-          : JSON.parse(activity.services_provided);
-      } catch {
-        servicesList = [];
-      }
-    }
+    // Parse JSON fields using shared helper
+    const availableDates = operatorActivityService.parseJSONField(
+      activity.available_dates,
+    );
+    const servicesList = operatorActivityService.parseJSONField(
+      activity.services_provided,
+    );
 
     const result = {
       ...activity.dataValues,
