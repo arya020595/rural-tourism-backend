@@ -38,7 +38,7 @@ router.patch("/mark-paid/:id", async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Booking not found" });
-    booking.status = "Paid";
+    booking.status = "paid";
     await booking.save();
     return res.json({ success: true, booking });
   } catch (err) {
