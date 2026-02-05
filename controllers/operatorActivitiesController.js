@@ -126,10 +126,13 @@ exports.updateOperatorActivity = async (req, res) => {
       "price_per_pax",
       "activity_id",
       "rt_user_id",
+      "available_dates", // ✅ ADD THIS
     ];
 
     updatableFields.forEach((field) => {
-      if (req.body[field] !== undefined) activity[field] = req.body[field];
+      if (req.body[field] !== undefined) {
+        activity[field] = req.body[field];
+      }
     });
 
     await activity.save();

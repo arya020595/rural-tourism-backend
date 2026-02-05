@@ -26,8 +26,9 @@ exports.getAccomById = async (req, res) => {
 };
 
 // 3. Create a new accommodation
+// 3. Create a new accommodation
 exports.createAccom = async (req, res) => {
-  const {
+  let {
     name,
     location,
     description,
@@ -45,6 +46,20 @@ exports.createAccom = async (req, res) => {
     return res.status(400).json({ error: "name and rt_user_id are required." });
   }
 
+  // --- Ensure available_dates is always an array ---
+  if (!available_dates) {
+    available_dates = [];
+  } else if (typeof available_dates === "string") {
+    try {
+      available_dates = JSON.parse(available_dates);
+      if (!Array.isArray(available_dates)) available_dates = [];
+    } catch {
+      available_dates = [];
+    }
+  } else if (!Array.isArray(available_dates)) {
+    available_dates = [];
+  }
+
   try {
     const newAccommodation = await Accom.create({
       name,
@@ -56,7 +71,7 @@ exports.createAccom = async (req, res) => {
       provided,
       rt_user_id,
       district,
-      show_availability,
+      show_availability: show_availability ? 1 : 0,
       available_dates,
     });
 
