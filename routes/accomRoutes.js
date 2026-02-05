@@ -259,28 +259,6 @@ router.put(
 //     if (price !== undefined) accommodation.price = price;
 //     if (image !== undefined) accommodation.image = image;
 //     if (address !== undefined) accommodation.address = address;
-//     if (provided !== undefined) accommodation.provided = provided;
-//     if (provided_accomodation !== undefined)
-//       accommodation.provided = provided_accomodation;
-//     if (rt_user_id !== undefined) accommodation.rt_user_id = rt_user_id;
-//     if (user_id !== undefined) accommodation.rt_user_id = user_id;
-//     if (district !== undefined) accommodation.district = district;
-//     if (show_availability !== undefined)
-//       accommodation.show_availability = show_availability;
-//     if (showAvailability !== undefined)
-//       accommodation.show_availability = showAvailability;
-
-//     await accommodation.save();
-
-//     res.json({
-//       ...accommodation.dataValues,
-//       user_id: accommodation.rt_user_id,
-//       homest_id: accommodation.accommodation_id,
-//       homest_name: accommodation.name,
-//     });
-//   }),
-// );
-
 /**
  * 6. Delete an accommodation by ID
  */
