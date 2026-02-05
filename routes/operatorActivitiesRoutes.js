@@ -1,31 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const operatorActivityController = require('../controllers/operatorActivitiesController');
+const activityController = require("../controllers/activityController");
 
 // Helper for async error handling
-const asyncHandler = (fn) => (req, res, next) => {
+const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
-};
 
-// 1️⃣ Get all operator activities
-router.get('/', asyncHandler(operatorActivityController.getAllOperatorActivities));
+/**
+ * Get all operator activities for a specific activity master ID
+ * @route GET /api/operator-activities/activity/:activityId
+ */
+router.get(
+  "/activity/:activityId",
+  asyncHandler(activityController.getOperatorActivitiesByActivityId),
+);
 
-// 2️⃣ Get operators by activity_id
-router.get('/activity/:activity_id', asyncHandler(operatorActivityController.getOperatorsByActivityId));
-
-// 3️⃣ Get operator activity by ID (for detail view)
-router.get('/:id', asyncHandler(operatorActivityController.getOperatorActivityById));
-
-// 4️⃣ Create a new operator activity
-router.post('/', asyncHandler(operatorActivityController.createOperatorActivity));
-
-// 5️⃣ Update an existing operator activity
-router.put('/:id', asyncHandler(operatorActivityController.updateOperatorActivity));
-
-// 6️⃣ Delete an operator activity
-router.delete('/:id', asyncHandler(operatorActivityController.deleteOperatorActivity));
-
-// 7️⃣ Get all operator activities by RT user ID
-router.get('/user/:rt_user_id', asyncHandler(operatorActivityController.getAllOperatorActivitiesByUser));
+/**
+ * Get single operator activity by ID
+ * @route GET /api/operator-activities/:id
+ * @query {boolean} includeUser - Whether to include user data
+ */
+router.get("/:id", asyncHandler(activityController.getOperatorActivityById));
 
 module.exports = router;

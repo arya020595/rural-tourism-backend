@@ -7,10 +7,10 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const hashedPassword = await bcrypt.hash("password123", 10);
 
-    // Seed rt_users (operators)
+    // Seed rt_users (operators) - user_id uses auto-increment (PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("rt_users", [
       {
-        user_id: "OP001",
+        // user_id: 1 (auto-generated)
         username: "operator1",
         user_email: "operator1@example.com",
         password: hashedPassword,
@@ -23,7 +23,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        user_id: "OP002",
+        // user_id: 2 (auto-generated)
         username: "operator2",
         user_email: "operator2@example.com",
         password: hashedPassword,
@@ -36,7 +36,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        user_id: "OP003",
+        // user_id: 3 (auto-generated)
         username: "operator3",
         user_email: "operator3@example.com",
         password: hashedPassword,
@@ -50,10 +50,10 @@ module.exports = {
       },
     ]);
 
-    // Seed tourist_users
+    // Seed tourist_users - tourist_user_id uses auto-increment (PostgreSQL SERIAL style)
     await queryInterface.bulkInsert("tourist_users", [
       {
-        tourist_user_id: "TU001",
+        // tourist_user_id: 1 (auto-generated)
         full_name: "Alice Tourist",
         contact_no: "+60123456789",
         username: "alice_tourist",
@@ -64,7 +64,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        tourist_user_id: "TU002",
+        // tourist_user_id: 2 (auto-generated)
         full_name: "Bob Traveler",
         contact_no: "+60198765432",
         username: "bob_traveler",
@@ -75,7 +75,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        tourist_user_id: "TU003",
+        // tourist_user_id: 3 (auto-generated)
         full_name: "Charlie Explorer",
         contact_no: "+60112233445",
         username: "charlie_explorer",
@@ -86,7 +86,7 @@ module.exports = {
         updated_at: new Date(),
       },
       {
-        tourist_user_id: "TU004",
+        // tourist_user_id: 4 (auto-generated)
         full_name: "Diana Adventurer",
         contact_no: "+60155667788",
         username: "diana_adventure",
