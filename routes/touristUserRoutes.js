@@ -1,9 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const touristUserController = require('../controllers/touristUserController');
+const touristUserController = require("../controllers/touristUserController");
 
-// POST /api/tourists/register
-router.post('/register', touristUserController.registerTourist);
-router.post('/login', touristUserController.login);
+router.post("/register", touristUserController.registerTourist);
+router.post("/login", touristUserController.login);
+router.put("/:id/suspend", touristUserController.suspendTouristUser);
 
 module.exports = router;
