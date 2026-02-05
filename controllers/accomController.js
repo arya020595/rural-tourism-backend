@@ -26,7 +26,6 @@ exports.getAccomById = async (req, res) => {
 };
 
 // 3. Create a new accommodation
-// 3. Create a new accommodation
 exports.createAccom = async (req, res) => {
   let {
     name,
