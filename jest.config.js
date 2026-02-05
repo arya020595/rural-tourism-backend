@@ -14,11 +14,12 @@ module.exports = {
   roots: ["<rootDir>/tests"],
   testPathIgnorePatterns: ["/node_modules/"],
   verbose: true,
-  forceExit: true,
   clearMocks: true,
   resetMocks: true,
   restoreMocks: true,
   testTimeout: 10000,
+  globalSetup: "<rootDir>/tests/setup.js",
+  globalTeardown: "<rootDir>/tests/teardown.js",
   // Display test names in tree structure by module
   displayName: {
     name: "RT-BACKEND",
