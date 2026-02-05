@@ -9,21 +9,23 @@ describe("Activity Master Data API - Integration Tests", () => {
       activity_name: "Test Beach Activity",
       description: "A fun beach activity for testing",
       address: "Test Beach, Sabah",
-      things_to_know: { requirements: "Must know swimming" },
+      things_to_know: JSON.stringify({ requirements: "Must know swimming" }),
       image: "assets/test-beach.jpg",
     },
     {
       activity_name: "Test Mountain Hiking",
       description: "Challenging mountain hike",
       address: "Test Mountain, Sabah",
-      things_to_know: { requirements: "Good physical condition" },
+      things_to_know: JSON.stringify({
+        requirements: "Good physical condition",
+      }),
       image: "assets/test-mountain.jpg",
     },
     {
       activity_name: "Test Cultural Tour",
       description: "Cultural heritage tour",
       address: "Test Village, Sabah",
-      things_to_know: { requirements: "All ages welcome" },
+      things_to_know: JSON.stringify({ requirements: "All ages welcome" }),
       image: "assets/test-culture.jpg",
     },
   ];
@@ -142,7 +144,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should filter by exact match (eq predicate)", async () => {
       const response = await request(app)
         .get(
-          "/api/activity-master-data?q[activity_name_eq]=Test Beach Activity"
+          "/api/activity-master-data?q[activity_name_eq]=Test Beach Activity",
         )
         .expect(200);
 
@@ -153,7 +155,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should filter by not equals (not_eq predicate)", async () => {
       const response = await request(app)
         .get(
-          "/api/activity-master-data?q[activity_name_not_eq]=Test Beach Activity"
+          "/api/activity-master-data?q[activity_name_not_eq]=Test Beach Activity",
         )
         .expect(200);
 
@@ -165,7 +167,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should combine multiple search predicates", async () => {
       const response = await request(app)
         .get(
-          "/api/activity-master-data?q[activity_name_cont]=Test&q[description_cont]=activity"
+          "/api/activity-master-data?q[activity_name_cont]=Test&q[description_cont]=activity",
         )
         .expect(200);
 
@@ -246,7 +248,7 @@ describe("Activity Master Data API - Integration Tests", () => {
         activity_name: "Test New Activity",
         description: "A brand new activity",
         address: "New Location, Sabah",
-        things_to_know: { requirements: "None" },
+        things_to_know: JSON.stringify({ requirements: "None" }),
         image: "assets/test-new.jpg",
       };
 
@@ -288,7 +290,9 @@ describe("Activity Master Data API - Integration Tests", () => {
         activity_name: "Updated Test Beach Activity",
         description: "Updated description",
         address: "Updated Beach, Sabah",
-        things_to_know: { requirements: "Updated requirements" },
+        things_to_know: JSON.stringify({
+          requirements: "Updated requirements",
+        }),
         image: "assets/updated-beach.jpg",
       };
 
@@ -348,7 +352,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should combine search, sort, and pagination", async () => {
       const response = await request(app)
         .get(
-          "/api/activity-master-data?q[activity_name_cont]=Test&sort=activity_name_asc&page=1&per_page=2"
+          "/api/activity-master-data?q[activity_name_cont]=Test&sort=activity_name_asc&page=1&per_page=2",
         )
         .expect(200);
 
