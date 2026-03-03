@@ -97,7 +97,24 @@ exports.getOperatorActivityById = async (req, res) => {
 // 3️⃣ Create a new operator activity
 exports.createOperatorActivity = async (req, res) => {
   try {
-    const newActivity = await OperatorActivity.create(req.body);
+    const { activity_id, rt_user_id, address } = req.body;
+
+    // Validate required fields before DB insert
+    if (!rt_user_id) {
+      return res
+        .status(400)
+        .json({ error: "rt_user_id is required. Please login again." });
+    }
+    if (!activity_id) {
+      return res.status(400).json({ error: "activity_id is required." });
+    }
+
+    const newActivity = await OperatorActivity.create({
+      ...req.body,
+      rt_user_id: parseInt(rt_user_id, 10),
+      activity_id: parseInt(activity_id, 10),
+      address: address || "",
+    });
     res.status(201).json(newActivity);
   } catch (err) {
     console.error("Error creating operator activity:", err);

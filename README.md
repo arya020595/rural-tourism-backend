@@ -8,6 +8,7 @@ A RESTful API backend built with **Node.js**, **Express.js**, and **Sequelize OR
 - [Environment Setup](#environment-setup)
 - [Database](#database)
 - [API Endpoints](#api-endpoints)
+- [Available Scripts](#available-scripts)
 - [Tech Stack](#tech-stack)
 - [Development Notes](#development-notes)
 
@@ -17,16 +18,16 @@ A RESTful API backend built with **Node.js**, **Express.js**, and **Sequelize OR
 
 ### Prerequisites
 
-- Node.js >= 14.x
+- Node.js >= 18.x
 - MySQL >= 5.7
-- npm >= 6.x
+- npm
 
 ### Installation
 
 ```bash
 # 1. Clone and install dependencies
 git clone <repository-url>
-cd RT-backend-main
+cd rural-tourism-backend
 npm install
 
 # 2. Setup environment variables
@@ -40,17 +41,22 @@ npx sequelize-cli db:migrate
 # 4. (Optional) Seed database with sample data
 npx sequelize-cli db:seed:all
 
-# 5. Start server
-npm start
+# 5. Start development server (auto-restarts on file changes)
+npm run dev
 ```
 
 Server will be running at: `http://localhost:3000/api`
+
+> **Tip**: `npm run dev` uses **nodemon** to automatically restart the server whenever you change files in `routes/`, `controllers/`, `models/`, `middleware/`, `config/`, or `utils/`. No manual restart needed during development.
 
 **Test the API:**
 
 ```bash
 curl http://localhost:3000/api/test
 # Expected: {"message": "Test route is working"}
+
+curl http://localhost:3000/api/health
+# Expected: {"success": true, "status": "healthy", ...}
 ```
 
 ---
@@ -102,7 +108,7 @@ CORS_ORIGIN_EXTERNAL=http://192.168.1.8:8100
 ### Tables Overview
 
 - **Users**: `rt_users`, `tourist_users`
-- **Activities**: `activity_master_table`, `activity`, `operator_activities`
+- **Activities**: `activity_master_table`, `operator_activities`
 - **Accommodations**: `accommodation_list`
 - **Bookings**: `activity_booking`, `accommodation_booking`
 - **Forms & Receipts**: `form_responses`
@@ -154,39 +160,68 @@ npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db
 
 **Base URL**: `/api`
 
-| Resource                  | Endpoints                                   |
-| ------------------------- | ------------------------------------------- |
-| **Users**                 | GET/POST/PUT/DELETE `/users`, POST `/login` |
-| **Tourists**              | GET/POST/PUT `/tourists`                    |
-| **Accommodations**        | GET/POST/PUT/DELETE `/accom`                |
-| **Activities**            | GET/POST/PUT/DELETE `/activity`             |
-| **Activity Master Data**  | GET/POST `/activity-master-data`            |
-| **Operator Activities**   | GET/POST `/operator-activities`             |
-| **Activity Bookings**     | GET/POST/PUT `/activity-booking`            |
-| **Accommodation Booking** | GET/POST/PUT `/accommodation-booking`       |
-| **Receipts**              | GET/POST `/receipts`                        |
-| **Forms**                 | GET/POST `/form`                            |
-| **Notifications**         | GET/POST `/notifications`                   |
-| **Uploads**               | Static files at `/uploads/*`                |
+| Resource                  | Endpoints                                         |
+| ------------------------- | ------------------------------------------------- |
+| **Test / Health**         | GET `/test`, GET `/health`, GET `/`               |
+| **Users**                 | GET/POST/PUT/DELETE `/users`, POST `/users/login` |
+| **Tourists**              | GET/POST/PUT `/tourists`, POST `/tourists/login`  |
+| **Accommodations**        | GET/POST/PUT/DELETE `/accom`                      |
+| **Activities**            | GET/POST/PUT/DELETE `/activity`                   |
+| **Activity Master Data**  | GET/POST `/activity-master-data`                  |
+| **Operator Activities**   | GET/POST `/operator-activities`                   |
+| **Activity Bookings**     | GET/POST/PUT `/activity-booking`                  |
+| **Accommodation Booking** | GET/POST/PUT `/accommodation-booking`             |
+| **Tourist Bookings**      | GET `/tourist-bookings`                           |
+| **Operator Bookings**     | GET `/operator-bookings`                          |
+| **Receipts**              | GET/POST `/receipts`                              |
+| **Forms**                 | GET/POST `/form`                                  |
+| **Notifications**         | GET/POST `/notifications`                         |
+| **Uploads**               | Static files at `/uploads/*`                      |
+
+---
+
+## 🔧 Available Scripts
+
+| Command                    | Description                                      |
+| -------------------------- | ------------------------------------------------ |
+| `npm run dev`              | Start dev server with **nodemon** (auto-restart) |
+| `npm start`                | Start production server                          |
+| `npm run server`           | Start server directly with `node server.js`      |
+| `npm run console`          | Open interactive REPL with models loaded         |
+| `npm run db:sync`          | Sync database schema from models                 |
+| `npm test`                 | Run all tests with coverage                      |
+| `npm run test:watch`       | Run tests in watch mode                          |
+| `npm run test:unit`        | Run unit tests only                              |
+| `npm run test:integration` | Run integration tests only                       |
+| `npm run lint`             | Lint the codebase                                |
 
 ---
 
 ## 🛠 Tech Stack
 
-- **Node.js** + **Express.js** - Server framework
-- **Sequelize** + **MySQL** - Database ORM
-- **JWT** + **bcrypt** - Authentication
-- **Multer** - File uploads
-- **PDFKit** - Receipt generation
+| Category       | Technology                  |
+| -------------- | --------------------------- |
+| Runtime        | Node.js >= 18               |
+| Framework      | Express.js 4.x              |
+| ORM            | Sequelize 6.x + MySQL2      |
+| Authentication | JWT (jsonwebtoken) + bcrypt |
+| File Uploads   | Multer                      |
+| PDF Generation | PDFKit + Puppeteer          |
+| Testing        | Jest + Supertest            |
+| Dev Server     | Nodemon (auto-restart)      |
+| Logging        | Morgan                      |
 
 ---
 
 ## 📝 Development Notes
 
-- **File uploads**: Stored in `/uploads/logos/`, max 10MB
-- **Error handling**: Using `http-errors` package
-- **Logging**: Morgan for HTTP requests, console for database
+- **Auto-restart**: Use `npm run dev` — nodemon watches `routes/`, `controllers/`, `models/`, `middleware/`, `config/`, `utils/`, and `server.js` for changes
+- **File uploads**: Stored in `/uploads/logos/`, max 10MB (configured via body-parser)
+- **CORS**: Opens to all origins in development; restricted in production via env vars
+- **Error handling**: Using `http-errors` package with stack traces in development mode
+- **Logging**: Morgan for HTTP requests, console for database operations
 - **Model relationships**: Defined in `models/associations.js`
+- **Request size limit**: 10MB for JSON and URL-encoded bodies
 
 ---
 
