@@ -179,7 +179,7 @@ exports.createAccommodation = async (req, res) => {
       name: finalName,
       rt_user_id: finalUserId,
       description: description || "",
-      price: price || null,
+      price: price != null ? price : 0,
       image: image || null,
       district: district || "",
       provided: finalProvided || "",
