@@ -20,12 +20,10 @@ function parseJSONField(field) {
  * Falls back to 0 if no dates or no price found.
  */
 function derivePriceFromDates(availableDates) {
-  const dates = Array.isArray(availableDates)
-    ? availableDates
-    : typeof availableDates === "string"
-      ? JSON.parse(availableDates)
-      : [];
-  return dates.length > 0 && dates[0].price != null ? dates[0].price : 0;
+  const dates = parseJSONField(availableDates);
+  return dates.length > 0 && dates[0] != null && dates[0].price != null
+    ? dates[0].price
+    : 0;
 }
 
 // Get all operator activities
@@ -155,7 +153,6 @@ exports.updateOperatorActivity = async (req, res) => {
       "address",
       "district",
       "image",
-      "operator_logo",
       "services_provided",
       "price_per_pax",
       "activity_id",
