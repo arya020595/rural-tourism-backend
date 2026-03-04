@@ -17,6 +17,7 @@ exports.createAccommodationBooking = async (req, res) => {
       contact_phone,
       nationality,
       status,
+      booking_type,
     } = req.body;
 
     // Basic validation
@@ -46,6 +47,7 @@ exports.createAccommodationBooking = async (req, res) => {
       contact_email,
       contact_phone,
       nationality,
+      booking_type: booking_type || "guest",
     });
 
     return res.status(201).json({
