@@ -25,7 +25,11 @@ exports.getAllActivities = async (req, res) => {
       ) {
         activityData.operator_activities.forEach((op) => {
           if (op.available_dates && Array.isArray(op.available_dates)) {
-            allAvailableDates = allAvailableDates.concat(op.available_dates);
+            op.available_dates.forEach((d) => {
+              // Handle both plain date strings and objects {date, time, price}
+              const dateStr = typeof d === "string" ? d : d.date;
+              if (dateStr) allAvailableDates.push(dateStr);
+            });
           }
         });
       }
@@ -74,7 +78,7 @@ exports.getActivityById = async (req, res) => {
             ([key, value]) => ({
               title: key.replace(/_/g, " "), // optional formatting
               description: value,
-            })
+            }),
           );
         } else {
           activity.things_to_know = [];
