@@ -44,7 +44,26 @@ function mockReqRes(overrides = {}) {
 // ─── Helper function tests ───
 
 describe("parseJSONField (via controller response mapping)", () => {
-  // parseJSONField is internal, but we test it through getOperatorsByActivityId
+  afterEach(() => jest.clearAllMocks());
+
+  test("should return [] for invalid JSON strings", async () => {
+    const mockData = [
+      {
+        dataValues: { id: 1 },
+        rt_user: { user_id: 10, business_name: "Biz" },
+        services_provided: "not-valid-json{{{",
+        available_dates: "also-invalid",
+      },
+    ];
+    OperatorActivity.findAll = jest.fn().mockResolvedValue(mockData);
+
+    const { req, res } = mockReqRes({ params: { activityId: "1" } });
+    await controller.getOperatorsByActivityId(req, res);
+
+    const result = res.json.mock.calls[0][0];
+    expect(result[0].services_provided_list).toEqual([]);
+    expect(result[0].available_dates_list).toEqual([]);
+  });
 });
 
 describe("derivePriceFromDates (via createOperatorActivity)", () => {
