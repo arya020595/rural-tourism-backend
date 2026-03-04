@@ -25,7 +25,8 @@ exports.getAllOperatorActivities = async (req, res) => {
 
 // 2️⃣ Get operator activity by activity_id and include business_name from rt_user
 exports.getOperatorsByActivityId = async (req, res) => {
-  const { activity_id } = req.params;
+  const { activityId } = req.params;
+  const activity_id = activityId;
 
   try {
     const operators = await OperatorActivity.findAll({
