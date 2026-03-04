@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "test": "jest --coverage --verbose",
     "test:watch": "jest --watch",
-    "test:unit": "jest tests/unit --coverage",
+    "test:unit": "jest --config jest.unit.config.js --coverage",
     "test:integration": "jest tests/integration --coverage",
     "test:middleware": "jest tests/unit/middleware",
     "test:routes": "jest tests/integration/routes"
