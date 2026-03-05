@@ -31,6 +31,15 @@ exports.createBooking = async (req, res) => {
       });
     }
 
+    // ✅ Validate booking_type
+    const ALLOWED_BOOKING_TYPES = ["guest", "manual"];
+    if (booking_type && !ALLOWED_BOOKING_TYPES.includes(booking_type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid booking_type. Allowed values: ${ALLOWED_BOOKING_TYPES.join(", ")}.`,
+      });
+    }
+
     // 🔍 STEP 1: Resolve operator_activity_id FIRST
     let opActivityId = operator_activity_id;
 
