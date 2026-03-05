@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log*
+coverage
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+*.md
+tests
+jest.config.js
+jest.unit.config.js
+.vscode
+.idea
+uploads/logos/*
+uploads/*.pdf
+!uploads/.gitkeep

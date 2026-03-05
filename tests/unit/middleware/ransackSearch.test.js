@@ -83,7 +83,7 @@ describe("Ransack Search Middleware - Unit Tests", () => {
 
       expect(where).toEqual({
         activity_name: {
-          [Op.startsWith]: "Mount%",
+          [Op.startsWith]: "Mount",
         },
       });
     });
@@ -99,7 +99,7 @@ describe("Ransack Search Middleware - Unit Tests", () => {
 
       expect(where).toEqual({
         activity_name: {
-          [Op.endsWith]: "%Tour",
+          [Op.endsWith]: "Tour",
         },
       });
     });

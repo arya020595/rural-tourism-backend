@@ -1,5 +1,7 @@
 module.exports = {
   testEnvironment: "node",
+  // Run test files sequentially - integration tests share a real database
+  maxWorkers: 1,
   coverageDirectory: "coverage",
   collectCoverageFrom: [
     "middleware/**/*.js",
