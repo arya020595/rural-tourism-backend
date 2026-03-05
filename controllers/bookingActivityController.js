@@ -20,6 +20,7 @@ exports.createBooking = async (req, res) => {
       nationality,
       total_price,
       status,
+      booking_type,
     } = req.body;
 
     // ✅ Basic validation
@@ -27,6 +28,15 @@ exports.createBooking = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Missing required fields",
+      });
+    }
+
+    // ✅ Validate booking_type
+    const ALLOWED_BOOKING_TYPES = ["guest", "manual"];
+    if (booking_type && !ALLOWED_BOOKING_TYPES.includes(booking_type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid booking_type. Allowed values: ${ALLOWED_BOOKING_TYPES.join(", ")}.`,
       });
     }
 
@@ -81,6 +91,7 @@ exports.createBooking = async (req, res) => {
       nationality,
       total_price,
       status: status || "pending",
+      booking_type: booking_type || "guest",
     });
 
     return res.status(201).json({
@@ -106,9 +117,7 @@ exports.getBookingById = async (req, res) => {
     const { id } = req.params;
 
     const booking = await ActivityBooking.findByPk(id, {
-      include: [
-        { model: OperatorActivities, as: "operatorActivity" },
-      ],
+      include: [{ model: OperatorActivities, as: "operatorActivity" }],
     });
 
     if (!booking) {
@@ -146,7 +155,10 @@ exports.getBookingsByUser = async (req, res) => {
           as: "operatorActivity",
         },
       ],
-      order: [["date", "ASC"], ["time", "ASC"]],
+      order: [
+        ["date", "ASC"],
+        ["time", "ASC"],
+      ],
     });
 
     return res.json({
@@ -236,4 +248,3 @@ exports.getBookedDatesByOperatorActivity = async (req, res) => {
     });
   }
 };
-
