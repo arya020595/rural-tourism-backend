@@ -26,20 +26,20 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            cd /opt/rural-tourism
+            cd ~/st_rural_tourism
 
             # Login to GHCR
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Pull latest backend image
-            docker compose -f docker-compose.production.yml pull backend
+            docker compose pull backend
 
             # Restart backend
-            docker compose -f docker-compose.production.yml up -d backend
+            docker compose up -d backend
 
             # Clean up old images
             docker image prune -f
 
             # Verify health
             sleep 10
-            docker compose -f docker-compose.production.yml ps
+            docker compose ps
