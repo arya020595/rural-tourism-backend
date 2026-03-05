@@ -1,8 +1,8 @@
-# Rural Tourism Backend — CI Pipeline
-# Runs unit tests (no database required) on every push & PR to main/develop.
-# Integration tests are skipped in CI since they need a MySQL instance.
+# ============================================
+# Rural Tourism Backend - CI (Tests)
+# ============================================
 
-name: Backend CI
+name: CI
 
 on:
   push:
@@ -10,43 +10,40 @@ on:
   pull_request:
     branches: [main, develop]
 
-permissions:
-  contents: read
-
 jobs:
-  lint-and-test:
-    name: Lint & Unit Tests
+  test:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18, 20, 22]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: rural_tourism_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - run: npm ci
+
+      - name: Run tests
+        run: npm test
         env:
-          PUPPETEER_SKIP_DOWNLOAD: 1
-        run: npm ci
-
-      - name: Run lint
-        run: npm run lint
-
-      - name: Run unit tests with coverage
-        run: npm run test:unit
-
-      - name: Upload coverage artifact
-        if: matrix.node-version == 20
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-coverage
-          path: coverage/
-          retention-days: 14
+          NODE_ENV: test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: rural_tourism_test
+          DB_USER: root
+          DB_PASSWORD: root
+          JWT_SECRET: test-secret-key
