@@ -16,6 +16,9 @@ RUN apt-get update -qq && \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+# Skip Puppeteer bundled Chromium download (system chromium used in runtime)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 # Copy package files and install all dependencies
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
@@ -50,20 +53,20 @@ RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs appuser
 
 # Copy node_modules from builder
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
 
 # Copy application code
-COPY . .
+COPY --chown=appuser:nodejs . .
 
 # Create uploads directory and set permissions
 RUN mkdir -p uploads/logos && \
-    chown -R appuser:nodejs /app
+    chown -R appuser:nodejs uploads
 
 USER appuser
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
+    CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
 CMD ["node", "server.js"]
