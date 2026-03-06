@@ -4,7 +4,6 @@ const sequelize = require("../config/db");
 require("../models/associations");
 
 // Import all models
-const Activity = require("../models/activityModel");
 const Accom = require("../models/accomModel");
 const User = require("../models/userModel");
 const Tourist = require("../models/touristModel");
@@ -20,16 +19,14 @@ async function startConsole() {
     await sequelize.authenticate();
     console.log("✅ Database connected!\n");
     console.log("📦 Available models:");
-    console.log("   Activity, Accom, User, Tourist, BookingActivity,");
+    console.log("   Accom, User, Tourist, BookingActivity,");
     console.log(
       "   BookingAccommodation, OperatorActivity, ActivityMasterData,"
     );
     console.log("   Notification, Form, sequelize\n");
     console.log("💡 Examples:");
-    console.log("   await Activity.findAll()");
-    console.log(
-      '   await Activity.findOne({ where: { activity_id: "ACT123" } })'
-    );
+    console.log("   await ActivityMasterData.findAll()");
+    console.log("   await ActivityMasterData.findOne({ where: { id: 1 } })");
     console.log("   await Accom.update({ price: 100 }, { where: { id: 1 } })");
     console.log("   await User.count()");
     console.log("\n");
@@ -44,7 +41,6 @@ async function startConsole() {
     // Attach models to REPL context
     replServer.context.sequelize = sequelize;
     replServer.context.bcrypt = bcrypt;
-    replServer.context.Activity = Activity;
     replServer.context.Accom = Accom;
     replServer.context.User = User;
     replServer.context.Tourist = Tourist;

@@ -1,85 +1,81 @@
-const { DataTypes, Sequelize } = require('sequelize');
-const sequelize = require('../config/db'); // Your Sequelize instance
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
+const Accom = require("./accomModel");
 
-const AccommodationBooking = sequelize.define('accommodation_booking', {
+const AccommodationBooking = sequelize.define(
+  "accommodation_booking",
+  {
     id: {
-        type: DataTypes.BIGINT,
-        autoIncrement: true,
-        primaryKey: true
+      type: DataTypes.BIGINT,
+      autoIncrement: true,
+      primaryKey: true,
     },
-
     tourist_user_id: {
-        type: DataTypes.STRING,  // CHAR or VARCHAR in MySQL
-        allowNull: false
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
-
     accommodation_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
-
-    operator_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+    check_in: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
     },
-
-    accommodation_name: {
-        type: DataTypes.STRING,
-        allowNull: true
+    check_out: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
     },
-
-    operator_name: {
-        type: DataTypes.STRING,
-        allowNull: true
+    total_no_of_nights: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
     },
-
-    location: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-
-    start_date: {
-        type: DataTypes.DATEONLY,
-        allowNull: true
-    },
-
-    end_date: {
-        type: DataTypes.DATEONLY,
-        allowNull: true
-    },
-
-    number_of_nights: {
-        type: DataTypes.INTEGER,
-        allowNull: true
-    },
-
-    no_of_rooms: {
-        type: DataTypes.INTEGER,
-        allowNull: true
-    },
-
     total_price: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
+      type: DataTypes.STRING,
+      allowNull: false,
     },
-
     status: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'pending'
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "pending",
     },
-
-    
     no_of_pax: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-    }
-
-}, {
-    tableName: 'accommodation_booking',
-    timestamps: true, // adds createdAt and updatedAt
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-});
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    contact_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    contact_email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    contact_phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    nationality: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    booking_type: {
+      type: DataTypes.ENUM("guest", "manual"),
+      allowNull: false,
+      defaultValue: "guest",
+    },
+  },
+  {
+    tableName: "accommodation_booking",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
+);
 
 module.exports = AccommodationBooking;
+
+AccommodationBooking.belongsTo(Accom, {
+  foreignKey: "accommodation_id",
+  targetKey: "accommodation_id",
+});

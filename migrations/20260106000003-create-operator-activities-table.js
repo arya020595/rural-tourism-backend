@@ -1,13 +1,20 @@
 "use strict";
 
-/** @type {import('sequelize-cli').Migration} */
+/**
+ * Migration: Create operator_activities table
+ *
+ * This table stores activities offered by tour operators with proper schema
+ * matching the Sequelize model definitions.
+ *
+ * @type {import('sequelize-cli').Migration}
+ */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create operator_activities table
     await queryInterface.createTable("operator_activities", {
       id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         primaryKey: true,
+        autoIncrement: true,
         allowNull: false,
       },
       activity_id: {
@@ -21,7 +28,7 @@ module.exports = {
         onDelete: "CASCADE",
       },
       rt_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "rt_users",
@@ -30,29 +37,33 @@ module.exports = {
         onUpdate: "CASCADE",
         onDelete: "CASCADE",
       },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: false,
+      },
       address: {
         type: Sequelize.STRING(255),
-        allowNull: false,
+        allowNull: true,
       },
       district: {
         type: Sequelize.STRING(255),
-        allowNull: true,
+        allowNull: false,
       },
       image: {
         type: Sequelize.TEXT("long"),
         allowNull: true,
       },
-      description: {
-        type: Sequelize.STRING(255),
-        allowNull: false,
+      operator_logo: {
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
       services_provided: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.JSON,
         allowNull: false,
       },
       available_dates: {
         type: Sequelize.JSON,
-        allowNull: false,
+        allowNull: true,
       },
       price_per_pax: {
         type: Sequelize.DECIMAL(10, 2),
@@ -67,10 +78,15 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
+
+    // Create indexes for better query performance
+    await queryInterface.addIndex("operator_activities", ["activity_id"]);
+    await queryInterface.addIndex("operator_activities", ["rt_user_id"]);
+    await queryInterface.addIndex("operator_activities", ["district"]);
   },
 
   async down(queryInterface, Sequelize) {

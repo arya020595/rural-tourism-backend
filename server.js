@@ -18,13 +18,15 @@ const userRoutes = require("./routes/userRoutes");
 const formRoutes = require("./routes/formRoutes");
 const receiptRoutes = require("./routes/receiptRoutes");
 const accomRoutes = require("./routes/accomRoutes");
-const actRoutes = require("./routes/activityRoutes");
+const activityRoutes = require("./routes/activityRoutes");
 const touristUserRoutes = require("./routes/touristUserRoutes");
 const activityMasterDataRoutes = require("./routes/activityMasterDataRoutes");
-const operatorActivityRoutes = require("./routes/operatorActivitiesRoutes");
 const bookingActivityRoutes = require("./routes/bookingActivityRoutes");
 const bookingAccommodationRoutes = require("./routes/bookingAccommodationRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const touristBookingsRoutes = require("./routes/touristBookingsRoute");
+const operatorBookingsRoutes = require("./routes/operatorBookingsRoute");
+const operatorActivitiesRoutes = require("./routes/operatorActivitiesRoutes");
 
 const app = express();
 
@@ -99,13 +101,15 @@ app.use("/api/users", userRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/accom", accomRoutes);
-app.use("/api/activity", actRoutes);
+app.use("/api/activity", activityRoutes);
 app.use("/api/tourists", touristUserRoutes);
 app.use("/api/activity-master-data", activityMasterDataRoutes);
-app.use("/api/operator-activities", operatorActivityRoutes);
 app.use("/api/activity-booking", bookingActivityRoutes);
 app.use("/api/accommodation-booking", bookingAccommodationRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/tourist-bookings", touristBookingsRoutes);
+app.use("/api/operator-bookings", operatorBookingsRoutes);
+app.use("/api/operator-activities", operatorActivitiesRoutes);
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {

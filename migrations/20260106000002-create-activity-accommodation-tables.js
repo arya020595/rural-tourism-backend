@@ -45,75 +45,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-        ),
-      },
-    });
-
-    // Create activity table
-    await queryInterface.createTable("activity", {
-      activity_id: {
-        type: Sequelize.INTEGER(11),
-        primaryKey: true,
-        autoIncrement: true,
-        allowNull: false,
-      },
-      activity_name: {
-        type: Sequelize.STRING(255),
-        allowNull: false,
-      },
-      description: {
-        type: Sequelize.TEXT,
-        allowNull: false,
-      },
-      price: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false,
-      },
-      image: {
-        type: Sequelize.TEXT("long"),
-        allowNull: true,
-        defaultValue: null,
-      },
-      district: {
-        type: Sequelize.STRING(100),
-        allowNull: true,
-        defaultValue: null,
-      },
-      things_to_know: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-        defaultValue: null,
-      },
-      user_id: {
-        type: Sequelize.STRING(255),
-        allowNull: true,
-      },
-      location: {
-        type: Sequelize.STRING(255),
-        allowNull: true,
-        defaultValue: null,
-      },
-      address: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-        defaultValue: null,
-      },
-      show_in_suggestion: {
-        type: Sequelize.TINYINT(1),
-        allowNull: true,
-        defaultValue: null,
-      },
-      created_at: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
-      },
-      updated_at: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
@@ -121,13 +53,13 @@ module.exports = {
     // Create accommodation_list table
     await queryInterface.createTable("accommodation_list", {
       accommodation_id: {
-        type: Sequelize.INTEGER(11),
+        type: Sequelize.INTEGER,
         primaryKey: true,
         autoIncrement: true,
         allowNull: false,
       },
       rt_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "rt_users",
@@ -187,7 +119,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });
@@ -195,7 +127,6 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable("accommodation_list");
-    await queryInterface.dropTable("activity");
     await queryInterface.dropTable("activity_master_table");
   },
 };

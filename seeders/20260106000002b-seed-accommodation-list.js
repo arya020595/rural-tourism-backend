@@ -1,0 +1,88 @@
+"use strict";
+
+/** @type {import('sequelize-cli').Migration} */
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    // Fetch operator user IDs dynamically
+    const operators = await queryInterface.sequelize.query(
+      `SELECT user_id, username FROM rt_users ORDER BY user_id LIMIT 3`,
+      { type: Sequelize.QueryTypes.SELECT },
+    );
+
+    const operator1 = operators[0].user_id;
+    const operator2 = operators[1].user_id;
+    const operator3 = operators[2].user_id;
+
+    // Seed accommodation_list (all IDs use auto-increment / PostgreSQL SERIAL style)
+    await queryInterface.bulkInsert("accommodation_list", [
+      {
+        // accommodation_id: auto-generated
+        rt_user_id: operator1,
+        name: "Kinabalu Mountain Lodge",
+        description:
+          "Cozy mountain lodge near Mount Kinabalu with stunning views",
+        price: 250.0,
+        image: "kinabalu-lodge.jpg",
+        district: "Ranau",
+        provided: "WiFi, Hot Water, Breakfast, Mountain View",
+        address: "Kundasang, Ranau, Sabah",
+        location: "Kundasang",
+        show_availability: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      {
+        // accommodation_id: auto-generated
+        rt_user_id: operator2,
+        name: "Riverside Homestay",
+        description:
+          "Traditional Sabahan homestay by the river with authentic experience",
+        price: 180.0,
+        image: "riverside-homestay.jpg",
+        district: "Beaufort",
+        provided: "Meals, River View, Local Guide, Traditional Activities",
+        address: "Kampung Sungai, Beaufort, Sabah",
+        location: "Beaufort",
+        show_availability: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      {
+        // accommodation_id: auto-generated
+        rt_user_id: operator3,
+        name: "Island Beach Resort",
+        description:
+          "Beachfront resort on Manukan Island with water sports facilities",
+        price: 320.0,
+        image: "island-resort.jpg",
+        district: "Kota Kinabalu",
+        provided: "Beach Access, Snorkeling Gear, Restaurant, Bar",
+        address: "Manukan Island, Tunku Abdul Rahman Park",
+        location: "Manukan Island",
+        show_availability: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+      {
+        // accommodation_id: auto-generated
+        rt_user_id: operator2,
+        name: "Firefly Village Retreat",
+        description:
+          "Peaceful retreat near Klias wetland, perfect for nature lovers",
+        price: 150.0,
+        image: "firefly-retreat.jpg",
+        district: "Beaufort",
+        provided: "Dinner, Firefly Tour, Breakfast, Nature Walk",
+        address: "Klias Village, Beaufort, Sabah",
+        location: "Klias",
+        show_availability: 1,
+        created_at: new Date(),
+        updated_at: new Date(),
+      },
+    ]);
+  },
+
+  async down(queryInterface, Sequelize) {
+    await queryInterface.bulkDelete("accommodation_list", null, {});
+  },
+};

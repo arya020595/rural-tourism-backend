@@ -1,16 +1,62 @@
 const express = require('express');
 const router = express.Router();
+const ActivityBooking = require('../models/bookingActivityModel');
 const activityBookingController = require('../controllers/bookingActivityController.js');
 
-const asyncHandler = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+const asyncHandler = fn => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
 
-// Create a new booking
+// ===============================
+// CREATE A NEW BOOKING
+// ===============================
 router.post('/', asyncHandler(activityBookingController.createBooking));
 
-// Get booking by ID
-router.get('/:id', asyncHandler(activityBookingController.getBookingById));
+// ===============================
+// BOOKED SLOTS (MOST SPECIFIC FIRST)
+// ===============================
+router.get(
+  '/booked-dates/operator/:operator_activity_id',
+  asyncHandler(activityBookingController.getBookedDatesByOperatorActivity)
+);
 
-// Get all bookings for a specific tourist
-router.get('/user/:tourist_user_id', asyncHandler(activityBookingController.getBookingsByUser));
+// (Optional – keep only if needed elsewhere)
+router.get(
+  '/booked-dates/:activity_id',
+  asyncHandler(activityBookingController.getBookedDatesByActivity)
+);
+
+// ===============================
+// USER BOOKINGS
+// ===============================
+router.get(
+  '/user/:tourist_user_id',
+  asyncHandler(activityBookingController.getBookingsByUser)
+);
+
+// ===============================
+// SINGLE BOOKING (LEAST SPECIFIC LAST)
+// ===============================
+router.get(
+  '/:id',
+  asyncHandler(activityBookingController.getBookingById)
+);
+
+// ===============================
+// MARK PAID
+// ===============================
+router.patch('/mark-paid/:id', async (req, res) => {
+  try {
+    const booking = await ActivityBooking.findByPk(req.params.id);
+    if (!booking)
+      return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    booking.status = 'Paid';
+    await booking.save();
+    return res.json({ success: true, booking });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
 
 module.exports = router;

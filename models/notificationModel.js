@@ -1,55 +1,56 @@
-const { DataTypes, Sequelize } = require('sequelize');
-const sequelize = require('../config/db'); // your Sequelize instance
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
 
 const Notification = sequelize.define(
-  'notification',
+  "notification",
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.BIGINT,
       autoIncrement: true,
       primaryKey: true,
     },
-
-    operator_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: 'References rt_user.user_id',
-    },
-
-    tourist_user_id: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      comment: 'References tourist_user.tourist_user_id',
-    },
-
-    booking_id: {
+    user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      comment: 'References the accommodation booking ID',
     },
-
+    user_type: {
+      type: DataTypes.ENUM("tourist", "operator"),
+      allowNull: true,
+    },
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     message: {
-      type: DataTypes.TEXT,
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    type: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    related_id: {
+      type: DataTypes.BIGINT,
       allowNull: false,
     },
-
-    read_status: {
+    is_read: {
       type: DataTypes.TINYINT,
-      allowNull: false,
+      allowNull: true,
       defaultValue: 0,
-      field: 'read_status',
       get() {
-        return this.getDataValue('read_status') === 1;
+        return this.getDataValue("is_read") === 1;
       },
       set(value) {
-        this.setDataValue('read_status', value ? 1 : 0);
+        this.setDataValue("is_read", value ? 1 : 0);
       },
     },
   },
   {
-    tableName: 'notifications',
-    timestamps: true, // createdAt and updatedAt
-  }
+    tableName: "notifications",
+    timestamps: true,
+    createdAt: "created_at",
+    updatedAt: "updated_at",
+  },
 );
 
 module.exports = Notification;

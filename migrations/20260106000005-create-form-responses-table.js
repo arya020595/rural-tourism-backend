@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create form_responses table
+    // Create form_responses table - using INTEGER for foreign keys (PostgreSQL SERIAL style)
     await queryInterface.createTable("form_responses", {
       receipt_id: {
         type: Sequelize.STRING(255),
@@ -11,7 +11,7 @@ module.exports = {
         allowNull: false,
       },
       operator_user_id: {
-        type: Sequelize.STRING(255),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "rt_users",
@@ -25,7 +25,7 @@ module.exports = {
         allowNull: false,
       },
       pax: {
-        type: Sequelize.INTEGER(11),
+        type: Sequelize.INTEGER,
         allowNull: false,
       },
       activity_name: {
@@ -34,7 +34,7 @@ module.exports = {
         defaultValue: null,
       },
       tourist_user_id: {
-        type: Sequelize.STRING(12),
+        type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: "tourist_users",
@@ -65,7 +65,7 @@ module.exports = {
         onDelete: "SET NULL",
       },
       homest_id: {
-        type: Sequelize.INTEGER(11),
+        type: Sequelize.INTEGER,
         allowNull: true,
         defaultValue: null,
         references: {
@@ -95,15 +95,32 @@ module.exports = {
         allowNull: true,
         defaultValue: null,
       },
-      status: {
-        type: Sequelize.STRING(255),
-        allowNull: true,
-        defaultValue: null,
-      },
       date: {
         type: Sequelize.DATE,
         allowNull: true,
         defaultValue: null,
+      },
+      activity_booking_id: {
+        type: Sequelize.BIGINT,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+          model: "activity_booking",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
+      },
+      accommodation_booking_id: {
+        type: Sequelize.BIGINT,
+        allowNull: true,
+        defaultValue: null,
+        references: {
+          model: "accommodation_booking",
+          key: "id",
+        },
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
       },
       created_at: {
         type: Sequelize.DATE,
@@ -114,7 +131,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         ),
       },
     });

@@ -1,132 +1,453 @@
-const Activity = require('../models/activityModel');  // Import the Activity model
+const OperatorActivity = require("../models/operatorActivitiesModel");
+const ActivityMasterData = require("../models/activityMasterDataModel");
+const User = require("../models/userModel");
+const operatorActivityService = require("../services/operatorActivityService");
+const { v4: uuidv4 } = require("uuid");
 
-// 1. Get all activities (Read all)
+/**
+ * Activity Controller
+ * Handles HTTP requests for activity-related endpoints
+ * Delegates business logic to operatorActivityService
+ */
+
+/**
+ * Get all activities with booking-aware filtering
+ * @route GET /api/activity
+ * @query {string} date - Single date filter (YYYY-MM-DD)
+ * @query {string} startDate - Start date for range filter
+ * @query {string} endDate - End date for range filter
+ */
 exports.getAllActivities = async (req, res) => {
-    try {
-        const activities = await Activity.findAll();
-        res.json(activities);
-    } catch (err) {
-        console.error('Error fetching activities:', err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// 2. Get activity by activity_id (Read one by primary key)
-// exports.getActivityById = async (req, res) => {
-//     const { activity_id } = req.params;
-//     try {
-//         const activity = await Activity.findOne({ where: { activity_id } });
-
-//         if (!activity) {
-//             return res.status(404).json({ error: 'Activity not found.' });
-//         }
-
-//         res.json(activity);
-//     } catch (err) {
-//         console.error('Error fetching activity by ID:', err);
-//         res.status(500).json({ error: err.message });
-//     }
-// };
-
-exports.getActivityById = async (req, res) => {
-  const { activity_id } = req.params;
   try {
-    const activity = await Activity.findOne({ where: { activity_id } });
+    const { startDate, endDate, date } = req.query;
 
-    if (!activity) {
-      return res.status(404).json({ error: 'Activity not found.' });
-    }
-    // Parse things_to_know JSON string into an object/array if it exists
-    if (activity.things_to_know) {
-      try {
-        activity.things_to_know = JSON.parse(activity.things_to_know);
-      } catch (parseError) {
-        console.error('Error parsing things_to_know JSON:', parseError);
-        // You can decide what to do here — maybe set it to an empty array?
-        activity.things_to_know = [];
-      }
-    }
-    res.json(activity);
+    // Fetch activities with master data
+    const activities = await OperatorActivity.findAll({
+      include: [
+        {
+          model: ActivityMasterData,
+          as: "activity_master",
+          attributes: ["id", "activity_name", "description"],
+        },
+      ],
+    });
+
+    // Apply booking-aware filtering via service
+    const filteredActivities =
+      await operatorActivityService.applyBookingAwareFiltering(activities, {
+        date,
+        startDate,
+        endDate,
+      });
+
+    // Format response for frontend
+    // Note: Service now preserves associations, no need for lookup
+    const result = filteredActivities.map((activity) => {
+      return {
+        ...activity,
+        activity_name: activity.activity_master
+          ? activity.activity_master.activity_name
+          : "Unknown",
+        location: activity.address,
+      };
+    });
+
+    res.json(result);
   } catch (err) {
-    console.error('Error fetching activity by ID:', err);
+    console.error("Error fetching activities:", err);
+    // Return 400 for invalid date filters
+    if (err.message && err.message.includes("Invalid")) {
+      return res.status(400).json({ error: err.message });
+    }
     res.status(500).json({ error: err.message });
   }
 };
 
-// 3. Create a new activity (Create)
-exports.createActivity = async (req, res) => {
-   
-    // console.log('req body activity:' , req.body);
-
-    try {
-        const newActivity = await Activity.create(req.body);
-        res.status(201).json(newActivity);  // 201 indicates resource creation
-    } catch (err) {
-        console.error('Error creating activity:', err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// 4. Update an existing activity (Update)
-exports.updateActivity = async (req, res) => {
-    const { activity_id } = req.params;
-    const { activity_name, location, user_id } = req.body;
-
-    try {
-        const activity = await Activity.findOne({ where: { activity_id } });
-
-        if (!activity) {
-            return res.status(404).json({ error: 'Activity not found.' });
-        }
-
-        // Update fields only if provided
-        activity.activity_name = activity_name || activity.activity_name;
-        activity.location = location || activity.location;
-        activity.user_id = user_id || activity.user_id;
-
-        await activity.save();  // Save the updated activity
-
-        res.json(activity);
-    } catch (err) {
-        console.error('Error updating activity:', err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// 5. Delete an activity (Delete)
-exports.deleteActivity = async (req, res) => {
-    const { activity_id } = req.params;
-
-    try {
-        const activity = await Activity.findOne({ where: { activity_id } });
-
-        if (!activity) {
-            return res.status(404).json({ error: 'Activity not found.' });
-        }
-
-        await activity.destroy();  // Delete the activity from the database
-
-        res.json({ message: 'Activity deleted successfully.' });
-    } catch (err) {
-        console.error('Error deleting activity:', err);
-        res.status(500).json({ error: err.message });
-    }
-};
-
-
-// 6. Get all activity by user_id 
-exports.getAllActivityByUser = async (req, res) => {
+/**
+ * Get activities for a specific user
+ * @route GET /api/activity/user/:user_id
+ * @param {string} user_id - User ID
+ */
+exports.getActivitiesByUser = async (req, res) => {
+  try {
     const { user_id } = req.params;
-    try {
-        const activity = await Activity.findAll({ where: { user_id } });
 
-        if (!activity) {
-            return res.status(404).json({ error: 'Activity not found.' });
-        }
+    const activities = await OperatorActivity.findAll({
+      where: { rt_user_id: user_id },
+      include: [
+        {
+          model: ActivityMasterData,
+          as: "activity_master",
+          attributes: ["id", "activity_name", "description"],
+        },
+      ],
+    });
 
-        res.json(activity);
-    } catch (err) {
-        console.error('Error fetching activity by ID:', err);
-        res.status(500).json({ error: err.message });
+    if (activities.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No activities found for this user." });
     }
+
+    // Format response
+    const result = activities.map((activity) => ({
+      ...activity.dataValues,
+      activity_id: activity.id,
+      activity_name: activity.activity_master
+        ? activity.activity_master.activity_name
+        : "Unknown",
+      location: activity.address,
+      user_id: activity.rt_user_id,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching activities by user:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Get single activity by ID
+ * @route GET /api/activity/:id
+ * @param {string} id - Activity ID
+ * @query {string} date - Optional single date filter (YYYY-MM-DD)
+ * @query {string} startDate - Optional start of date range (YYYY-MM-DD)
+ * @query {string} endDate - Optional end of date range (YYYY-MM-DD)
+ */
+exports.getActivityById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const activity = await OperatorActivity.findOne({
+      where: { id },
+      include: [
+        {
+          model: ActivityMasterData,
+          as: "activity_master",
+          attributes: ["id", "activity_name", "description"],
+        },
+      ],
+    });
+
+    if (!activity) {
+      return res.status(404).json({ error: "Activity not found." });
+    }
+
+    // Apply booking-aware filtering (including date filters if provided)
+    const filters = {
+      date: req.query.date,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+    };
+
+    const [filtered] = await operatorActivityService.applyBookingAwareFiltering(
+      [activity],
+      filters,
+    );
+
+    // If filtered out (no available dates match), return 404
+    if (!filtered) {
+      return res.status(404).json({
+        error: "Activity not available for the specified dates",
+      });
+    }
+
+    res.json({
+      ...filtered,
+      activity_name: activity.activity_master
+        ? activity.activity_master.activity_name
+        : "Unknown",
+      location: filtered.address,
+      user_id: filtered.rt_user_id,
+    });
+  } catch (err) {
+    console.error("Error fetching activity by ID:", err);
+    // Return 400 for invalid date filters
+    if (err.message && err.message.includes("Invalid")) {
+      return res.status(400).json({ error: err.message });
+    }
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Create a new activity
+ * @route POST /api/activity
+ * @body {object} activity - Activity data
+ */
+exports.createActivity = async (req, res) => {
+  try {
+    const {
+      activity_id,
+      activity_name,
+      description,
+      price,
+      image,
+      district,
+      things_to_know,
+      user_id,
+      address,
+      location,
+      services_provided,
+      available_dates,
+    } = req.body;
+
+    // Generate unique ID if not provided
+    const id = activity_id || `act_${uuidv4().substring(0, 8)}`;
+
+    // Find activity master ID
+    let masterActivityId = 1;
+    if (activity_name) {
+      const masterActivity = await ActivityMasterData.findOne({
+        where: { activity_name },
+      });
+      if (masterActivity) {
+        masterActivityId = masterActivity.id;
+      }
+    }
+
+    // Create activity
+    const newActivity = await OperatorActivity.create({
+      id,
+      activity_id: masterActivityId,
+      rt_user_id: user_id,
+      description: description || "",
+      address: address || location || "",
+      district: district || "",
+      image: image || null,
+      services_provided: services_provided || things_to_know || "[]",
+      available_dates: available_dates || [],
+      price_per_pax: price || null,
+    });
+
+    // Format response
+    res.status(201).json({
+      ...newActivity.dataValues,
+      activity_id: newActivity.id,
+      activity_name: activity_name || "Activity",
+      user_id: newActivity.rt_user_id,
+      location: newActivity.address,
+    });
+  } catch (err) {
+    console.error("Error creating activity:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Update an activity
+ * @route PUT /api/activity/:id
+ * @param {string} id - Activity ID
+ * @body {object} updates - Activity updates
+ */
+exports.updateActivity = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      activity_name,
+      description,
+      price,
+      image,
+      district,
+      things_to_know,
+      user_id,
+      address,
+      location,
+      services_provided,
+      available_dates,
+    } = req.body;
+
+    const activity = await OperatorActivity.findOne({ where: { id } });
+    if (!activity) {
+      return res.status(404).json({ error: "Activity not found." });
+    }
+
+    // Update fields
+    if (description !== undefined) activity.description = description;
+    if (address !== undefined) activity.address = address;
+    if (location !== undefined) activity.address = location;
+    if (district !== undefined) activity.district = district;
+    if (image !== undefined) activity.image = image;
+    if (services_provided !== undefined)
+      activity.services_provided = services_provided;
+    if (things_to_know !== undefined)
+      activity.services_provided = things_to_know;
+    if (available_dates !== undefined)
+      activity.available_dates = available_dates;
+    if (price !== undefined) activity.price_per_pax = price;
+    if (user_id !== undefined) activity.rt_user_id = user_id;
+
+    await activity.save();
+
+    res.json({
+      ...activity.dataValues,
+      activity_name: activity_name || "Activity",
+      user_id: activity.rt_user_id,
+      location: activity.address,
+    });
+  } catch (err) {
+    console.error("Error updating activity:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Get all operator activities by activity master ID
+ * @route GET /api/operator-activities/activity/:activityId
+ * @param {string} activityId - Activity Master ID
+ */
+exports.getOperatorActivitiesByActivityId = async (req, res) => {
+  try {
+    const { activityId } = req.params;
+
+    const activities = await OperatorActivity.findAll({
+      where: { activity_id: activityId },
+      include: [
+        {
+          model: ActivityMasterData,
+          as: "activity_master",
+          attributes: ["id", "activity_name", "description"],
+        },
+        {
+          model: User,
+          as: "operator",
+          attributes: ["user_id", "business_name", "full_name", "company_logo"],
+        },
+      ],
+    });
+
+    // Format response for frontend
+    const result = activities.map((activity) => {
+      // Parse JSON fields using shared helper
+      const availableDates = operatorActivityService.parseJSONField(
+        activity.available_dates,
+      );
+      const servicesList = operatorActivityService.parseJSONField(
+        activity.services_provided,
+      );
+
+      return {
+        ...activity.dataValues,
+        activity_name: activity.activity_master
+          ? activity.activity_master.activity_name
+          : "Unknown",
+        location: activity.address,
+        // Include business_name from operator association
+        business_name: activity.operator?.business_name || "No Business Name",
+        operator_name:
+          activity.operator?.business_name ||
+          activity.operator?.full_name ||
+          "Unknown Operator",
+        // Include parsed arrays for frontend
+        available_dates_list: availableDates,
+        activity_slots: availableDates,
+        services_provided_list: servicesList,
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching operator activities by activity ID:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Get single operator activity by ID
+ * @route GET /api/operator-activities/:id
+ * @param {string} id - Operator Activity ID
+ * @query {boolean} includeUser - Whether to include user data
+ */
+exports.getOperatorActivityById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const includeUser = req.query.includeUser === "true";
+
+    const includeOptions = [
+      {
+        model: ActivityMasterData,
+        as: "activity_master",
+        attributes: ["id", "activity_name", "description"],
+      },
+    ];
+
+    if (includeUser) {
+      includeOptions.push({
+        model: User,
+        as: "operator",
+        attributes: ["user_id", "business_name", "full_name", "company_logo"],
+      });
+    }
+
+    const activity = await OperatorActivity.findOne({
+      where: { id },
+      include: includeOptions,
+    });
+
+    if (!activity) {
+      return res.status(404).json({ error: "Operator activity not found." });
+    }
+
+    // Parse JSON fields using shared helper
+    const availableDates = operatorActivityService.parseJSONField(
+      activity.available_dates,
+    );
+    const servicesList = operatorActivityService.parseJSONField(
+      activity.services_provided,
+    );
+
+    const result = {
+      ...activity.dataValues,
+      activity_name: activity.activity_master
+        ? activity.activity_master.activity_name
+        : "Unknown",
+      location: activity.address,
+      // Include business_name from operator association
+      business_name: activity.operator?.business_name || "No Business Name",
+      operator_name:
+        activity.operator?.business_name ||
+        activity.operator?.full_name ||
+        "Unknown Operator",
+      rt_user: activity.operator
+        ? {
+            user_id: activity.operator.user_id,
+            business_name: activity.operator.business_name,
+            full_name: activity.operator.full_name,
+            company_logo: activity.operator.company_logo,
+          }
+        : null,
+      // Include parsed arrays for frontend
+      available_dates_list: availableDates,
+      activity_slots: availableDates,
+      services_provided_list: servicesList,
+    };
+
+    res.json(result);
+  } catch (err) {
+    console.error("Error fetching operator activity by ID:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Delete an activity
+ * @route DELETE /api/activity/:id
+ * @param {string} id - Activity ID
+ */
+exports.deleteActivity = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const activity = await OperatorActivity.findOne({ where: { id } });
+    if (!activity) {
+      return res.status(404).json({ error: "Activity not found." });
+    }
+
+    await activity.destroy();
+    res.json({ message: "Activity deleted successfully." });
+  } catch (err) {
+    console.error("Error deleting activity:", err);
+    res.status(500).json({ error: err.message });
+  }
 };
