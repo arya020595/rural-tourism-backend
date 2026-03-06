@@ -48,7 +48,7 @@ describe("getAllActivities - date merging", () => {
         toJSON: () => ({
           id: 1,
           activity_name: "Kayaking",
-          operator_activities: [
+          operators: [
             { available_dates: ["2026-03-10", "2026-03-11"] },
           ],
         }),
@@ -60,8 +60,8 @@ describe("getAllActivities - date merging", () => {
 
     const result = res.json.mock.calls[0][0];
     expect(result[0].available_dates).toEqual(["2026-03-10", "2026-03-11"]);
-    // operator_activities should be stripped from response
-    expect(result[0].operator_activities).toBeUndefined();
+    // operators should be stripped from response
+    expect(result[0].operators).toBeUndefined();
   });
 
   test("should extract date strings from object arrays {date, time, price}", async () => {
@@ -70,7 +70,7 @@ describe("getAllActivities - date merging", () => {
         toJSON: () => ({
           id: 1,
           activity_name: "Hiking",
-          operator_activities: [
+          operators: [
             {
               available_dates: [
                 { date: "2026-04-01", time: "Full Day", price: 100 },
@@ -95,7 +95,7 @@ describe("getAllActivities - date merging", () => {
         toJSON: () => ({
           id: 1,
           activity_name: "Rafting",
-          operator_activities: [
+          operators: [
             {
               available_dates: ["2026-05-01", "2026-05-03"],
             },
@@ -128,7 +128,7 @@ describe("getAllActivities - date merging", () => {
         toJSON: () => ({
           id: 1,
           activity_name: "Empty",
-          operator_activities: [],
+          operators: [],
         }),
       },
     ]);
@@ -146,7 +146,7 @@ describe("getAllActivities - date merging", () => {
         toJSON: () => ({
           id: 1,
           activity_name: "Null dates",
-          operator_activities: [{ available_dates: null }],
+          operators: [{ available_dates: null }],
         }),
       },
     ]);
@@ -164,7 +164,7 @@ describe("getAllActivities - date merging", () => {
         toJSON: () => ({
           id: 1,
           activity_name: "Bad data",
-          operator_activities: [
+          operators: [
             {
               available_dates: [
                 { date: "2026-06-01", time: "Full Day", price: 50 },

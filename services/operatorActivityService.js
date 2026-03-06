@@ -272,7 +272,9 @@ class OperatorActivityService {
           const normalizedStart = this.normalizeDate(filterStart);
           const normalizedEnd = this.normalizeDate(filterEnd);
 
-          return slotDate >= normalizedStart && slotDate <= normalizedEnd;
+          const afterStart = !normalizedStart || slotDate >= normalizedStart;
+          const beforeEnd = !normalizedEnd || slotDate <= normalizedEnd;
+          return afterStart && beforeEnd;
         });
 
         // If no dates remain after filtering, exclude this activity
