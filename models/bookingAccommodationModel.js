@@ -78,4 +78,5 @@ module.exports = AccommodationBooking;
 AccommodationBooking.belongsTo(Accom, {
   foreignKey: "accommodation_id",
   targetKey: "accommodation_id",
+  as: "accommodation",
 });

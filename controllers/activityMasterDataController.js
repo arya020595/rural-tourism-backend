@@ -8,7 +8,7 @@ exports.getAllActivities = async (req, res) => {
       include: [
         {
           model: OperatorActivity,
-          as: "operator_activities",
+          as: "operators",
           attributes: ["available_dates"],
         },
       ],
@@ -20,10 +20,10 @@ exports.getAllActivities = async (req, res) => {
       let allAvailableDates = [];
 
       if (
-        activityData.operator_activities &&
-        activityData.operator_activities.length > 0
+        activityData.operators &&
+        activityData.operators.length > 0
       ) {
-        activityData.operator_activities.forEach((op) => {
+        activityData.operators.forEach((op) => {
           if (op.available_dates && Array.isArray(op.available_dates)) {
             op.available_dates.forEach((d) => {
               // Handle both plain date strings and objects {date, time, price}
@@ -37,8 +37,8 @@ exports.getAllActivities = async (req, res) => {
       // Remove duplicates and sort dates
       allAvailableDates = [...new Set(allAvailableDates)].sort();
 
-      // Exclude operator_activities from the response to avoid exposing internal structure
-      const { operator_activities, ...activityWithoutOperators } = activityData;
+      // Exclude operators from the response to avoid exposing internal structure
+      const { operators, ...activityWithoutOperators } = activityData;
 
       return {
         ...activityWithoutOperators,

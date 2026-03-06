@@ -122,9 +122,9 @@ class AccommodationService {
       const normalizedDate = this.normalizeDate(dateStr);
       if (!normalizedDate) return false;
 
-      return (
-        normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd
-      );
+      const afterStart = !normalizedStart || normalizedDate >= normalizedStart;
+      const beforeEnd = !normalizedEnd || normalizedDate <= normalizedEnd;
+      return afterStart && beforeEnd;
     });
   }
 
@@ -197,7 +197,9 @@ class AccommodationService {
           const normalizedStart = this.normalizeDate(filterStart);
           const normalizedEnd = this.normalizeDate(filterEnd);
 
-          return normalized >= normalizedStart && normalized <= normalizedEnd;
+          const afterStart = !normalizedStart || normalized >= normalizedStart;
+          const beforeEnd = !normalizedEnd || normalized <= normalizedEnd;
+          return afterStart && beforeEnd;
         });
 
         // If no dates remain after filtering, exclude this accommodation
