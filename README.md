@@ -116,35 +116,106 @@ CORS_ORIGIN_EXTERNAL=http://192.168.1.8:8100
 
 ### Migration Commands
 
+#### Local Development
+
 ```bash
 # Create database
 npx sequelize-cli db:create
 
 # Run all migrations
+npm run db:migrate
+# or
 npx sequelize-cli db:migrate
 
-# Rollback last migration
-npx sequelize-cli db:migrate:undo
+# Check migration status
+npm run db:migrate:status
 
-# Fresh setup (drop, create, and migrate)
-npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db:migrate
+# Rollback last migration
+npm run db:migrate:undo
+
+# Rollback all migrations
+npm run db:migrate:undo:all
 
 # Create new migration
 npx sequelize-cli migration:generate --name your-migration-name
+
+# Fresh setup (drop, create, and migrate)
+npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db:migrate
 ```
+
+#### Production Server (Docker)
+
+```bash
+# SSH to server
+ssh vmadm001@46.202.163.155
+cd ~/st_rural_tourism
+
+# Run migrations (automatically runs during CD deployment)
+docker compose run --rm backend npm run db:migrate
+
+# Check migration status
+docker compose exec backend npm run db:migrate:status
+
+# Emergency rollback
+docker compose run --rm backend npm run db:migrate:undo
+```
+
+> **Note**: Migrations run automatically during production deployment via CD pipeline
 
 ### Seeder Commands
 
+#### Local Development
+
 ```bash
 # Run all seeders (populate database with sample data)
+npm run db:seed
+# or
 npx sequelize-cli db:seed:all
 
+# Run specific seeder
+npx sequelize-cli db:seed --seed 20260106000001-seed-user-tables.js
+
 # Undo all seeders (remove sample data)
+npm run db:seed:undo
+# or
 npx sequelize-cli db:seed:undo:all
+
+# Check seeder status
+npx sequelize-cli db:seed:status
 
 # Fresh setup with sample data
 npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db:migrate && npx sequelize-cli db:seed:all
 ```
+
+#### Production Server (Docker)
+
+```bash
+# 1. SSH into server
+ssh vmadm001@46.202.163.155
+
+# 2. Navigate to project
+cd ~/st_rural_tourism
+
+# 3. Check migration status first
+docker compose exec backend npx sequelize-cli db:migrate:status
+
+# 4. Run all seeders
+docker compose run --rm backend npm run db:seed
+# or
+docker compose run --rm backend npx sequelize-cli db:seed:all
+
+# 5. Undo seeders if needed
+docker compose run --rm backend npm run db:seed:undo
+
+# 6. Verify seeded data
+docker compose exec db mysql -u rt_user -p rural_tourism -e "
+  SELECT 'rt_users' AS table_name, COUNT(*) AS count FROM rt_users
+  UNION ALL SELECT 'tourist_users', COUNT(*) FROM tourist_users
+  UNION ALL SELECT 'activity_master_table', COUNT(*) FROM activity_master_table;
+"
+```
+
+⚠️ **Production Warning**: Only run seeders on production if the database is completely empty. Seeders may overwrite existing data!
 
 **Sample Data Includes:**
 
@@ -182,18 +253,23 @@ npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db
 
 ## 🔧 Available Scripts
 
-| Command                    | Description                                      |
-| -------------------------- | ------------------------------------------------ |
-| `npm run dev`              | Start dev server with **nodemon** (auto-restart) |
-| `npm start`                | Start production server                          |
-| `npm run server`           | Start server directly with `node server.js`      |
-| `npm run console`          | Open interactive REPL with models loaded         |
-| `npm run db:sync`          | Sync database schema from models                 |
-| `npm test`                 | Run all tests with coverage                      |
-| `npm run test:watch`       | Run tests in watch mode                          |
-| `npm run test:unit`        | Run unit tests only                              |
-| `npm run test:integration` | Run integration tests only                       |
-| `npm run lint`             | Lint the codebase                                |
+| Command                     | Description                                      |
+| --------------------------- | ------------------------------------------------ |
+| `npm run dev`               | Start dev server with **nodemon** (auto-restart) |
+| `npm start`                 | Start production server                          |
+| `npm run server`            | Start server directly with `node server.js`      |
+| `npm run console`           | Open interactive REPL with models loaded         |
+| `npm run db:sync`           | Sync database schema from models                 |
+| `npm run db:migrate`        | Run all pending migrations                       |
+| `npm run db:migrate:undo`   | Rollback last migration                          |
+| `npm run db:migrate:status` | Check migration status                           |
+| `npm run db:seed`           | Run all seeders (populate with sample data)      |
+| `npm run db:seed:undo`      | Undo all seeders (remove sample data)            |
+| `npm test`                  | Run all tests with coverage                      |
+| `npm run test:watch`        | Run tests in watch mode                          |
+| `npm run test:unit`         | Run unit tests only                              |
+| `npm run test:integration`  | Run integration tests only                       |
+| `npm run lint`              | Lint the codebase                                |
 
 ---
 
@@ -222,6 +298,16 @@ npx sequelize-cli db:drop && npx sequelize-cli db:create && npx sequelize-cli db
 - **Logging**: Morgan for HTTP requests, console for database operations
 - **Model relationships**: Defined in `models/associations.js`
 - **Request size limit**: 10MB for JSON and URL-encoded bodies
+
+---
+
+## 📚 Documentation
+
+For detailed guides on specific topics:
+
+- **[DEPLOYMENT_MIGRATION_GUIDE.md](docs/DEPLOYMENT_MIGRATION_GUIDE.md)** - Migration workflows, CI/CD deployment, rollback strategies
+- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)** - Schema changes history, model refactoring details
+- **[SOLID_ARCHITECTURE.md](docs/SOLID_ARCHITECTURE.md)** - Architecture principles and best practices
 
 ---
 

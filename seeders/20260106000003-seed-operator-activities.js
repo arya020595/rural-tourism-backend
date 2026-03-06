@@ -71,7 +71,19 @@ module.exports = {
         image: "operator-kinabalu-1.jpg",
         description:
           "2D1N Mount Kinabalu climbing package with experienced guide",
-        services_provided: "Transport, Guide, Meals, Accommodation, Permits",
+        services_provided: JSON.stringify([
+          {
+            title: "Transport",
+            description: "Round-trip transportation from Kota Kinabalu",
+          },
+          { title: "Guide", description: "Experienced mountain guide" },
+          {
+            title: "Meals",
+            description: "Breakfast, lunch, and dinner during trek",
+          },
+          { title: "Accommodation", description: "1 night at Laban Rata" },
+          { title: "Permits", description: "Climbing permit and insurance" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(0, 5, morningSlots),
         ),
@@ -88,7 +100,12 @@ module.exports = {
         image: "operator-kinabalu-2.jpg",
         description:
           "Budget-friendly Mount Kinabalu climb with local expert guide",
-        services_provided: "Guide, Meals, Permits, First Aid Kit",
+        services_provided: JSON.stringify([
+          { title: "Guide", description: "Local expert mountain guide" },
+          { title: "Meals", description: "Basic meals during trek" },
+          { title: "Permits", description: "Climbing permit" },
+          { title: "First Aid Kit", description: "Emergency medical supplies" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(1, 5, morningSlots),
         ),
@@ -105,7 +122,16 @@ module.exports = {
         district: "Beaufort",
         image: "operator-rafting-1.jpg",
         description: "Full day white water rafting adventure with BBQ lunch",
-        services_provided: "Transport, Equipment, Guide, Lunch, Insurance",
+        services_provided: JSON.stringify([
+          {
+            title: "Transport",
+            description: "Pick-up and drop-off from hotel",
+          },
+          { title: "Equipment", description: "Life jacket, helmet, paddle" },
+          { title: "Guide", description: "Professional rafting instructor" },
+          { title: "Lunch", description: "BBQ lunch" },
+          { title: "Insurance", description: "Activity insurance coverage" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(2, 4, afternoonSlots),
         ),
@@ -122,8 +148,14 @@ module.exports = {
         image: "operator-rafting-2.jpg",
         description:
           "Extreme white water rafting with professional safety team",
-        services_provided:
-          "Transport, Equipment, Guide, Lunch, Insurance, Photos",
+        services_provided: JSON.stringify([
+          { title: "Transport", description: "Hotel pick-up and drop-off" },
+          { title: "Equipment", description: "Premium safety gear" },
+          { title: "Guide", description: "Expert safety team" },
+          { title: "Lunch", description: "Riverside BBQ lunch" },
+          { title: "Insurance", description: "Comprehensive insurance" },
+          { title: "Photos", description: "Action photos" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(0, 5, morningSlots),
         ),
@@ -140,7 +172,12 @@ module.exports = {
         district: "Beaufort",
         image: "operator-firefly-1.jpg",
         description: "Evening cruise with dinner and proboscis monkey spotting",
-        services_provided: "Transport, Boat Ride, Dinner, Guide",
+        services_provided: JSON.stringify([
+          { title: "Transport", description: "Hotel transfers" },
+          { title: "Boat Ride", description: "2-hour river cruise" },
+          { title: "Dinner", description: "Local seafood dinner" },
+          { title: "Guide", description: "Nature guide" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(0, 5, morningSlots),
         ),
@@ -157,8 +194,16 @@ module.exports = {
         image: "operator-firefly-2.jpg",
         description:
           "Sunset river cruise with traditional Sabahan dinner buffet",
-        services_provided:
-          "Transport, Boat Ride, Buffet Dinner, Guide, Binoculars",
+        services_provided: JSON.stringify([
+          { title: "Transport", description: "Round-trip hotel transfers" },
+          {
+            title: "Boat Ride",
+            description: "Sunset cruise with firefly watching",
+          },
+          { title: "Buffet Dinner", description: "Traditional Sabahan buffet" },
+          { title: "Guide", description: "Wildlife expert guide" },
+          { title: "Binoculars", description: "Binoculars provided" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(1, 5, morningSlots),
         ),
@@ -176,7 +221,15 @@ module.exports = {
         image: "operator-island-1.jpg",
         description:
           "Visit 3 beautiful islands with snorkeling and beach activities",
-        services_provided: "Boat Transfer, Snorkeling Gear, Lunch, Guide",
+        services_provided: JSON.stringify([
+          { title: "Boat Transfer", description: "Speedboat to 3 islands" },
+          {
+            title: "Snorkeling Gear",
+            description: "Mask, fins, and life jacket",
+          },
+          { title: "Lunch", description: "Packed lunch on the beach" },
+          { title: "Guide", description: "Marine guide" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(2, 4, afternoonSlots),
         ),
@@ -193,8 +246,22 @@ module.exports = {
         image: "operator-island-2.jpg",
         description:
           "Premium island hopping with 5 islands and underwater photography",
-        services_provided:
-          "Boat Transfer, Snorkeling Gear, BBQ Lunch, Guide, GoPro Rental",
+        services_provided: JSON.stringify([
+          {
+            title: "Boat Transfer",
+            description: "Private speedboat to 5 islands",
+          },
+          {
+            title: "Snorkeling Gear",
+            description: "Professional snorkeling equipment",
+          },
+          { title: "BBQ Lunch", description: "Beach BBQ lunch" },
+          { title: "Guide", description: "Certified dive master" },
+          {
+            title: "GoPro Rental",
+            description: "GoPro camera rental for underwater photos",
+          },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(0, 5, morningSlots),
         ),
@@ -211,7 +278,15 @@ module.exports = {
         district: "Kota Kinabalu",
         image: "operator-cultural-1.jpg",
         description: "Half day tour exploring 5 traditional ethnic houses",
-        services_provided: "Transport, Entrance Fee, Guide, Traditional Snacks",
+        services_provided: JSON.stringify([
+          { title: "Transport", description: "Hotel pick-up and drop-off" },
+          {
+            title: "Entrance Fee",
+            description: "Admission to cultural village",
+          },
+          { title: "Guide", description: "Cultural heritage guide" },
+          { title: "Traditional Snacks", description: "Local Sabahan snacks" },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(0, 5, morningSlots),
         ),
@@ -228,8 +303,22 @@ module.exports = {
         image: "operator-cultural-2.jpg",
         description:
           "Full day immersive cultural experience with hands-on activities",
-        services_provided:
-          "Transport, Entrance Fee, Guide, Traditional Lunch, Costume Rental",
+        services_provided: JSON.stringify([
+          { title: "Transport", description: "Round-trip transportation" },
+          {
+            title: "Entrance Fee",
+            description: "Full access to village activities",
+          },
+          { title: "Guide", description: "Cultural expert guide" },
+          {
+            title: "Traditional Lunch",
+            description: "Authentic Sabahan lunch",
+          },
+          {
+            title: "Costume Rental",
+            description: "Traditional costume photo opportunity",
+          },
+        ]),
         available_dates: JSON.stringify(
           generateDatesWithSlots(1, 5, morningSlots),
         ),
