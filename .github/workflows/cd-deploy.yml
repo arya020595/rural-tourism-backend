@@ -17,8 +17,53 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
     environment: production
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
     steps:
+      - name: Set deployment start time
+        run: |
+          echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Notify Slack - Deployment Starting
+        run: |
+          set -e
+
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+          FULL_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHORT_SHA=$(echo "$FULL_SHA" | cut -c1-7)
+          ACTOR='${{ github.actor }}'
+          RUN_URL='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          COMMIT_MSG=$(echo ${{ toJson(github.event.workflow_run.head_commit.message || 'Manual dispatch') }} | sed 's/\\n/\n/g')
+
+          payload=$(jq -n \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH" \
+            --arg sha "$SHORT_SHA" \
+            --arg actor "$ACTOR" \
+            --arg msg "$COMMIT_MSG" \
+            --arg runurl "$RUN_URL" \
+            '{
+              text: ":rocket: Backend deployment started",
+              blocks: [
+                { type: "header", text: { type: "plain_text", text: "🚀 Backend Deployment Started" } },
+                { type: "section", fields: [
+                    { type: "mrkdwn", text: ("*Repository:*\n" + $repo) },
+                    { type: "mrkdwn", text: ("*Branch:*\n" + $branch) },
+                    { type: "mrkdwn", text: ("*Commit:*\n" + $sha) },
+                    { type: "mrkdwn", text: ("*Actor:*\n" + $actor) }
+                  ]
+                },
+                { type: "section", text: { type: "mrkdwn", text: ("*Message:*\n" + $msg) } },
+                { type: "context", elements: [
+                    { type: "mrkdwn", text: ("<" + $runurl + "|View workflow run>") }
+                  ]
+                }
+              ]
+            }')
+          echo "$payload" | curl -s -X POST -H 'Content-type: application/json' -d @- "$SLACK_WEBHOOK_URL" || echo "Warning: Failed to send Slack notification"
+          echo "Sent Slack start notification"
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1
         env:
@@ -55,3 +100,63 @@ jobs:
             # Show migration status
             echo "Current migration status:"
             docker compose exec -T backend npx sequelize-cli db:migrate:status
+
+      - name: Notify Slack - Deployment Result
+        if: always()
+        run: |
+          set -e
+          REPO="${{ github.repository }}"
+          BRANCH="${{ github.event.workflow_run.head_branch || github.ref_name }}"
+          FULL_SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHORT_SHA=$(echo "$FULL_SHA" | cut -c1-7)
+          ACTOR='${{ github.actor }}'
+          RUN_URL='${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          STATUS='${{ job.status }}'
+          END_TIME=$(date +%s)
+          DURATION=$(( END_TIME - START_TIME ))
+          HUMAN_DURATION=$(printf '%02dm:%02ds' $((DURATION/60)) $((DURATION%60)))
+          COMMIT_MSG=$(echo ${{ toJson(github.event.workflow_run.head_commit.message || 'Manual dispatch') }} | sed 's/\\n/\n/g')
+
+          if [ "$STATUS" = "success" ]; then
+            TITLE="✅ Backend Deployment Succeeded"
+            RESULT_LINE="*Result:* Success"
+            COLOR="#2eb886"
+          else
+            TITLE="❌ Backend Deployment Failed"
+            RESULT_LINE="*Result:* Failure"
+            COLOR="#e01e5a"
+          fi
+
+          payload=$(jq -n \
+            --arg color "$COLOR" \
+            --arg title "$TITLE" \
+            --arg repo "$REPO" \
+            --arg branch "$BRANCH" \
+            --arg sha "$SHORT_SHA" \
+            --arg actor "$ACTOR" \
+            --arg msg "$COMMIT_MSG" \
+            --arg runurl "$RUN_URL" \
+            --arg result "$RESULT_LINE" \
+            --arg dur "$HUMAN_DURATION" \
+            '{
+              text: $title,
+              blocks: [
+                { type: "header", text: { type: "plain_text", text: $title } },
+                { type: "section", fields: [
+                    { type: "mrkdwn", text: ("*Repository:*\n" + $repo) },
+                    { type: "mrkdwn", text: ("*Branch:*\n" + $branch) },
+                    { type: "mrkdwn", text: ("*Commit:*\n" + $sha) },
+                    { type: "mrkdwn", text: ("*Actor:*\n" + $actor) },
+                    { type: "mrkdwn", text: $result },
+                    { type: "mrkdwn", text: ("*Duration:*\n" + $dur) }
+                  ]
+                },
+                { type: "section", text: { type: "mrkdwn", text: ("*Message:*\n" + $msg) } },
+                { type: "context", elements: [
+                    { type: "mrkdwn", text: ("<" + $runurl + "|View workflow run>") }
+                  ]
+                }
+              ]
+            }')
+          echo "$payload" | curl -s -X POST -H 'Content-type: application/json' -d @- "$SLACK_WEBHOOK_URL" || echo "Warning: Failed to send Slack notification"
+          echo "Sent Slack result notification ($STATUS)"
