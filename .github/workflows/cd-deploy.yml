@@ -38,7 +38,11 @@ jobs:
             # Pull latest backend image
             docker compose pull backend
 
-            # Restart backend
+            # Run database migrations
+            echo "Running database migrations..."
+            docker compose run --rm backend npx sequelize-cli db:migrate
+
+            # Restart backend with new changes
             docker compose up -d backend
 
             # Clean up old images
@@ -47,3 +51,7 @@ jobs:
             # Verify health
             sleep 10
             docker compose ps
+
+            # Show migration status
+            echo "Current migration status:"
+            docker compose exec -T backend npx sequelize-cli db:migrate:status
