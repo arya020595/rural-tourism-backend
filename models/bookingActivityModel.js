@@ -1,9 +1,8 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const OperatorActivities = require("./operatorActivitiesModel");
-const User = require("./userModel"); // <-- add this at the top
-const FormResponse = require("./formModel");
 const User = require("./userModel");
+const FormResponse = require("./formModel");
 
 /**
  * ActivityBooking Model
