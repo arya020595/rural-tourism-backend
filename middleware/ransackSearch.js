@@ -63,10 +63,6 @@ function buildSearchQuery(queryParams) {
       // Handle special cases
       if (predicate === "cont" || predicate === "not_cont") {
         value = `%${value}%`;
-      } else if (predicate === "start") {
-        value = `${value}%`;
-      } else if (predicate === "end") {
-        value = `%${value}`;
       } else if (predicate === "in") {
         value = value.split(",").map((v) => v.trim());
       }

@@ -1,8 +1,9 @@
-const User = require('../models/userModel'); // Sequelize model
+
 const { Op } = require('sequelize'); // For search queries
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
+const { User, Association } = require('../models');
 
 const DEFAULT_LOGO = '/uploads/default-logo.png';
 
@@ -34,12 +35,21 @@ exports.getAllUsers = async (req, res) => {
 // Get user by ID
 exports.getUserById = async (req, res) => {
     try {
-        const user = await User.findByPk(req.params.id);
+        const user = await User.findByPk(req.params.id, {
+            attributes: ['user_id', 'company_logo', 'user_email', 'username', 'full_name'],
+            include: [
+                {
+                    model: Association,
+                    as: "association",
+                    required: false,
+                }
+            ]
+        });
         if (!user) return res.status(404).json({ message: 'User not found.' });
 
         const userWithLogo = {
             ...user.toJSON(),
-            company_logo: getLogoUrl(user.company_logo)
+            // company_logo: getLogoUrl(user.company_logo)
         };
 
         res.json(userWithLogo);
@@ -51,7 +61,7 @@ exports.getUserById = async (req, res) => {
 
 // Create a new user
 exports.createUser = async (req, res) => {
-    const { username, user_email, full_name, password, securityQ1, securityQ2, business_name } = req.body;
+    const { username, user_email, full_name, password, securityQ1, securityQ2, business_name, associationId } = req.body;
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -72,7 +82,8 @@ exports.createUser = async (req, res) => {
             securityQ1: securityQ1 || null,
             securityQ2: securityQ2 || null,
             business_name: business_name || null,
-            company_logo: logoBase64 // store Base64 here
+            company_logo: logoBase64, // store Base64 here
+            associationId,
         });
 
         res.status(201).json(newUser);

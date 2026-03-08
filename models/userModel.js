@@ -36,6 +36,11 @@ const User = sequelize.define(
       defaultValue: "Not Provided",
     },
     company_logo: { type: DataTypes.TEXT("long"), allowNull: true },
+    associationId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "association_id",
+    },
   },
   {
     tableName: "rt_users",

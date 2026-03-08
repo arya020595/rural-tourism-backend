@@ -1,7 +1,11 @@
+/**
+ * Jest config for unit tests only.
+ * Skips globalSetup/teardown (no DB needed) — suitable for CI pipelines.
+ *
+ * Run with: npx jest --config jest.unit.config.js
+ */
 module.exports = {
   testEnvironment: "node",
-  // Run test files sequentially - integration tests share a real database
-  maxWorkers: 1,
   coverageDirectory: "coverage",
   collectCoverageFrom: [
     "middleware/**/*.js",
@@ -12,7 +16,7 @@ module.exports = {
     "!**/tests/**",
     "!**/coverage/**",
   ],
-  testMatch: ["**/tests/**/*.test.js"],
+  testMatch: ["**/tests/unit/**/*.test.js"],
   roots: ["<rootDir>/tests"],
   testPathIgnorePatterns: ["/node_modules/"],
   verbose: true,
@@ -20,11 +24,8 @@ module.exports = {
   resetMocks: true,
   restoreMocks: true,
   testTimeout: 10000,
-  globalSetup: "<rootDir>/tests/setup.js",
-  globalTeardown: "<rootDir>/tests/teardown.js",
-  // Display test names in tree structure by module
   displayName: {
-    name: "RT-BACKEND",
-    color: "cyan",
+    name: "RT-UNIT",
+    color: "green",
   },
 };
