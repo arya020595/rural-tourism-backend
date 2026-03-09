@@ -94,6 +94,7 @@ app.get("/api", (req, res) => {
       },
       receipts: "/api/receipts",
       notifications: "/api/notifications",
+      associations: "/api/associations",
     },
   });
 });

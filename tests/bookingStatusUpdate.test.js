@@ -62,10 +62,11 @@ describe("Booking Status Update Integration Test", () => {
     operatorActivity = await OperatorActivity.create({
       rt_user_id: operatorUser.user_id,
       activity_id: activityMaster.id,
-      activity_name: "Island Hopping",
-      price: 150.0,
+      description: "Beautiful island hopping experience",
+      district: "Kota Kinabalu",
       address: "Kota Kinabalu",
-      max_capacity: 20,
+      services_provided: ["Boat", "Guide", "Snorkeling"],
+      price_per_pax: 150.0,
     });
 
     // Create activity booking with status = "booked"
@@ -73,9 +74,8 @@ describe("Booking Status Update Integration Test", () => {
       tourist_user_id: touristUser.tourist_user_id,
       operator_activity_id: operatorActivity.id,
       activity_id: activityMaster.id,
-      activity_name: "Island Hopping",
       contact_name: "Test Tourist",
-      contact_no: "1234567890",
+      contact_phone: "1234567890",
       date: "2026-03-15",
       no_of_pax: 2,
       total_price: 300.0,

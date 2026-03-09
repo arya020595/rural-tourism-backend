@@ -40,7 +40,11 @@ router.get("/", ransackMiddleware, async (req, res) => {
                 ? JSON.parse(op.available_dates)
                 : op.available_dates;
             if (Array.isArray(dates)) {
-              allAvailableDates = allAvailableDates.concat(dates);
+              dates.forEach((d) => {
+                // Handle both plain date strings and objects {date, time, price}
+                const dateStr = typeof d === "string" ? d : d.date;
+                if (dateStr) allAvailableDates.push(dateStr);
+              });
             }
           }
         });

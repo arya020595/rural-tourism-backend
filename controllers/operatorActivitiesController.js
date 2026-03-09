@@ -1,8 +1,11 @@
-const OperatorActivity = require("../models/operatorActivitiesModel"); // updated import
+const OperatorActivity = require("../models/operatorActivitiesModel");
 const RtUser = require("../models/userModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
 
-// Helper to safely parse JSON fields
+/**
+ * Safely parse a JSON string field into an array.
+ * Returns [] if the input is falsy, already an array, or invalid JSON.
+ */
 function parseJSONField(field) {
   if (!field) return [];
   try {
@@ -12,7 +15,18 @@ function parseJSONField(field) {
   }
 }
 
-// 1️⃣ Get all operator activities
+/**
+ * Extract price_per_pax from the first entry in available_dates.
+ * Falls back to 0 if no dates or no price found.
+ */
+function derivePriceFromDates(availableDates) {
+  const dates = parseJSONField(availableDates);
+  return dates.length > 0 && dates[0] != null && dates[0].price != null
+    ? dates[0].price
+    : 0;
+}
+
+// Get all operator activities
 exports.getAllOperatorActivities = async (req, res) => {
   try {
     const activities = await OperatorActivity.findAll();
@@ -23,9 +37,9 @@ exports.getAllOperatorActivities = async (req, res) => {
   }
 };
 
-// 2️⃣ Get operator activity by activity_id and include business_name from rt_user
+// Get operators by activity master ID (includes business_name from rt_user)
 exports.getOperatorsByActivityId = async (req, res) => {
-  const { activity_id } = req.params;
+  const { activityId: activity_id } = req.params;
 
   try {
     const operators = await OperatorActivity.findAll({
@@ -60,7 +74,7 @@ exports.getOperatorsByActivityId = async (req, res) => {
   }
 };
 
-// ✅ Get single operator activity by operator ID
+// Get single operator activity by operator ID
 exports.getOperatorActivityById = async (req, res) => {
   const { id } = req.params;
 
@@ -94,10 +108,28 @@ exports.getOperatorActivityById = async (req, res) => {
   }
 };
 
-// 3️⃣ Create a new operator activity
+// Create a new operator activity
 exports.createOperatorActivity = async (req, res) => {
   try {
-    const newActivity = await OperatorActivity.create(req.body);
+    const { activity_id, rt_user_id, address, price_per_pax, available_dates } =
+      req.body;
+
+    if (!rt_user_id) {
+      return res
+        .status(400)
+        .json({ error: "rt_user_id is required. Please login again." });
+    }
+    if (!activity_id) {
+      return res.status(400).json({ error: "activity_id is required." });
+    }
+
+    const newActivity = await OperatorActivity.create({
+      ...req.body,
+      rt_user_id: parseInt(rt_user_id, 10),
+      activity_id: parseInt(activity_id, 10),
+      address: address || "",
+      price_per_pax: price_per_pax ?? derivePriceFromDates(available_dates),
+    });
     res.status(201).json(newActivity);
   } catch (err) {
     console.error("Error creating operator activity:", err);
@@ -105,7 +137,7 @@ exports.createOperatorActivity = async (req, res) => {
   }
 };
 
-// 4️⃣ Update an existing operator activity
+// Update an existing operator activity
 exports.updateOperatorActivity = async (req, res) => {
   const { id } = req.params;
 
@@ -121,12 +153,11 @@ exports.updateOperatorActivity = async (req, res) => {
       "address",
       "district",
       "image",
-      "operator_logo",
       "services_provided",
       "price_per_pax",
       "activity_id",
       "rt_user_id",
-      "available_dates", // ✅ ADD THIS
+      "available_dates",
     ];
 
     updatableFields.forEach((field) => {
@@ -143,7 +174,7 @@ exports.updateOperatorActivity = async (req, res) => {
   }
 };
 
-// 5️⃣ Delete an operator activity
+// Delete an operator activity
 exports.deleteOperatorActivity = async (req, res) => {
   const { id } = req.params;
 
@@ -162,7 +193,7 @@ exports.deleteOperatorActivity = async (req, res) => {
   }
 };
 
-// 6️⃣ Get all operator activities by user (includes activity_name from activity_master_table)
+// Get all operator activities by user (includes activity_name from activity_master_table)
 exports.getAllOperatorActivitiesByUser = async (req, res) => {
   const { rt_user_id } = req.params;
 

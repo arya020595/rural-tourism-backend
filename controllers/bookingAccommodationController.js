@@ -17,6 +17,7 @@ exports.createAccommodationBooking = async (req, res) => {
       contact_phone,
       nationality,
       status,
+      booking_type,
     } = req.body;
 
     // Basic validation
@@ -33,6 +34,15 @@ exports.createAccommodationBooking = async (req, res) => {
         .json({ success: false, message: "Missing required fields" });
     }
 
+    // Validate booking_type
+    const ALLOWED_BOOKING_TYPES = ["guest", "manual"];
+    if (booking_type && !ALLOWED_BOOKING_TYPES.includes(booking_type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid booking_type. Allowed values: ${ALLOWED_BOOKING_TYPES.join(", ")}.`,
+      });
+    }
+
     const newBooking = await AccommodationBooking.create({
       tourist_user_id,
       accommodation_id,
@@ -46,6 +56,7 @@ exports.createAccommodationBooking = async (req, res) => {
       contact_email,
       contact_phone,
       nationality,
+      booking_type: booking_type || "guest",
     });
 
     return res.status(201).json({

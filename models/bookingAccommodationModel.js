@@ -59,6 +59,11 @@ const AccommodationBooking = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    booking_type: {
+      type: DataTypes.ENUM("guest", "manual"),
+      allowNull: false,
+      defaultValue: "guest",
+    },
   },
   {
     tableName: "accommodation_booking",
