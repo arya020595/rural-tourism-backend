@@ -138,6 +138,25 @@ class FormService {
   }
 
   /**
+   * Get all forms by tourist user ID
+   * @param {number} touristId - Tourist user ID
+   * @returns {Promise<array>} Array of form responses
+   */
+  async getFormsByTourist(touristId) {
+    return await FormResponse.findAll({
+      where: { tourist_user_id: touristId },
+      include: [
+        {
+          model: TouristUser,
+          as: "tourist",
+          attributes: ["tourist_user_id", "full_name"],
+        },
+      ],
+      order: [["created_at", "DESC"]],
+    });
+  }
+
+  /**
    * Validate that a tourist user exists
    * @param {number} touristUserId - Tourist user ID
    * @throws {NotFoundError} If tourist not found
