@@ -2,6 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const OperatorActivities = require("./operatorActivitiesModel");
 const User = require("./userModel");
+const FormResponse = require("./formModel");
 
 /**
  * ActivityBooking Model
@@ -165,4 +166,8 @@ ActivityBooking.belongsTo(User, {
   as: "tourist",
 });
 
+ActivityBooking.hasOne(FormResponse, {
+  foreignKey: "activity_booking_id",
+  as: "formResponse",
+});
 module.exports = ActivityBooking;

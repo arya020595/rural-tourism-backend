@@ -72,6 +72,21 @@ exports.getFormsByOperator = async (req, res) => {
 };
 
 /**
+ * Get all forms for a specific tourist
+ * GET /api/form/tourist/:tourist_user_id
+ */
+exports.getFormsByTourist = async (req, res) => {
+  try {
+    const { tourist_user_id } = req.params;
+    const forms = await formService.getFormsByTourist(tourist_user_id);
+
+    return res.status(200).json({ success: true, data: forms });
+  } catch (err) {
+    return handleError(res, err, "Error fetching forms");
+  }
+};
+
+/**
  * Centralized error handler for controller
  * @param {object} res - Express response object
  * @param {Error} err - Error object

@@ -4,6 +4,7 @@ const OperatorActivity = require("../models/operatorActivitiesModel");
 const Accom = require("../models/accomModel");
 const User = require("../models/userModel");
 const ActivityMasterData = require("../models/activityMasterDataModel"); // For activity details
+const FormResponse = require("../models/formModel");
 
 /**
  * Get all bookings (activities + accommodations) for an operator
@@ -38,6 +39,13 @@ exports.getAllBookingsForOperator = async (req, res) => {
             },
           ],
         },
+        {
+          model: FormResponse,
+          as: "formResponse",
+          required: false, // LEFT JOIN — don't exclude unpaid bookings
+          attributes: ["receipt_id"],
+          foreignKey: "activity_booking_id",
+        },
       ],
     });
 
@@ -50,6 +58,12 @@ exports.getAllBookingsForOperator = async (req, res) => {
           where: { rt_user_id: operatorId }, // <-- operator foreign key
           attributes: ["name"],
         },
+        {
+          model: FormResponse,
+          as: "formResponse",
+          required: false,
+          attributes: ["receipt_id"],
+        },
       ],
     });
 
@@ -58,6 +72,7 @@ exports.getAllBookingsForOperator = async (req, res) => {
       ...activityBookings.map((b) => ({
         ...b.dataValues,
         type: "activity",
+        receipt_id: b.formResponse?.receipt_id || null,
         activity_name: b.operatorActivity?.activity?.activity_name,
         activityName: b.operatorActivity?.activity?.activity_name,
         operatorName:
@@ -69,6 +84,7 @@ exports.getAllBookingsForOperator = async (req, res) => {
       ...accomBookings.map((b) => ({
         ...b.dataValues,
         type: "accommodation",
+        receipt_id: b.formResponse?.receipt_id || null,
         accommodation_name: b.accommodation?.name,
         citizenship: b.nationality || "",
       })),
