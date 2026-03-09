@@ -27,7 +27,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const touristBookingsRoutes = require("./routes/touristBookingsRoute");
 const operatorBookingsRoutes = require("./routes/operatorBookingsRoute");
 const operatorActivitiesRoutes = require("./routes/operatorActivitiesRoutes");
-const associationRoutes = require("./routes/associationRoutes");
+const associationUserRoutes = require("./routes/associationUserRoutes");
 
 const app = express();
 
@@ -112,7 +112,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/tourist-bookings", touristBookingsRoutes);
 app.use("/api/operator-bookings", operatorBookingsRoutes);
 app.use("/api/operator-activities", operatorActivitiesRoutes);
-app.use("/api/associations", associationRoutes);
+app.use("/api/association-users", associationUserRoutes);
 
 // Catch 404 and forward to error handler
 app.use((req, res, next) => {
