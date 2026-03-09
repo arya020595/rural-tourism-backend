@@ -168,9 +168,10 @@ class AccommodationService {
     // Process each accommodation with pre-fetched booking data
     const processedAccommodations = accommodations.map((accommodation) => {
       const bookedDates = bookedDatesMap[accommodation.accommodation_id] || [];
-      const originalAvailableDates = this.parseJSONField(
-        accommodation.available_dates,
-      );
+      // const originalAvailableDates = this.parseJSONField(
+      //   accommodation.available_dates,
+      // );
+      const originalAvailableDates = accommodation.availabilities;
       let actualAvailableDates = this.filterAvailableDates(
         originalAvailableDates,
         bookedDates,

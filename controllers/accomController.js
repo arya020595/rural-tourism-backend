@@ -96,7 +96,14 @@ exports.getAccommodationById = async (req, res) => {
       return res.status(400).json({ error: "Invalid ID." });
     }
 
-    const accommodation = await Accom.findByPk(id);
+    const accommodation = await Accom.findByPk(id, {
+      include: [
+        {
+          association: 'availabilities',
+          required: false,
+        }
+      ]
+    });
 
     if (!accommodation) {
       return res.status(404).json({ error: "Accommodation not found." });
