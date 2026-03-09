@@ -67,7 +67,7 @@ exports.createBooking = async (req, res) => {
         operator_activity_id: opActivityId, // ✅ NOW SAFE
         date,
         time,
-        status: { [Op.notIn]: ["Cancelled", "Canceled"] },
+        status: { [Op.notIn]: ["cancelled", "canceled"] },
       },
     });
 
