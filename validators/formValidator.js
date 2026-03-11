@@ -148,6 +148,13 @@ class FormValidator {
       "total_rm",
       "total_night",
       "date",
+      "check_out",
+      "time",
+      "booking_type",
+      "contact_name",
+      "contact_phone",
+      "contact_email",
+      "nationality",
       "activity_booking_id",
       "accommodation_booking_id",
     ];

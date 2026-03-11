@@ -49,6 +49,76 @@ class BookingService {
   }
 
   /**
+   * Create a new manual activity booking (operator-created, status paid)
+   * @param {object} params - Booking parameters
+   * @returns {Promise<object>} Created booking
+   */
+  async createManualActivityBooking({
+    tourist_user_id,
+    activity_id,
+    operator_activity_id,
+    total_price,
+    no_of_pax,
+    date,
+    time,
+    nationality,
+    contact_name,
+    contact_phone,
+  }) {
+    const booking = await ActivityBooking.create({
+      tourist_user_id,
+      activity_id,
+      operator_activity_id,
+      total_price: parseFloat(total_price) || 0,
+      no_of_pax: no_of_pax || null,
+      date: date || null,
+      time: time || null,
+      nationality: nationality || null,
+      contact_name: contact_name || null,
+      contact_phone: contact_phone || null,
+      status: "paid",
+      booking_type: "manual",
+    });
+    return booking;
+  }
+
+  /**
+   * Create a new manual accommodation booking (operator-created, status paid)
+   * @param {object} params - Booking parameters
+   * @returns {Promise<object>} Created booking
+   */
+  async createManualAccommodationBooking({
+    tourist_user_id,
+    accommodation_id,
+    check_in,
+    check_out,
+    total_no_of_nights,
+    total_price,
+    no_of_pax,
+    contact_name,
+    contact_phone,
+    contact_email,
+    nationality,
+  }) {
+    const booking = await AccommodationBooking.create({
+      tourist_user_id,
+      accommodation_id,
+      check_in,
+      check_out,
+      total_no_of_nights: parseInt(total_no_of_nights) || 1,
+      total_price: String(total_price || "0"),
+      no_of_pax: no_of_pax || null,
+      contact_name: contact_name || "",
+      contact_phone: contact_phone || null,
+      contact_email: contact_email || null,
+      nationality: nationality || null,
+      status: "paid",
+      booking_type: "manual",
+    });
+    return booking;
+  }
+
+  /**
    * Check if booking is eligible for payment
    * @param {number} bookingId - Booking ID
    * @param {string} type - 'activity' or 'accommodation'

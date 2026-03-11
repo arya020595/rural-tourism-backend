@@ -1,6 +1,28 @@
 const bcrypt = require("bcrypt");
 const TouristUser = require("../models/touristModel");
 
+// Get all active tourist users (for operator manual booking dropdown)
+exports.getAllTouristUsers = async (req, res) => {
+  try {
+    const tourists = await TouristUser.findAll({
+      where: { is_active: true },
+      attributes: [
+        "tourist_user_id",
+        "full_name",
+        "username",
+        "email",
+        "contact_no",
+        "nationality",
+      ],
+      order: [["full_name", "ASC"]],
+    });
+    res.json({ success: true, data: tourists });
+  } catch (error) {
+    console.error("Error fetching tourist users:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 exports.login = async (req, res) => {
   const { username, password } = req.body;
 
