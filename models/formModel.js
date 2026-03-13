@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const TouristUser = require("./touristModel");
+const RtUser = require("./userModel");
 
 const FormResponse = sequelize.define(
   "form_responses",
@@ -22,6 +23,11 @@ const FormResponse = sequelize.define(
     date: { type: DataTypes.DATE, allowNull: true },
     activity_booking_id: { type: DataTypes.BIGINT, allowNull: true },
     accommodation_booking_id: { type: DataTypes.BIGINT, allowNull: true },
+    booking_type: {
+      type: DataTypes.ENUM("guest", "manual"),
+      allowNull: false,
+      defaultValue: "guest",
+    },
   },
   {
     tableName: "form_responses",
@@ -31,10 +37,15 @@ const FormResponse = sequelize.define(
   },
 );
 
-// 🔹 Define association BEFORE exporting
+// 🔹 Define associations BEFORE exporting
 FormResponse.belongsTo(TouristUser, {
   foreignKey: "tourist_user_id",
   as: "tourist",
+});
+
+FormResponse.belongsTo(RtUser, {
+  foreignKey: "operator_user_id",
+  as: "operator",
 });
 
 module.exports = FormResponse;
