@@ -1,23 +1,39 @@
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const multer = require("multer");
 
-const uploadDir = path.join(__dirname, '../uploads/logos');
+const storage = multer.memoryStorage();
 
-// Ensure upload directory exists
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const allowedMimeTypesByField = {
+  operator_logo_image: ["image/jpeg", "image/png"],
+  motac_license_file: ["application/pdf"],
+  trading_operation_license: ["application/pdf"],
+  homestay_certificate: ["application/pdf"],
+  company_logo: ["image/jpeg", "image/png"],
+};
 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        // Keep original filename
-        cb(null, file.originalname);
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = allowedMimeTypesByField[file.fieldname];
+
+    if (!allowedMimeTypes) {
+      cb(new Error(`Unsupported upload field: ${file.fieldname}`));
+      return;
     }
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      cb(
+        new Error(
+          `Invalid file type for ${file.fieldname}. Allowed: ${allowedMimeTypes.join(", ")}`,
+        ),
+      );
+      return;
+    }
+
+    cb(null, true);
+  },
 });
 
-const upload = multer({ storage });
 module.exports = upload;

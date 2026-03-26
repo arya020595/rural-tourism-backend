@@ -1,38 +1,52 @@
-'use strict';
+"use strict";
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up(queryInterface, Sequelize) {
     const now = new Date();
-    await queryInterface.bulkInsert('associations', [
+    await queryInterface.bulkInsert("associations", [
       {
-        name: 'Association Alpha',
-        image: 'https://placehold.co/50x50?text=A',
+        name: "KOBETA",
+        image: "/uploads/associations/kobeta_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: 'Association Beta',
-        image: 'https://placehold.co/50x50?text=B',
+        name: "RATA",
+        image: "/uploads/associations/rata_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: 'Association Gamma',
-        image: 'https://placehold.co/50x50?text=C',
+        name: "KOMTDA",
+        image: "/uploads/associations/komtda_logo.jpg",
         created_at: now,
         updated_at: now,
-      }
+      },
+      {
+        name: "USTA",
+        image: "/uploads/associations/usta_logo.jpg",
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        name: "NTA",
+        image: "/uploads/associations/nta_logo.jpg",
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        name: "KATA",
+        image: "/uploads/associations/kata_logo.jpg",
+        created_at: now,
+        updated_at: now,
+      },
     ]);
   },
 
-  async down (queryInterface, Sequelize) {
-    await queryInterface.bulkDelete('associations', {
-      name: [
-        'Association Alpha',
-        'Association Beta',
-        'Association Gamma'
-      ]
+  async down(queryInterface, Sequelize) {
+    await queryInterface.bulkDelete("associations", {
+      name: ["KOBETA", "RATA", "KOMTDA", "USTA", "NTA", "KATA"],
     });
-  }
+  },
 };

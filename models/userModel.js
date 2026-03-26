@@ -11,31 +11,62 @@ const User = sequelize.define(
       autoIncrement: true,
     },
     username: { type: DataTypes.STRING, allowNull: false },
-    user_email: { type: DataTypes.STRING, allowNull: false, unique: true },
+    user_email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      field: "email_address",
+    },
     password: { type: DataTypes.STRING, allowNull: false },
+    confirmed_password: { type: DataTypes.STRING, allowNull: true },
     full_name: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "Not Provided",
-    },
-    // Using securityQ1/securityQ2 as model attribute names for backward compatibility
-    // with existing controller code, mapping to security_Q1/security_Q2 in database
-    securityQ1: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      field: "security_Q1", // Maps to database column security_Q1
-    },
-    securityQ2: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      field: "security_Q2", // Maps to database column security_Q2
+      field: "owner_full_name",
     },
     business_name: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "Not Provided",
     },
-    company_logo: { type: DataTypes.TEXT("long"), allowNull: true },
+    business_address: {
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    contact_no: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    no_of_full_time_staff: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    no_of_part_time_staff: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    company_logo: {
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
+      field: "operator_logo_image",
+    },
+    motac_license_file: {
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
+    },
+    trading_operation_license: {
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
+    },
+    homestay_certificate: {
+      type: DataTypes.TEXT("long"),
+      allowNull: true,
+    },
     associationId: {
       type: DataTypes.INTEGER,
       allowNull: true,
