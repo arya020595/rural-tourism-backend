@@ -12,12 +12,10 @@ module.exports = {
       {
         // user_id: 1 (auto-generated)
         username: "operator1",
-        user_email: "operator1@example.com",
+        email_address: "operator1@example.com",
         password: hashedPassword,
-        full_name: "John Operator",
-        security_Q1: "What is your pet name?",
-        security_Q2: "What is your favorite color?",
-        company_logo: "default_logo.png",
+        owner_full_name: "John Operator",
+        operator_logo_image: "default_logo.png",
         business_name: "Sabah Adventure Tours",
         created_at: new Date(),
         updated_at: new Date(),
@@ -25,12 +23,10 @@ module.exports = {
       {
         // user_id: 2 (auto-generated)
         username: "operator2",
-        user_email: "operator2@example.com",
+        email_address: "operator2@example.com",
         password: hashedPassword,
-        full_name: "Jane Operator",
-        security_Q1: "What is your hometown?",
-        security_Q2: "What is your mother's name?",
-        company_logo: "default_logo.png",
+        owner_full_name: "Jane Operator",
+        operator_logo_image: "default_logo.png",
         business_name: "Kinabalu Homestay",
         created_at: new Date(),
         updated_at: new Date(),
@@ -38,12 +34,10 @@ module.exports = {
       {
         // user_id: 3 (auto-generated)
         username: "operator3",
-        user_email: "operator3@example.com",
+        email_address: "operator3@example.com",
         password: hashedPassword,
-        full_name: "Ahmad Operator",
-        security_Q1: "What is your school name?",
-        security_Q2: "What is your birth year?",
-        company_logo: "default_logo.png",
+        owner_full_name: "Ahmad Operator",
+        operator_logo_image: "default_logo.png",
         business_name: "Riverside Retreat",
         created_at: new Date(),
         updated_at: new Date(),
