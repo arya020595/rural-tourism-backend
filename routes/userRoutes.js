@@ -6,6 +6,13 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const upload = require("../middleware/uploadLogo");
 
+const operatorRegistrationUploadFields = upload.fields([
+  { name: "operator_logo_image", maxCount: 1 },
+  { name: "motac_license_file", maxCount: 1 },
+  { name: "trading_operation_license", maxCount: 1 },
+  { name: "homestay_certificate", maxCount: 1 },
+]);
+
 // Middleware for error handling
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -29,12 +36,12 @@ router.get("/:id", asyncHandler(userController.getUserById));
 // router.post('/', asyncHandler(userController.createUser));
 router.post(
   "/",
-  upload.single("company_logo"),
-  asyncHandler(userController.createUser)
+  operatorRegistrationUploadFields,
+  asyncHandler(userController.createUser),
 );
 
 // Route to update an existing user
-router.put("/:id", upload.single("company_logo"), userController.updateUser);
+router.put("/:id", operatorRegistrationUploadFields, userController.updateUser);
 //router.put('/:id', asyncHandler(userController.updateUser));
 
 // Route to delete a user
@@ -49,8 +56,8 @@ router.get("/search", asyncHandler(userController.searchUsers));
 // Update user route with file upload (optional)
 router.put(
   "/update/:id",
-  upload.single("company_logo"),
-  userController.updateUser
+  operatorRegistrationUploadFields,
+  userController.updateUser,
 );
 
 // Login route
@@ -71,7 +78,7 @@ router.post("/login", async (req, res) => {
     // Compare the entered password with the hashed password in the database
     const isValidPassword = await bcrypt.compare(
       enteredPassword,
-      user.password
+      user.password,
     );
 
     // If the password is not valid, send an error
@@ -86,7 +93,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user.user_id, username: user.username },
       JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "24h" }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "24h" },
     );
 
     // Send the response with the token and user data

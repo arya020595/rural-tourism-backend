@@ -6,6 +6,7 @@
 
 const FormResponse = require("../models/formModel");
 const TouristUser = require("../models/touristModel");
+const RtUser = require("../models/userModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
 const { bookingService } = require("./bookingService");
@@ -47,7 +48,7 @@ class FormService {
    * @throws {NotFoundError} If tourist or activity not found
    */
   async createForm(data) {
-    // Validate tourist exists
+    // Validate tourist exists (required for both guest and manual — manual uses registered tourist)
     await this.validateTouristExists(data.tourist_user_id);
 
     // Resolve activity_id from operator_activity_id if needed
@@ -55,6 +56,45 @@ class FormService {
       data.activity_id,
       data.operator_activity_id,
     );
+
+    // Track booking IDs — guest bookings link existing IDs; manual bookings create new ones
+    let activityBookingId = data.activity_booking_id || null;
+    let accommodationBookingId = data.accommodation_booking_id || null;
+
+    if (data.booking_type === "manual") {
+      // Manual booking: create the booking record now with status 'paid'
+      if (data.operator_activity_id || resolvedActivityId) {
+        const newBooking = await bookingService.createManualActivityBooking({
+          tourist_user_id: data.tourist_user_id,
+          activity_id: resolvedActivityId || data.activity_id,
+          operator_activity_id: data.operator_activity_id,
+          total_price: data.total_rm || 0,
+          no_of_pax: data.pax || null,
+          date: data.date || null,
+          time: data.time || null,
+          nationality: data.nationality || null,
+          contact_name: data.contact_name || null,
+          contact_phone: data.contact_phone || null,
+        });
+        activityBookingId = newBooking.id;
+      } else if (data.homest_id) {
+        const newBooking =
+          await bookingService.createManualAccommodationBooking({
+            tourist_user_id: data.tourist_user_id,
+            accommodation_id: data.homest_id,
+            check_in: data.date,
+            check_out: data.check_out,
+            total_no_of_nights: data.total_night || 1,
+            total_price: data.total_rm || "0",
+            no_of_pax: data.pax || null,
+            contact_name: data.contact_name || data.issuer || "Operator",
+            contact_phone: data.contact_phone || null,
+            contact_email: data.contact_email || null,
+            nationality: data.nationality || null,
+          });
+        accommodationBookingId = newBooking.id;
+      }
+    }
 
     // Build form data object
     const formData = {
@@ -73,22 +113,26 @@ class FormService {
       package: data.package,
       issuer: data.issuer,
       date: data.date,
-      activity_booking_id: data.activity_booking_id,
-      accommodation_booking_id: data.accommodation_booking_id,
+      booking_type: data.booking_type || "guest",
+      activity_booking_id: activityBookingId,
+      accommodation_booking_id: accommodationBookingId,
     };
 
     // Create and return the form
     const newForm = await FormResponse.create(formData);
 
-    // Delegate booking status update to BookingService (SOLID: Single Responsibility)
-    if (data.activity_booking_id) {
-      await bookingService.markActivityBookingAsPaid(data.activity_booking_id);
+    // For guest bookings: mark existing booking as paid
+    if (data.booking_type !== "manual") {
+      if (activityBookingId) {
+        await bookingService.markActivityBookingAsPaid(activityBookingId);
+      }
+      if (accommodationBookingId) {
+        await bookingService.markAccommodationBookingAsPaid(
+          accommodationBookingId,
+        );
+      }
     }
-    if (data.accommodation_booking_id) {
-      await bookingService.markAccommodationBookingAsPaid(
-        data.accommodation_booking_id,
-      );
-    }
+    // Manual bookings are already created with status 'paid'
 
     return newForm;
   }
@@ -107,6 +151,11 @@ class FormService {
           model: TouristUser,
           as: "tourist",
           attributes: ["tourist_user_id", "full_name", "email", "contact_no"],
+        },
+        {
+          model: RtUser,
+          as: "operator",
+          attributes: ["user_id", "business_name", "full_name", "company_logo"],
         },
       ],
     });
