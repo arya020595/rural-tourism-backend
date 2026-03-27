@@ -4,9 +4,9 @@ const storage = multer.memoryStorage();
 
 const allowedMimeTypesByField = {
   operator_logo_image: ["image/jpeg", "image/png"],
-  motac_license_file: ["application/pdf"],
-  trading_operation_license: ["application/pdf"],
-  homestay_certificate: ["application/pdf"],
+  motac_license_file: ["application/pdf", "image/jpeg", "image/png"],
+  trading_operation_license: ["application/pdf", "image/jpeg", "image/png"],
+  homestay_certificate: ["application/pdf", "image/jpeg", "image/png"],
   company_logo: ["image/jpeg", "image/png"],
 };
 
