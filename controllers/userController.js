@@ -21,6 +21,13 @@ function parseNullableInt(value) {
   return Number.isInteger(parsed) ? parsed : null;
 }
 
+function parsePoscode(value) {
+  if (value === undefined || value === null || value === "") return null;
+  const normalized = String(value).trim();
+  if (!/^\d{5}$/.test(normalized)) return null;
+  return normalized;
+}
+
 // Get all users
 exports.getAllUsers = async (req, res) => {
   try {
@@ -82,6 +89,7 @@ exports.createUser = async (req, res) => {
     business_name,
     associationId,
     business_address,
+    poscode,
     location,
     contact_no,
     no_of_full_time_staff,
@@ -100,6 +108,13 @@ exports.createUser = async (req, res) => {
 
     if (!owner_full_name && !full_name) {
       return res.status(400).json({ error: "Owner full name is required." });
+    }
+
+    const normalizedPoscode = String(poscode || "").trim();
+    if (!/^\d{5}$/.test(normalizedPoscode)) {
+      return res
+        .status(400)
+        .json({ error: "Poscode must be exactly 5 digits." });
     }
 
     const existingUserByUsername = await User.findOne({ where: { username } });
@@ -146,6 +161,7 @@ exports.createUser = async (req, res) => {
       confirmed_password: hashedPassword,
       business_name: business_name || null,
       business_address: business_address || null,
+      poscode: parsePoscode(poscode),
       location: location || null,
       contact_no: contact_no || null,
       no_of_full_time_staff: parseNullableInt(no_of_full_time_staff),
@@ -264,6 +280,16 @@ exports.updateUser = async (req, res) => {
       req.body.no_of_full_time_staff = parseNullableInt(
         req.body.no_of_full_time_staff,
       );
+    }
+
+    if (req.body.poscode !== undefined) {
+      const parsedPoscode = parsePoscode(req.body.poscode);
+      if (req.body.poscode !== "" && parsedPoscode === null) {
+        return res
+          .status(400)
+          .json({ error: "Poscode must be exactly 5 digits." });
+      }
+      req.body.poscode = parsedPoscode;
     }
 
     if (req.body.no_of_part_time_staff !== undefined) {
