@@ -38,6 +38,10 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    poscode: {
+      type: DataTypes.STRING(5),
+      allowNull: true,
+    },
     contact_no: {
       type: DataTypes.STRING,
       allowNull: true,
