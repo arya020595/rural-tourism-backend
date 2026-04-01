@@ -78,6 +78,7 @@ jobs:
           command_timeout: 10m
           envs: GHCR_TOKEN,GITHUB_ACTOR
           script: |
+            set -e
             cd ~/st_rural_tourism
 
             # Login to GHCR
