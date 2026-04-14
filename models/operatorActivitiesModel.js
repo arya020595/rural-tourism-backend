@@ -1,7 +1,6 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const Activity = require("./activityMasterDataModel");
-const User = require("./userModel");
 
 /**
  * OperatorActivity Model
@@ -10,7 +9,7 @@ const User = require("./userModel");
  * @typedef {Object} OperatorActivity
  * @property {number} id - Auto-incrementing primary key
  * @property {number} activity_id - Reference to activity_master_table
- * @property {number} rt_user_id - Reference to rt_users (operator)
+ * @property {number} user_id - Reference to users (operator)
  * @property {string} description - Detailed description of the activity
  * @property {string|null} address - Physical address
  * @property {string} district - District/region where activity is located
@@ -39,7 +38,7 @@ const OperatorActivity = sequelize.define(
         isInt: { msg: "Activity ID must be an integer" },
       },
     },
-    rt_user_id: {
+    user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       validate: {
@@ -125,7 +124,7 @@ const OperatorActivity = sequelize.define(
         fields: ["activity_id"],
       },
       {
-        fields: ["rt_user_id"],
+        fields: ["user_id"],
       },
       {
         fields: ["district"],
@@ -138,11 +137,6 @@ const OperatorActivity = sequelize.define(
 OperatorActivity.belongsTo(Activity, {
   foreignKey: "activity_id",
   as: "activity",
-});
-
-OperatorActivity.belongsTo(User, {
-  foreignKey: "rt_user_id",
-  as: "operator",
 });
 
 module.exports = OperatorActivity;

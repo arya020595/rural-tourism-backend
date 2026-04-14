@@ -1,6 +1,18 @@
 const Accom = require("../models/accomModel");
 const accommodationService = require("../services/accommodationService");
 
+const getRequesterContext = (req) => {
+  const requesterId = Number(
+    req.user?.user_type === "operator"
+      ? req.user?.unified_user_id ?? req.user?.id
+      : req.user?.legacy_user_id ?? req.user?.id,
+  );
+  return {
+    requesterId: Number.isNaN(requesterId) ? null : requesterId,
+    isAdmin: req.user?.role === "admin",
+  };
+};
+
 /**
  * Accommodation Controller
  * Handles HTTP requests for accommodation-related endpoints
@@ -31,7 +43,7 @@ exports.getAllAccommodations = async (req, res) => {
     // Format response for frontend
     const result = filteredAccommodations.map((accom) => ({
       ...accom,
-      user_id: accom.rt_user_id,
+      user_id: accom.user_id,
       homest_id: accom.accommodation_id,
       homest_name: accom.name,
     }));
@@ -57,7 +69,7 @@ exports.getAccommodationsByUser = async (req, res) => {
     const { user_id } = req.params;
 
     const accommodations = await Accom.findAll({
-      where: { rt_user_id: user_id },
+      where: { user_id },
     });
 
     if (accommodations.length === 0) {
@@ -69,7 +81,7 @@ exports.getAccommodationsByUser = async (req, res) => {
     // Format response
     const result = accommodations.map((accom) => ({
       ...accom.dataValues,
-      user_id: accom.rt_user_id,
+      user_id: accom.user_id,
       homest_id: accom.accommodation_id,
       homest_name: accom.name,
     }));
@@ -123,7 +135,7 @@ exports.getAccommodationById = async (req, res) => {
 
     res.json({
       ...filtered,
-      user_id: filtered.rt_user_id,
+      user_id: filtered.user_id,
       homest_id: filtered.accommodation_id,
       homest_name: filtered.name,
     });
@@ -144,6 +156,12 @@ exports.getAccommodationById = async (req, res) => {
  */
 exports.createAccommodation = async (req, res) => {
   try {
+    const { requesterId, isAdmin } = getRequesterContext(req);
+
+    if (!isAdmin && requesterId === null) {
+      return res.status(401).json({ error: "Unauthorized user context." });
+    }
+
     const {
       name,
       homest_name,
@@ -154,7 +172,6 @@ exports.createAccommodation = async (req, res) => {
       address,
       provided,
       provided_accomodation,
-      rt_user_id,
       user_id,
       district,
       show_availability,
@@ -164,7 +181,20 @@ exports.createAccommodation = async (req, res) => {
 
     // Use frontend aliases if main fields are not provided
     const finalName = name || homest_name;
-    const finalUserId = rt_user_id || user_id;
+    const payloadUserId = user_id;
+
+    if (
+      !isAdmin &&
+      payloadUserId !== undefined &&
+      payloadUserId !== null &&
+      String(payloadUserId) !== String(requesterId)
+    ) {
+      return res.status(403).json({
+        error: "Forbidden. You can only create accommodations for your own account.",
+      });
+    }
+
+    const finalUserId = isAdmin ? payloadUserId : requesterId;
     const finalProvided = provided || provided_accomodation;
     const finalShowAvailability =
       show_availability !== undefined ? show_availability : showAvailability;
@@ -177,7 +207,7 @@ exports.createAccommodation = async (req, res) => {
 
     const newAccommodation = await Accom.create({
       name: finalName,
-      rt_user_id: finalUserId,
+      user_id: finalUserId,
       description: description || "",
       price: price != null ? price : 0,
       image: image || null,
@@ -191,7 +221,7 @@ exports.createAccommodation = async (req, res) => {
 
     res.status(201).json({
       ...newAccommodation.dataValues,
-      user_id: newAccommodation.rt_user_id,
+      user_id: newAccommodation.user_id,
       homest_id: newAccommodation.accommodation_id,
       homest_name: newAccommodation.name,
     });
@@ -219,6 +249,13 @@ exports.updateAccommodation = async (req, res) => {
       return res.status(404).json({ error: "Accommodation not found." });
     }
 
+    const { requesterId, isAdmin } = getRequesterContext(req);
+    if (!isAdmin && Number(accommodation.user_id) !== requesterId) {
+      return res.status(403).json({
+        error: "Forbidden. You can only update your own accommodations.",
+      });
+    }
+
     const {
       name,
       homest_name,
@@ -229,7 +266,6 @@ exports.updateAccommodation = async (req, res) => {
       address,
       provided,
       provided_accomodation,
-      rt_user_id,
       user_id,
       district,
       show_availability,
@@ -252,8 +288,13 @@ exports.updateAccommodation = async (req, res) => {
       accommodation.address = location;
       accommodation.location = location;
     }
-    if (rt_user_id !== undefined) accommodation.rt_user_id = rt_user_id;
-    if (user_id !== undefined) accommodation.rt_user_id = user_id;
+    if (!isAdmin && user_id !== undefined) {
+      return res.status(403).json({
+        error: "Forbidden. Only admin can reassign accommodation ownership.",
+      });
+    }
+
+    if (isAdmin && user_id !== undefined) accommodation.user_id = user_id;
     if (show_availability !== undefined)
       accommodation.show_availability = show_availability;
     if (showAvailability !== undefined)
@@ -265,7 +306,7 @@ exports.updateAccommodation = async (req, res) => {
 
     res.json({
       ...accommodation.dataValues,
-      user_id: accommodation.rt_user_id,
+      user_id: accommodation.user_id,
       homest_id: accommodation.accommodation_id,
       homest_name: accommodation.name,
     });
@@ -290,6 +331,13 @@ exports.deleteAccommodation = async (req, res) => {
     const accommodation = await Accom.findByPk(id);
     if (!accommodation) {
       return res.status(404).json({ error: "Accommodation not found." });
+    }
+
+    const { requesterId, isAdmin } = getRequesterContext(req);
+    if (!isAdmin && Number(accommodation.user_id) !== requesterId) {
+      return res.status(403).json({
+        error: "Forbidden. You can only delete your own accommodations.",
+      });
     }
 
     await accommodation.destroy();

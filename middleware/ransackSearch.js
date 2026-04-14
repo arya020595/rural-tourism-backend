@@ -19,7 +19,12 @@ const { Op } = require("sequelize");
  */
 function buildSearchQuery(queryParams) {
   const where = {};
-  const q = queryParams.q || {};
+  const safeQueryParams =
+    queryParams && typeof queryParams === "object" ? queryParams : {};
+  const q =
+    safeQueryParams.q && typeof safeQueryParams.q === "object"
+      ? safeQueryParams.q
+      : {};
 
   // Mapping of predicates to Sequelize operators
   const predicateMap = {
@@ -84,7 +89,9 @@ function buildSearchQuery(queryParams) {
  * Or: ?sort=activity_name_desc
  */
 function buildSort(queryParams) {
-  const { sort, order } = queryParams;
+  const safeQueryParams =
+    queryParams && typeof queryParams === "object" ? queryParams : {};
+  const { sort, order } = safeQueryParams;
 
   if (sort) {
     // Check if sort has _asc or _desc suffix
@@ -109,8 +116,10 @@ function buildSort(queryParams) {
  * Example: ?page=2&per_page=10
  */
 function buildPagination(queryParams) {
-  const page = parseInt(queryParams.page) || 1;
-  const perPage = parseInt(queryParams.per_page || queryParams.limit) || 10;
+  const safeQueryParams =
+    queryParams && typeof queryParams === "object" ? queryParams : {};
+  const page = parseInt(safeQueryParams.page) || 1;
+  const perPage = parseInt(safeQueryParams.per_page || safeQueryParams.limit) || 10;
 
   return {
     limit: perPage,
@@ -122,6 +131,10 @@ function buildPagination(queryParams) {
  * Middleware to parse Ransack-like query params
  */
 function ransackMiddleware(req, res, next) {
+  if (!req.query || typeof req.query !== "object" || Array.isArray(req.query)) {
+    return res.status(400).json({ error: "Invalid search parameters" });
+  }
+
   try {
     const where = buildSearchQuery(req.query);
     const order = buildSort(req.query);

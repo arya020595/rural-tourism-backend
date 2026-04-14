@@ -1,6 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const Accom = require("./accomModel");
+const TouristUser = require("./touristModel");
 const FormResponse = require("./formModel");
 
 const AccommodationBooking = sequelize.define(
@@ -79,6 +80,12 @@ module.exports = AccommodationBooking;
 AccommodationBooking.belongsTo(Accom, {
   foreignKey: "accommodation_id",
   targetKey: "accommodation_id",
+});
+
+AccommodationBooking.belongsTo(TouristUser, {
+  foreignKey: "tourist_user_id",
+  targetKey: "tourist_user_id",
+  as: "tourist",
 });
 
 AccommodationBooking.hasOne(FormResponse, {

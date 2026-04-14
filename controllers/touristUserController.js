@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const TouristUser = require("../models/touristModel");
+const authService = require("../services/authService");
 
 // Get all active tourist users (for operator manual booking dropdown)
 exports.getAllTouristUsers = async (req, res) => {
@@ -33,42 +34,19 @@ exports.login = async (req, res) => {
   }
 
   try {
-    const user = await TouristUser.findOne({ where: { username } });
+    res.set("Deprecation", "true");
+    res.set("Sunset", "Thu, 31 Dec 2026 23:59:59 GMT");
+    res.set("Link", "</api/auth/login>; rel=\"successor-version\"");
+
+    const authResult = await authService.login({
+      identifier: username,
+      password,
+      allowedUserTypes: ["tourist"],
+    });
+
+    const user = await TouristUser.findByPk(authResult.user.id);
 
     if (!user) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid username or password" });
-    }
-
-    if (!user.is_active) {
-      if (user.suspended_at) {
-        const now = new Date();
-        const suspendedAt = new Date(user.suspended_at);
-        const diffDays = Math.floor(
-          (now - suspendedAt) / (1000 * 60 * 60 * 24),
-        );
-
-        if (diffDays >= 3) {
-          // Reactivate the user automatically after 3 days
-          await user.update({ is_active: true, suspended_at: null });
-        } else {
-          const daysLeft = 3 - diffDays;
-          return res.status(403).json({
-            success: false,
-            message: `Your account is suspended. Please try again in ${daysLeft} day(s).`,
-          });
-        }
-      } else {
-        return res.status(403).json({
-          success: false,
-          message: "Your account is suspended. Please contact support.",
-        });
-      }
-    }
-
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
       return res
         .status(401)
         .json({ success: false, message: "Invalid username or password" });
@@ -82,14 +60,25 @@ exports.login = async (req, res) => {
       nationality: user.nationality || "",
       contact_no: user.contact_no,
       profileImage: user.profileImage || null,
-      role: user.role,
+      role: authResult.user.role?.name || "tourist",
+      permissions: authResult.user.permissions,
       is_active: user.is_active,
     };
 
-    res.json({ success: true, message: "Login successful", user: userData });
+    res.json({
+      success: true,
+      message: "Login successful",
+      deprecated: true,
+      migrate_to: "/api/auth/login",
+      token: authResult.token,
+      user: userData,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Server error",
+    });
   }
 };
 
@@ -189,50 +178,18 @@ exports.suspendTouristUser = async (req, res) => {
 
 exports.registerTourist = async (req, res) => {
   try {
-    const { username, email, password, full_name, contact_no, nationality } =
-      req.body;
-
-    if (
-      !username ||
-      !email ||
-      !password ||
-      !full_name ||
-      !contact_no ||
-      !nationality
-    ) {
-      return res.status(400).json({ error: "All fields are required." });
-    }
-
-    // Check for duplicates
-    const existingUser = await TouristUser.findOne({ where: { username } });
-    if (existingUser)
-      return res.status(400).json({ error: "Username already taken." });
-
-    const existingEmail = await TouristUser.findOne({ where: { email } });
-    if (existingEmail)
-      return res.status(400).json({ error: "Email already registered." });
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new tourist
-    const newUser = await TouristUser.create({
-      username,
-      email,
-      password: hashedPassword,
-      full_name,
-      contact_no,
-      nationality,
-      role: "tourist",
-      is_active: true,
+    const registerResult = await authService.register({
+      userType: "tourist",
+      payload: req.body,
     });
 
     return res.status(201).json({
       message: "Tourist account successfully created!",
-      user: newUser,
+      user: registerResult.user,
     });
   } catch (error) {
-    console.error("Error registering tourist:", error);
-    res.status(500).json({ error: "Server error during registration." });
+    res.status(error.statusCode || 500).json({
+      error: error.message || "Server error during registration.",
+    });
   }
 };

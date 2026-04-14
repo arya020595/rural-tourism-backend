@@ -1,6 +1,7 @@
 const OperatorActivity = require("../models/operatorActivitiesModel");
-const RtUser = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
+const Company = require("../models/companyModel");
 
 /**
  * Safely parse a JSON string field into an array.
@@ -37,7 +38,7 @@ exports.getAllOperatorActivities = async (req, res) => {
   }
 };
 
-// Get operators by activity master ID (includes business_name from rt_user)
+// Get operators by activity master ID (includes business_name from unified user company)
 exports.getOperatorsByActivityId = async (req, res) => {
   const { activityId: activity_id } = req.params;
 
@@ -46,9 +47,18 @@ exports.getOperatorsByActivityId = async (req, res) => {
       where: { activity_id },
       include: [
         {
-          model: RtUser,
-          as: "rt_user",
-          attributes: ["user_id", "business_name"],
+          model: UnifiedUser,
+          as: "operator",
+          attributes: ["id", "name", "username"],
+          required: false,
+          include: [
+            {
+              model: Company,
+              as: "company",
+              attributes: ["company_name", "operator_logo_image"],
+              required: false,
+            },
+          ],
         },
       ],
     });
@@ -61,8 +71,12 @@ exports.getOperatorsByActivityId = async (req, res) => {
 
     const result = operators.map((op) => ({
       ...op.dataValues,
-      rt_user_id: op.rt_user ? op.rt_user.user_id : null,
-      business_name: op.rt_user ? op.rt_user.business_name : "Not Provided",
+      user_id: op.user_id,
+      business_name:
+        op.operator?.company?.company_name || op.operator?.name || "Not Provided",
+      operator_name:
+        op.operator?.company?.company_name || op.operator?.name || "Unknown Operator",
+      company_logo: op.operator?.company?.operator_logo_image || null,
       services_provided_list: parseJSONField(op.services_provided),
       available_dates_list: parseJSONField(op.available_dates),
     }));
@@ -83,9 +97,18 @@ exports.getOperatorActivityById = async (req, res) => {
       where: { id },
       include: [
         {
-          model: RtUser,
-          as: "rt_user",
-          attributes: ["business_name"],
+          model: UnifiedUser,
+          as: "operator",
+          attributes: ["id", "name", "username"],
+          required: false,
+          include: [
+            {
+              model: Company,
+              as: "company",
+              attributes: ["company_name", "operator_logo_image"],
+              required: false,
+            },
+          ],
         },
       ],
     });
@@ -96,9 +119,11 @@ exports.getOperatorActivityById = async (req, res) => {
 
     res.json({
       ...operator.dataValues,
-      business_name: operator.rt_user
-        ? operator.rt_user.business_name
-        : "Not Provided",
+      user_id: operator.user_id,
+      business_name:
+        operator.operator?.company?.company_name ||
+        operator.operator?.name ||
+        "Not Provided",
       services_provided_list: parseJSONField(operator.services_provided),
       available_dates_list: parseJSONField(operator.available_dates),
     });
@@ -111,13 +136,20 @@ exports.getOperatorActivityById = async (req, res) => {
 // Create a new operator activity
 exports.createOperatorActivity = async (req, res) => {
   try {
-    const { activity_id, rt_user_id, address, price_per_pax, available_dates } =
-      req.body;
+    const {
+      activity_id,
+      user_id,
+      address,
+      price_per_pax,
+      available_dates,
+    } = req.body;
 
-    if (!rt_user_id) {
+    const ownerUserId = user_id;
+
+    if (!ownerUserId) {
       return res
         .status(400)
-        .json({ error: "rt_user_id is required. Please login again." });
+        .json({ error: "user_id is required. Please login again." });
     }
     if (!activity_id) {
       return res.status(400).json({ error: "activity_id is required." });
@@ -125,12 +157,15 @@ exports.createOperatorActivity = async (req, res) => {
 
     const newActivity = await OperatorActivity.create({
       ...req.body,
-      rt_user_id: parseInt(rt_user_id, 10),
+      user_id: parseInt(ownerUserId, 10),
       activity_id: parseInt(activity_id, 10),
       address: address || "",
       price_per_pax: price_per_pax ?? derivePriceFromDates(available_dates),
     });
-    res.status(201).json(newActivity);
+    res.status(201).json({
+      ...newActivity.dataValues,
+      user_id: newActivity.user_id,
+    });
   } catch (err) {
     console.error("Error creating operator activity:", err);
     res.status(500).json({ error: err.message });
@@ -156,7 +191,7 @@ exports.updateOperatorActivity = async (req, res) => {
       "services_provided",
       "price_per_pax",
       "activity_id",
-      "rt_user_id",
+      "user_id",
       "available_dates",
     ];
 
@@ -167,7 +202,10 @@ exports.updateOperatorActivity = async (req, res) => {
     });
 
     await activity.save();
-    res.json(activity);
+    res.json({
+      ...activity.dataValues,
+      user_id: activity.user_id,
+    });
   } catch (err) {
     console.error("Error updating operator activity:", err);
     res.status(500).json({ error: err.message });
@@ -195,11 +233,11 @@ exports.deleteOperatorActivity = async (req, res) => {
 
 // Get all operator activities by user (includes activity_name from activity_master_table)
 exports.getAllOperatorActivitiesByUser = async (req, res) => {
-  const { rt_user_id } = req.params;
+  const ownerUserId = req.params.user_id;
 
   try {
     const activities = await OperatorActivity.findAll({
-      where: { rt_user_id },
+      where: { user_id: ownerUserId },
       include: [
         {
           model: ActivityMasterData,
@@ -217,6 +255,7 @@ exports.getAllOperatorActivitiesByUser = async (req, res) => {
 
     const result = activities.map((activity) => ({
       ...activity.dataValues,
+      user_id: activity.user_id,
       activity_name: activity.activity_master
         ? activity.activity_master.activity_name
         : "Unknown Activity",

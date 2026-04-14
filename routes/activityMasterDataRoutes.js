@@ -3,9 +3,11 @@ const router = express.Router();
 const ActivityMasterData = require("../models/activityMasterDataModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const { ransackMiddleware } = require("../middleware/ransackSearch");
+const { authenticate } = require("../middleware/auth");
+const { authorize } = require("../middleware/authorize");
 
 // ✅ 1. Get all activities with search & filter (Ransack-like)
-router.get("/", ransackMiddleware, async (req, res) => {
+router.get("/", authenticate, authorize("activity:read"), ransackMiddleware, async (req, res) => {
   try {
     const { where, order } = req.ransack;
     const page = parseInt(req.query.page) || 1;
@@ -79,7 +81,7 @@ router.get("/", ransackMiddleware, async (req, res) => {
 });
 
 // ✅ 2. Get a single activity by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticate, authorize("activity:read"), async (req, res) => {
   const { id } = req.params;
   try {
     const activity = await ActivityMasterData.findByPk(id);
@@ -92,7 +94,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // ✅ 3. Create a new activity
-router.post("/", async (req, res) => {
+router.post("/", authenticate, authorize("activity:create"), async (req, res) => {
   const { activity_name, description, address, things_to_know, image } =
     req.body;
 
@@ -113,7 +115,7 @@ router.post("/", async (req, res) => {
 });
 
 // ✅ 4. Update an existing activity
-router.put("/:id", async (req, res) => {
+router.put("/:id", authenticate, authorize("activity:update"), async (req, res) => {
   const { id } = req.params;
   const { activity_name, description, address, things_to_know, image } =
     req.body;
@@ -138,7 +140,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // ✅ 5. Delete an activity
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticate, authorize("activity:delete"), async (req, res) => {
   const { id } = req.params;
   try {
     const activity = await ActivityMasterData.findByPk(id);

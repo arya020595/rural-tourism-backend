@@ -1,10 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const User = require("../models/userModel");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const UnifiedUser = require("../models/unifiedUserModel");
+const Company = require("../models/companyModel");
 const upload = require("../middleware/uploadLogo");
+const authService = require("../services/authService");
+const { authenticate } = require("../middleware/auth");
+const { authorize, authorizeOwnership } = require("../middleware/authorize");
 
 const operatorRegistrationUploadFields = upload.fields([
   { name: "operator_logo_image", maxCount: 1 },
@@ -19,18 +21,21 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 // Route to get all users
-router.get("/", async (req, res) => {
-  try {
-    const users = await User.findAll();
-    res.json(users);
-  } catch (error) {
-    console.error("Error fetching users:", error); // Log the full error
-    res.status(500).json({ error: error.message }); // Send back the error message
-  }
-});
+router.get(
+  "/",
+  authenticate,
+  authorize("user:read"),
+  asyncHandler(userController.getAllUsers),
+);
 
 // Route to get a user by ID
-router.get("/:id", asyncHandler(userController.getUserById));
+router.get(
+  "/:id(\\d+)",
+  authenticate,
+  authorize(["user:read", "profile:read"]),
+  authorizeOwnership("id", ["user:read"]),
+  asyncHandler(userController.getUserById),
+);
 
 // // Route to create a new user
 // router.post('/', asyncHandler(userController.createUser));
@@ -41,14 +46,31 @@ router.post(
 );
 
 // Route to update an existing user
-router.put("/:id", operatorRegistrationUploadFields, userController.updateUser);
+router.put(
+  "/:id",
+  authenticate,
+  authorize(["user:update", "profile:update"]),
+  authorizeOwnership("id", ["user:update"]),
+  operatorRegistrationUploadFields,
+  userController.updateUser,
+);
 //router.put('/:id', asyncHandler(userController.updateUser));
 
 // Route to delete a user
-router.delete("/:id", asyncHandler(userController.deleteUser));
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("user:delete"),
+  asyncHandler(userController.deleteUser),
+);
 
 // Route to search users by name (optional)
-router.get("/search", asyncHandler(userController.searchUsers));
+router.get(
+  "/search",
+  authenticate,
+  authorize("user:read"),
+  asyncHandler(userController.searchUsers),
+);
 
 // Create user route with file upload
 //router.post('/create', upload.single('company_logo'), userController.createUser);
@@ -56,6 +78,9 @@ router.get("/search", asyncHandler(userController.searchUsers));
 // Update user route with file upload (optional)
 router.put(
   "/update/:id",
+  authenticate,
+  authorize(["user:update", "profile:update"]),
+  authorizeOwnership("id", ["user:update"]),
   operatorRegistrationUploadFields,
   userController.updateUser,
 );
@@ -65,8 +90,25 @@ router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    // Find the user by username
-    const user = await User.findOne({ where: { username } });
+    res.set("Deprecation", "true");
+    res.set("Sunset", "Thu, 31 Dec 2026 23:59:59 GMT");
+    res.set("Link", "</api/auth/login>; rel=\"successor-version\"");
+
+    const authResult = await authService.login({
+      identifier: username,
+      password,
+      allowedUserTypes: ["operator"],
+    });
+
+    const user = await UnifiedUser.findByPk(authResult.user.id, {
+      include: [
+        {
+          model: Company,
+          as: "company",
+          required: false,
+        },
+      ],
+    });
 
     if (!user) {
       return res
@@ -74,44 +116,30 @@ router.post("/login", async (req, res) => {
         .json({ success: false, message: "Invalid username or password" });
     }
 
-    const enteredPassword = password.trim();
-    // Compare the entered password with the hashed password in the database
-    const isValidPassword = await bcrypt.compare(
-      enteredPassword,
-      user.password,
-    );
-
-    // If the password is not valid, send an error
-    if (!isValidPassword) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid username or password" });
-    }
-
-    // Generate a JWT token using environment variable
-    const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
-    const token = jwt.sign(
-      { id: user.user_id, username: user.username },
-      JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "24h" },
-    );
-
     // Send the response with the token and user data
     res.json({
       success: true,
       message: "Login successful",
-      token,
+      deprecated: true,
+      migrate_to: "/api/auth/login",
+      token: authResult.token,
       user: {
-        id: user.user_id,
+        id: user.id,
         username: user.username,
-        email: user.user_email,
-        full_name: user.full_name,
-        business_name: user.business_name,
+        email: user.email,
+        full_name: user.name,
+        business_name: user.company?.company_name || null,
+        company_logo: user.company?.operator_logo_image || null,
+        role: authResult.user.role,
+        permissions: authResult.user.permissions,
       },
     });
   } catch (error) {
     console.error("Error during login:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
   }
 });
 

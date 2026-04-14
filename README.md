@@ -234,8 +234,13 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 | Resource                  | Endpoints                                         |
 | ------------------------- | ------------------------------------------------- |
 | **Test / Health**         | GET `/test`, GET `/health`, GET `/`               |
+| **Auth (RBAC)**           | POST `/auth/login`, POST `/auth/register`, GET `/auth/me` |
+| **Roles (RBAC)**          | GET `/roles`, GET `/roles/:id`, PUT `/roles/:id/permissions` |
+| **Permissions (RBAC)**    | GET `/permissions`                                |
 | **Users**                 | GET/POST/PUT/DELETE `/users`, POST `/users/login` |
 | **Tourists**              | GET/POST/PUT `/tourists`, POST `/tourists/login`  |
+| **Association Users**     | GET/POST/PUT/DELETE `/association-users`, POST `/association-users/login` |
+| **Associations**          | GET `/associations/public`, GET `/associations`   |
 | **Accommodations**        | GET/POST/PUT/DELETE `/accom`                      |
 | **Activities**            | GET/POST/PUT/DELETE `/activity`                   |
 | **Activity Master Data**  | GET/POST `/activity-master-data`                  |
@@ -259,6 +264,7 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 | `npm start`                 | Start production server                          |
 | `npm run server`            | Start server directly with `node server.js`      |
 | `npm run console`           | Open interactive REPL with models loaded         |
+| `npm run rbac:bootstrap-admin -- --user-type operator --user-id 1` | Assign admin role to an existing account |
 | `npm run db:sync`           | Sync database schema from models                 |
 | `npm run db:migrate`        | Run all pending migrations                       |
 | `npm run db:migrate:undo`   | Rollback last migration                          |
@@ -306,7 +312,10 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 For detailed guides on specific topics:
 
 - **[DEPLOYMENT_MIGRATION_GUIDE.md](docs/DEPLOYMENT_MIGRATION_GUIDE.md)** - Migration workflows, CI/CD deployment, rollback strategies
-- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)** - Schema changes history, model refactoring details
+- **[RBAC_ROUTE_PERMISSION_MATRIX.md](docs/RBAC_ROUTE_PERMISSION_MATRIX.md)** - Frozen endpoint-to-permission contract
+- **[RBAC_LEGACY_LOGIN_DEPRECATION.md](docs/RBAC_LEGACY_LOGIN_DEPRECATION.md)** - Legacy login deprecation timeline and compatibility details
+- **[RBAC_ADMIN_BOOTSTRAP.md](docs/RBAC_ADMIN_BOOTSTRAP.md)** - Procedure for assigning initial admin role
+- **[RBAC_ROLLOUT_RUNBOOK.md](docs/RBAC_ROLLOUT_RUNBOOK.md)** - RBAC migration/seed/verification/rollback runbook
 - **[SOLID_ARCHITECTURE.md](docs/SOLID_ARCHITECTURE.md)** - Architecture principles and best practices
 
 ---

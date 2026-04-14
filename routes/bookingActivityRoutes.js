@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const ActivityBooking = require('../models/bookingActivityModel');
 const activityBookingController = require('../controllers/bookingActivityController.js');
+const { authenticate } = require('../middleware/auth');
+const { authorize, authorizeOwnership } = require('../middleware/authorize');
 
 const asyncHandler = fn => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -9,19 +11,28 @@ const asyncHandler = fn => (req, res, next) =>
 // ===============================
 // CREATE A NEW BOOKING
 // ===============================
-router.post('/', asyncHandler(activityBookingController.createBooking));
+router.post(
+  '/',
+  authenticate,
+  authorize(['booking:create', 'booking:update']),
+  asyncHandler(activityBookingController.createBooking),
+);
 
 // ===============================
 // BOOKED SLOTS (MOST SPECIFIC FIRST)
 // ===============================
 router.get(
   '/booked-dates/operator/:operator_activity_id',
+  authenticate,
+  authorize('booking:read'),
   asyncHandler(activityBookingController.getBookedDatesByOperatorActivity)
 );
 
 // (Optional – keep only if needed elsewhere)
 router.get(
   '/booked-dates/:activity_id',
+  authenticate,
+  authorize('booking:read'),
   asyncHandler(activityBookingController.getBookedDatesByActivity)
 );
 
@@ -30,6 +41,9 @@ router.get(
 // ===============================
 router.get(
   '/user/:tourist_user_id',
+  authenticate,
+  authorize('booking:read'),
+  authorizeOwnership('tourist_user_id'),
   asyncHandler(activityBookingController.getBookingsByUser)
 );
 
@@ -38,13 +52,15 @@ router.get(
 // ===============================
 router.get(
   '/:id',
+  authenticate,
+  authorize('booking:read'),
   asyncHandler(activityBookingController.getBookingById)
 );
 
 // ===============================
 // MARK PAID
 // ===============================
-router.patch('/mark-paid/:id', async (req, res) => {
+router.patch('/mark-paid/:id', authenticate, authorize('booking:update'), async (req, res) => {
   try {
     const booking = await ActivityBooking.findByPk(req.params.id);
     if (!booking)

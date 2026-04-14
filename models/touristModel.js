@@ -42,6 +42,10 @@ const TouristUser = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   },
   {
     tableName: "tourist_users",

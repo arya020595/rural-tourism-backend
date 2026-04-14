@@ -5,7 +5,7 @@ require("../models/associations");
 
 // Import all models
 const Accom = require("../models/accomModel");
-const User = require("../models/userModel");
+const User = require("../models/unifiedUserModel");
 const Tourist = require("../models/touristModel");
 const BookingActivity = require("../models/bookingActivityModel");
 const BookingAccommodation = require("../models/bookingAccommodationModel");

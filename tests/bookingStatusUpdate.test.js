@@ -12,10 +12,23 @@ const app = require("../server");
 const sequelize = require("../config/db");
 const ActivityBooking = require("../models/bookingActivityModel");
 const FormResponse = require("../models/formModel");
-const User = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
 const TouristUser = require("../models/touristModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
+const { generateToken } = require("../middleware/auth");
+
+const adminToken = generateToken({
+  id: 1,
+  unified_user_id: 1,
+  user_type: "operator",
+  username: "integration_admin",
+  role: "admin",
+  permissions: ["*:*"],
+});
+
+const withAdminAuth = (req) =>
+  req.set("Authorization", `Bearer ${adminToken}`);
 
 describe("Booking Status Update Integration Test", () => {
   let operatorUser;
@@ -30,25 +43,25 @@ describe("Booking Status Update Integration Test", () => {
   });
 
   beforeEach(async () => {
-    // Create operator user
-    operatorUser = await User.create({
-      username: "test_operator",
-      full_name: "Test Operator",
+    const uniqueSuffix = `${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+
+    // Create unified operator user
+    operatorUser = await UnifiedUser.create({
+      name: "Test Operator",
+      username: `test_operator_${uniqueSuffix}`,
+      email: `operator_${uniqueSuffix}@test.com`,
       password: "hashedpassword123",
-      user_email: "operator@test.com",
-      business_name: "Test Business",
-      company_logo: "",
-      securityQ1: "Test Q1",
-      securityQ2: "Test Q2",
+      confirm_password: "hashedpassword123",
     });
 
     // Create tourist user
     touristUser = await TouristUser.create({
-      username: "test_tourist",
+      username: `test_tourist_${uniqueSuffix}`,
       full_name: "Test Tourist",
-      email: "tourist@test.com",
+      email: `tourist_${uniqueSuffix}@test.com`,
       contact_no: "1234567890",
       password: "hashedpassword123",
+      nationality: "Malaysian",
     });
 
     // Create activity master data
@@ -60,7 +73,7 @@ describe("Booking Status Update Integration Test", () => {
 
     // Create operator activity
     operatorActivity = await OperatorActivity.create({
-      rt_user_id: operatorUser.user_id,
+      user_id: operatorUser.id,
       activity_id: activityMaster.id,
       description: "Beautiful island hopping experience",
       district: "Kota Kinabalu",
@@ -85,12 +98,29 @@ describe("Booking Status Update Integration Test", () => {
   });
 
   afterEach(async () => {
-    await FormResponse.destroy({ where: {} });
-    await ActivityBooking.destroy({ where: {} });
-    await OperatorActivity.destroy({ where: {} });
-    await ActivityMasterData.destroy({ where: {} });
-    await TouristUser.destroy({ where: {} });
-    await User.destroy({ where: {} });
+    if (touristUser?.tourist_user_id) {
+      await FormResponse.destroy({
+        where: { tourist_user_id: touristUser.tourist_user_id },
+      });
+      await ActivityBooking.destroy({
+        where: { tourist_user_id: touristUser.tourist_user_id },
+      });
+      await TouristUser.destroy({
+        where: { tourist_user_id: touristUser.tourist_user_id },
+      });
+    }
+
+    if (operatorActivity?.id) {
+      await OperatorActivity.destroy({ where: { id: operatorActivity.id } });
+    }
+
+    if (activityMaster?.id) {
+      await ActivityMasterData.destroy({ where: { id: activityMaster.id } });
+    }
+
+    if (operatorUser?.id) {
+      await UnifiedUser.destroy({ where: { id: operatorUser.id } });
+    }
   });
 
   afterAll(async () => {
@@ -105,7 +135,7 @@ describe("Booking Status Update Integration Test", () => {
     // Step 2: Create form response with activity_booking_id
     const formPayload = {
       receipt_id: "PE1234567",
-      operator_user_id: operatorUser.user_id,
+      operator_user_id: operatorUser.id,
       tourist_user_id: touristUser.tourist_user_id,
       citizenship: "Malaysian",
       pax: 2,
@@ -118,8 +148,7 @@ describe("Booking Status Update Integration Test", () => {
       activity_booking_id: activityBooking.id, // ✅ Link to booking
     };
 
-    const response = await request(app)
-      .post("/api/form")
+    const response = await withAdminAuth(request(app).post("/api/form"))
       .send(formPayload)
       .expect(201);
 
@@ -135,7 +164,7 @@ describe("Booking Status Update Integration Test", () => {
     // Create form without activity_booking_id
     const formPayload = {
       receipt_id: "PE9999999",
-      operator_user_id: operatorUser.user_id,
+      operator_user_id: operatorUser.id,
       tourist_user_id: touristUser.tourist_user_id,
       citizenship: "Malaysian",
       pax: 2,
@@ -150,7 +179,9 @@ describe("Booking Status Update Integration Test", () => {
       // activity_booking_id: null, // ❌ Not provided
     };
 
-    await request(app).post("/api/form").send(formPayload).expect(201);
+    await withAdminAuth(request(app).post("/api/form"))
+      .send(formPayload)
+      .expect(201);
 
     // Verify booking status remains "booked"
     const booking = await ActivityBooking.findByPk(activityBooking.id);
@@ -163,7 +194,8 @@ describe("Booking Status Update Integration Test", () => {
 
     // Simulate frontend API call to get operator bookings
     const response = await request(app)
-      .get(`/api/operator-bookings/user/${operatorUser.user_id}`)
+      .get(`/api/operator-bookings/user/${operatorUser.id}`)
+      .set("Authorization", `Bearer ${adminToken}`)
       .expect(200);
 
     expect(response.body.success).toBe(true);
@@ -187,7 +219,7 @@ describe("Booking Status Update Integration Test", () => {
       activity_id: activityMaster.id,
       activity_name: "Island Hopping",
       contact_name: "Test Tourist",
-      contact_no: "1234567890",
+      contact_phone: "1234567890",
       date: "2026-03-20",
       no_of_pax: 3,
       total_price: 450.0,
@@ -198,7 +230,7 @@ describe("Booking Status Update Integration Test", () => {
     // Create form for first booking only
     const formPayload = {
       receipt_id: "PE1111111",
-      operator_user_id: operatorUser.user_id,
+      operator_user_id: operatorUser.id,
       tourist_user_id: touristUser.tourist_user_id,
       citizenship: "Malaysian",
       pax: 2,
@@ -210,7 +242,9 @@ describe("Booking Status Update Integration Test", () => {
       activity_booking_id: activityBooking.id,
     };
 
-    await request(app).post("/api/form").send(formPayload).expect(201);
+    await withAdminAuth(request(app).post("/api/form"))
+      .send(formPayload)
+      .expect(201);
 
     // Verify first booking is paid
     const b1 = await ActivityBooking.findByPk(activityBooking.id);
