@@ -25,7 +25,7 @@ const Association = sequelize.define(
         exclude: ["created_at", "updated_at", "deleted_at"],
       },
     },
-  }
+  },
 );
 
 module.exports = Association;

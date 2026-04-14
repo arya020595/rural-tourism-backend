@@ -232,7 +232,11 @@ describe("getOperatorsByActivityId", () => {
     OperatorActivity.findAll = jest.fn().mockResolvedValue([
       {
         dataValues: { id: 1, activity_id: 2 },
-        operator: { id: 10, name: "TestBiz", company: { company_name: "TestBiz" } },
+        operator: {
+          id: 10,
+          name: "TestBiz",
+          company: { company_name: "TestBiz" },
+        },
         services_provided: null,
         available_dates: null,
       },

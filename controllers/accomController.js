@@ -4,8 +4,8 @@ const accommodationService = require("../services/accommodationService");
 const getRequesterContext = (req) => {
   const requesterId = Number(
     req.user?.user_type === "operator"
-      ? req.user?.unified_user_id ?? req.user?.id
-      : req.user?.legacy_user_id ?? req.user?.id,
+      ? (req.user?.unified_user_id ?? req.user?.id)
+      : (req.user?.legacy_user_id ?? req.user?.id),
   );
   return {
     requesterId: Number.isNaN(requesterId) ? null : requesterId,
@@ -190,7 +190,8 @@ exports.createAccommodation = async (req, res) => {
       String(payloadUserId) !== String(requesterId)
     ) {
       return res.status(403).json({
-        error: "Forbidden. You can only create accommodations for your own account.",
+        error:
+          "Forbidden. You can only create accommodations for your own account.",
       });
     }
 

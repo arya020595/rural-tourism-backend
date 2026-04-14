@@ -23,7 +23,9 @@ module.exports = {
 
     const adminRoleId = Number(roles[0]?.id || 0);
     if (!adminRoleId) {
-      throw new Error("Missing RBAC role 'admin'. Run RBAC role seeders first.");
+      throw new Error(
+        "Missing RBAC role 'admin'. Run RBAC role seeders first.",
+      );
     }
 
     const existingAdmin = await queryInterface.sequelize.query(

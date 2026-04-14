@@ -31,21 +31,28 @@ jest.mock("../../../config/db", () => ({
 
 jest.mock("../../../controllers/bookingActivityController.js", () => ({
   createBooking: (req, res) => res.status(201).json({ success: true }),
-  getBookedDatesByOperatorActivity: (req, res) => res.status(200).json({ success: true }),
-  getBookedDatesByActivity: (req, res) => res.status(200).json({ success: true }),
+  getBookedDatesByOperatorActivity: (req, res) =>
+    res.status(200).json({ success: true }),
+  getBookedDatesByActivity: (req, res) =>
+    res.status(200).json({ success: true }),
   getBookingsByUser: (req, res) => res.status(200).json({ success: true }),
   getBookingById: (req, res) => res.status(200).json({ success: true }),
 }));
 
 jest.mock("../../../controllers/bookingAccommodationController", () => ({
-  createAccommodationBooking: (req, res) => res.status(201).json({ success: true }),
-  getBookedDatesByAccommodation: (req, res) => res.status(200).json({ success: true }),
-  getAccommodationBookingById: (req, res) => res.status(200).json({ success: true }),
-  getAccommodationBookingsByUser: (req, res) => res.status(200).json({ success: true }),
+  createAccommodationBooking: (req, res) =>
+    res.status(201).json({ success: true }),
+  getBookedDatesByAccommodation: (req, res) =>
+    res.status(200).json({ success: true }),
+  getAccommodationBookingById: (req, res) =>
+    res.status(200).json({ success: true }),
+  getAccommodationBookingsByUser: (req, res) =>
+    res.status(200).json({ success: true }),
 }));
 
 jest.mock("../../../controllers/operatorBookingsController.js", () => ({
-  getAllBookingsForOperator: (...args) => mockGetAllBookingsForOperator(...args),
+  getAllBookingsForOperator: (...args) =>
+    mockGetAllBookingsForOperator(...args),
   markActivityPaid: (...args) => mockMarkActivityPaid(...args),
   markAccommodationPaid: (...args) => mockMarkAccommodationPaid(...args),
 }));
@@ -87,7 +94,9 @@ describe("financial and critical endpoint authorization", () => {
   describe("PATCH /api/activity-booking/mark-paid/:id", () => {
     test("should return 401 without token", async () => {
       const app = buildApp();
-      const response = await request(app).patch("/api/activity-booking/mark-paid/11");
+      const response = await request(app).patch(
+        "/api/activity-booking/mark-paid/11",
+      );
 
       expect(response.status).toBe(401);
     });
@@ -126,7 +135,9 @@ describe("financial and critical endpoint authorization", () => {
   describe("PATCH /api/accommodation-booking/mark-paid/:id", () => {
     test("should return 401 without token", async () => {
       const app = buildApp();
-      const response = await request(app).patch("/api/accommodation-booking/mark-paid/12");
+      const response = await request(app).patch(
+        "/api/accommodation-booking/mark-paid/12",
+      );
 
       expect(response.status).toBe(401);
     });

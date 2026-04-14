@@ -1,5 +1,9 @@
 const jwt = require("jsonwebtoken");
-const { authenticate, optionalAuth, generateToken } = require("../../../middleware/auth");
+const {
+  authenticate,
+  optionalAuth,
+  generateToken,
+} = require("../../../middleware/auth");
 
 const createMockRes = () => {
   const res = {};

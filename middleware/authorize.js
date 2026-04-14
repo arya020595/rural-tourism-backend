@@ -4,7 +4,9 @@ const hasRequiredPermission = (user, requiredPermissions) => {
   }
 
   const userRole = user.role || null;
-  const userPermissions = Array.isArray(user.permissions) ? user.permissions : [];
+  const userPermissions = Array.isArray(user.permissions)
+    ? user.permissions
+    : [];
   const required = Array.isArray(requiredPermissions)
     ? requiredPermissions
     : [requiredPermissions];
@@ -67,8 +69,8 @@ const authorizeOwnership = (ownerParamKey, bypassPermissions = []) => {
     const ownerIdFromParams = String(req.params[ownerParamKey] || "");
     const requesterOwnerId = String(
       req.user.user_type === "operator"
-        ? req.user.unified_user_id ?? req.user.id ?? ""
-        : req.user.legacy_user_id ?? req.user.id ?? "",
+        ? (req.user.unified_user_id ?? req.user.id ?? "")
+        : (req.user.legacy_user_id ?? req.user.id ?? ""),
     );
 
     if (ownerIdFromParams && ownerIdFromParams === requesterOwnerId) {

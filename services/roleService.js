@@ -88,11 +88,17 @@ class RoleService {
         attributes: ["id"],
       });
 
-      const existingIds = new Set(existingPermissions.map((permission) => permission.id));
-      const invalidIds = normalizedPermissionIds.filter((id) => !existingIds.has(id));
+      const existingIds = new Set(
+        existingPermissions.map((permission) => permission.id),
+      );
+      const invalidIds = normalizedPermissionIds.filter(
+        (id) => !existingIds.has(id),
+      );
 
       if (invalidIds.length > 0) {
-        const error = new Error(`Invalid permission IDs: ${invalidIds.join(", ")}`);
+        const error = new Error(
+          `Invalid permission IDs: ${invalidIds.join(", ")}`,
+        );
         error.statusCode = 400;
         throw error;
       }
@@ -125,7 +131,6 @@ class RoleService {
       throw error;
     }
   }
-
 }
 
 module.exports = new RoleService();

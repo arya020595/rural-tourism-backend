@@ -165,7 +165,9 @@ describe("RBAC route contracts", () => {
     test("GET /api/roles should return 200 with role:read", async () => {
       const app = buildApp();
       const token = makeToken(["role:read"], "operator");
-      mockGetAllRoles.mockResolvedValue([{ id: 1, name: "admin", permissions: [] }]);
+      mockGetAllRoles.mockResolvedValue([
+        { id: 1, name: "admin", permissions: [] },
+      ]);
 
       const response = await request(app)
         .get("/api/roles")
@@ -173,7 +175,9 @@ describe("RBAC route contracts", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data).toEqual([{ id: 1, name: "admin", permissions: [] }]);
+      expect(response.body.data).toEqual([
+        { id: 1, name: "admin", permissions: [] },
+      ]);
     });
 
     test("GET /api/permissions should return 200 with permission:read", async () => {

@@ -32,11 +32,13 @@ Legacy login responses now include:
 Clients should migrate to POST /api/auth/login with:
 
 Request body:
+
 - identifier
 - password
 - user_type (optional: operator, tourist, association)
 
 Response envelope:
+
 - success
 - message
 - data.token

@@ -66,7 +66,9 @@ class AuthService {
       throw error;
     }
 
-    const error = new Error("Your account is suspended. Please contact support.");
+    const error = new Error(
+      "Your account is suspended. Please contact support.",
+    );
     error.statusCode = 403;
     throw error;
   }
@@ -108,7 +110,8 @@ class AuthService {
               ],
             },
           }),
-        verifyPassword: async (user) => bcrypt.compare(normalizedPassword, user.password),
+        verifyPassword: async (user) =>
+          bcrypt.compare(normalizedPassword, user.password),
         getIdentity: (user) => ({
           id: user.tourist_user_id,
           username: user.username,
@@ -130,7 +133,10 @@ class AuthService {
             },
           }),
         verifyPassword: async (user) => {
-          if (user.default_password && normalizedPassword === user.default_password) {
+          if (
+            user.default_password &&
+            normalizedPassword === user.default_password
+          ) {
             return true;
           }
           return bcrypt.compare(normalizedPassword, user.password);
@@ -180,7 +186,10 @@ class AuthService {
         tokenPayload.association_id = identity.association_id;
       }
 
-      const token = generateToken(tokenPayload, process.env.JWT_EXPIRES_IN || "24h");
+      const token = generateToken(
+        tokenPayload,
+        process.env.JWT_EXPIRES_IN || "24h",
+      );
 
       return {
         token,
@@ -296,7 +305,10 @@ class AuthService {
       tokenPayload.association_id = user.association_id;
     }
 
-    const token = generateToken(tokenPayload, process.env.JWT_EXPIRES_IN || "24h");
+    const token = generateToken(
+      tokenPayload,
+      process.env.JWT_EXPIRES_IN || "24h",
+    );
 
     return {
       token,
@@ -322,9 +334,13 @@ class AuthService {
   }
 
   async register({ userType, payload = {}, files = {} } = {}) {
-    const normalizedUserType = String(userType || "").trim().toLowerCase();
+    const normalizedUserType = String(userType || "")
+      .trim()
+      .toLowerCase();
 
-    if (!Object.values(DEFAULT_ROLE_BY_USER_TYPE).includes(normalizedUserType)) {
+    if (
+      !Object.values(DEFAULT_ROLE_BY_USER_TYPE).includes(normalizedUserType)
+    ) {
       const error = new Error(
         `Invalid user_type. Allowed values: ${Object.values(DEFAULT_ROLE_BY_USER_TYPE).join(", ")}.`,
       );
@@ -347,8 +363,12 @@ class AuthService {
 
   async registerOperator(payload = {}, files = {}) {
     const username = String(payload.username || "").trim();
-    const userEmail = String(payload.user_email || payload.email_address || "").trim();
-    const ownerFullName = String(payload.owner_full_name || payload.full_name || "").trim();
+    const userEmail = String(
+      payload.user_email || payload.email_address || "",
+    ).trim();
+    const ownerFullName = String(
+      payload.owner_full_name || payload.full_name || "",
+    ).trim();
     const password = String(payload.password || "");
     const confirmedPassword = String(
       payload.confirmed_password || payload.confPass || "",
@@ -385,7 +405,11 @@ class AuthService {
     }
 
     const normalizedPoscode = parsePoscode(payload.poscode);
-    if (payload.poscode !== undefined && payload.poscode !== "" && !normalizedPoscode) {
+    if (
+      payload.poscode !== undefined &&
+      payload.poscode !== "" &&
+      !normalizedPoscode
+    ) {
       const error = new Error("Poscode must be exactly 5 digits.");
       error.statusCode = 400;
       throw error;
@@ -394,7 +418,11 @@ class AuthService {
     const associationIdInput = payload.associationId ?? payload.association_id;
     const parsedAssociationId = parseNullableInt(associationIdInput);
 
-    if (associationIdInput !== undefined && associationIdInput !== "" && parsedAssociationId === null) {
+    if (
+      associationIdInput !== undefined &&
+      associationIdInput !== "" &&
+      parsedAssociationId === null
+    ) {
       const error = new Error("Association ID must be an integer.");
       error.statusCode = 400;
       throw error;
@@ -409,14 +437,18 @@ class AuthService {
       }
     }
 
-    const existingUserByUsername = await UnifiedUser.findOne({ where: { username } });
+    const existingUserByUsername = await UnifiedUser.findOne({
+      where: { username },
+    });
     if (existingUserByUsername) {
       const error = new Error("Username already exists.");
       error.statusCode = 409;
       throw error;
     }
 
-    const existingUserByEmail = await UnifiedUser.findOne({ where: { email: userEmail } });
+    const existingUserByEmail = await UnifiedUser.findOne({
+      where: { email: userEmail },
+    });
     if (existingUserByEmail) {
       const error = new Error("Email address already exists.");
       error.statusCode = 409;
@@ -425,12 +457,11 @@ class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const roleId = await this.resolveDefaultRoleId(USER_TYPE_OPERATOR);
-    const companyName = String(payload.business_name || "").trim() || ownerFullName || username;
+    const companyName =
+      String(payload.business_name || "").trim() || ownerFullName || username;
 
     const logoFile =
-      files?.operator_logo_image?.[0] ||
-      files?.company_logo?.[0] ||
-      null;
+      files?.operator_logo_image?.[0] || files?.company_logo?.[0] || null;
     const motacFile = files?.motac_license_file?.[0] || null;
     const tradingOperationFile = files?.trading_operation_license?.[0] || null;
     const homestayFile = files?.homestay_certificate?.[0] || null;
@@ -490,7 +521,6 @@ class AuthService {
       await transaction.rollback();
       throw dbError;
     }
-
   }
 
   async registerTourist(payload = {}) {
@@ -504,7 +534,14 @@ class AuthService {
       payload.confirm_password || payload.confirmed_password || "",
     );
 
-    if (!username || !email || !fullName || !contactNo || !nationality || !password) {
+    if (
+      !username ||
+      !email ||
+      !fullName ||
+      !contactNo ||
+      !nationality ||
+      !password
+    ) {
       const error = new Error("All fields are required.");
       error.statusCode = 400;
       throw error;
@@ -516,7 +553,9 @@ class AuthService {
       throw error;
     }
 
-    const existingUserByUsername = await TouristUser.findOne({ where: { username } });
+    const existingUserByUsername = await TouristUser.findOne({
+      where: { username },
+    });
     if (existingUserByUsername) {
       const error = new Error("Username already taken.");
       error.statusCode = 409;
@@ -609,8 +648,12 @@ class AuthService {
   }
 
   extractPermissionCodes(role) {
-    const rolePermissions = Array.isArray(role.permissions) ? role.permissions : [];
-    const codes = rolePermissions.map((permission) => permission.code).filter(Boolean);
+    const rolePermissions = Array.isArray(role.permissions)
+      ? role.permissions
+      : [];
+    const codes = rolePermissions
+      .map((permission) => permission.code)
+      .filter(Boolean);
 
     if (role.name === "admin" && !codes.includes("*:*")) {
       codes.push("*:*");

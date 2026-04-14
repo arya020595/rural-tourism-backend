@@ -1,4 +1,7 @@
-const { authorize, authorizeOwnership } = require("../../../middleware/authorize");
+const {
+  authorize,
+  authorizeOwnership,
+} = require("../../../middleware/authorize");
 
 const createMockRes = () => {
   const res = {};
@@ -77,7 +80,8 @@ describe("authorize middleware", () => {
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        message: "Forbidden. You do not have permission to perform this action.",
+        message:
+          "Forbidden. You do not have permission to perform this action.",
         data: {
           required: ["booking:update"],
           your_role: "tourist",

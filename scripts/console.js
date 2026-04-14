@@ -21,7 +21,7 @@ async function startConsole() {
     console.log("📦 Available models:");
     console.log("   Accom, User, Tourist, BookingActivity,");
     console.log(
-      "   BookingAccommodation, OperatorActivity, ActivityMasterData,"
+      "   BookingAccommodation, OperatorActivity, ActivityMasterData,",
     );
     console.log("   Notification, Form, sequelize\n");
     console.log("💡 Examples:");

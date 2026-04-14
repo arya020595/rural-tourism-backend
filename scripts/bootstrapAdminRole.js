@@ -85,7 +85,9 @@ const resolveLookupWhere = (args, config) => {
     return { [config.emailField]: args.email };
   }
 
-  throw new Error("You must provide one lookup key: --user-id, --username, or --email");
+  throw new Error(
+    "You must provide one lookup key: --user-id, --username, or --email",
+  );
 };
 
 const run = async () => {
@@ -96,7 +98,9 @@ const run = async () => {
   const config = USER_TYPE_CONFIG[userType];
   if (!config) {
     printUsage();
-    throw new Error("Invalid --user-type. Allowed values: operator, tourist, association");
+    throw new Error(
+      "Invalid --user-type. Allowed values: operator, tourist, association",
+    );
   }
 
   const where = resolveLookupWhere(args, config);

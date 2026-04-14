@@ -27,8 +27,7 @@ const adminToken = generateToken({
   permissions: ["*:*"],
 });
 
-const withAdminAuth = (req) =>
-  req.set("Authorization", `Bearer ${adminToken}`);
+const withAdminAuth = (req) => req.set("Authorization", `Bearer ${adminToken}`);
 
 describe("Booking Status Update Integration Test", () => {
   let operatorUser;

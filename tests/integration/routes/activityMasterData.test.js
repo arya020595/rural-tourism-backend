@@ -12,8 +12,7 @@ const adminToken = generateToken({
   permissions: ["*:*"],
 });
 
-const withAdminAuth = (req) =>
-  req.set("Authorization", `Bearer ${adminToken}`);
+const withAdminAuth = (req) => req.set("Authorization", `Bearer ${adminToken}`);
 
 describe("Activity Master Data API - Integration Tests", () => {
   // Test data
@@ -69,8 +68,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should return all activities with default pagination", async () => {
       const response = await withAdminAuth(
         request(app).get("/api/activity-master-data"),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body).toHaveProperty("data");
       expect(response.body).toHaveProperty("pagination");
@@ -83,8 +81,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should support custom pagination", async () => {
       const response = await withAdminAuth(
         request(app).get("/api/activity-master-data?page=1&per_page=2"),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.pagination.per_page).toBe(2);
       expect(response.body.data.length).toBeLessThanOrEqual(2);
@@ -99,9 +96,10 @@ describe("Activity Master Data API - Integration Tests", () => {
 
     test("should search by activity name containing text (cont predicate)", async () => {
       const response = await withAdminAuth(
-        request(app).get("/api/activity-master-data?q[activity_name_cont]=Beach"),
-      )
-        .expect(200);
+        request(app).get(
+          "/api/activity-master-data?q[activity_name_cont]=Beach",
+        ),
+      ).expect(200);
 
       expect(response.body.data.length).toBeGreaterThan(0);
       expect(response.body.data[0].activity_name).toContain("Beach");
@@ -109,9 +107,10 @@ describe("Activity Master Data API - Integration Tests", () => {
 
     test("should search by activity name starting with text (start predicate)", async () => {
       const response = await withAdminAuth(
-        request(app).get("/api/activity-master-data?q[activity_name_start]=Test Beach"),
-      )
-        .expect(200);
+        request(app).get(
+          "/api/activity-master-data?q[activity_name_start]=Test Beach",
+        ),
+      ).expect(200);
 
       expect(response.body.data.length).toBeGreaterThan(0);
       expect(response.body.data[0].activity_name).toMatch(/^Test Beach/);
@@ -119,9 +118,10 @@ describe("Activity Master Data API - Integration Tests", () => {
 
     test("should search by activity name ending with text (end predicate)", async () => {
       const response = await withAdminAuth(
-        request(app).get("/api/activity-master-data?q[activity_name_end]=Hiking"),
-      )
-        .expect(200);
+        request(app).get(
+          "/api/activity-master-data?q[activity_name_end]=Hiking",
+        ),
+      ).expect(200);
 
       expect(response.body.data.length).toBeGreaterThan(0);
       expect(response.body.data[0].activity_name).toMatch(/Hiking$/);
@@ -136,8 +136,7 @@ describe("Activity Master Data API - Integration Tests", () => {
 
       const response = await withAdminAuth(
         request(app).get(`/api/activity-master-data?q[id_gt]=${firstId}`),
-      )
-        .expect(200);
+      ).expect(200);
 
       response.body.data.forEach((activity) => {
         expect(activity.id).toBeGreaterThan(firstId);
@@ -153,8 +152,7 @@ describe("Activity Master Data API - Integration Tests", () => {
 
       const response = await withAdminAuth(
         request(app).get(`/api/activity-master-data?q[id_lte]=${lastId}`),
-      )
-        .expect(200);
+      ).expect(200);
 
       response.body.data.forEach((activity) => {
         expect(activity.id).toBeLessThanOrEqual(lastId);
@@ -166,8 +164,7 @@ describe("Activity Master Data API - Integration Tests", () => {
         request(app).get(
           "/api/activity-master-data?q[activity_name_eq]=Test Beach Activity",
         ),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.data.length).toBe(1);
       expect(response.body.data[0].activity_name).toBe("Test Beach Activity");
@@ -178,8 +175,7 @@ describe("Activity Master Data API - Integration Tests", () => {
         request(app).get(
           "/api/activity-master-data?q[activity_name_not_eq]=Test Beach Activity",
         ),
-      )
-        .expect(200);
+      ).expect(200);
 
       response.body.data.forEach((activity) => {
         expect(activity.activity_name).not.toBe("Test Beach Activity");
@@ -191,8 +187,7 @@ describe("Activity Master Data API - Integration Tests", () => {
         request(app).get(
           "/api/activity-master-data?q[activity_name_cont]=Test&q[description_cont]=activity",
         ),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.data.length).toBeGreaterThan(0);
       response.body.data.forEach((activity) => {
@@ -209,9 +204,10 @@ describe("Activity Master Data API - Integration Tests", () => {
 
     test("should sort by activity_name ascending", async () => {
       const response = await withAdminAuth(
-        request(app).get("/api/activity-master-data?sort=activity_name&order=ASC"),
-      )
-        .expect(200);
+        request(app).get(
+          "/api/activity-master-data?sort=activity_name&order=ASC",
+        ),
+      ).expect(200);
 
       const names = response.body.data.map((a) => a.activity_name);
       const sortedNames = [...names].sort();
@@ -221,8 +217,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should sort by activity_name descending", async () => {
       const response = await withAdminAuth(
         request(app).get("/api/activity-master-data?sort=activity_name_desc"),
-      )
-        .expect(200);
+      ).expect(200);
 
       const names = response.body.data.map((a) => a.activity_name);
       const sortedNames = [...names].sort().reverse();
@@ -232,8 +227,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should sort by id ascending", async () => {
       const response = await withAdminAuth(
         request(app).get("/api/activity-master-data?sort=id_asc"),
-      )
-        .expect(200);
+      ).expect(200);
 
       const ids = response.body.data.map((a) => a.id);
       const sortedIds = [...ids].sort((a, b) => a - b);
@@ -252,8 +246,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should return a single activity by ID", async () => {
       const response = await withAdminAuth(
         request(app).get(`/api/activity-master-data/${testActivityId}`),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body).toHaveProperty("id", testActivityId);
       expect(response.body).toHaveProperty("activity_name");
@@ -263,8 +256,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should return 404 for non-existent activity", async () => {
       const response = await withAdminAuth(
         request(app).get("/api/activity-master-data/99999"),
-      )
-        .expect(404);
+      ).expect(404);
 
       expect(response.body).toHaveProperty("error");
     });
@@ -356,8 +348,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should delete an activity", async () => {
       const response = await withAdminAuth(
         request(app).delete(`/api/activity-master-data/${testActivityId}`),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body).toHaveProperty("message");
 
@@ -369,8 +360,7 @@ describe("Activity Master Data API - Integration Tests", () => {
     test("should return 404 when deleting non-existent activity", async () => {
       const response = await withAdminAuth(
         request(app).delete("/api/activity-master-data/99999"),
-      )
-        .expect(404);
+      ).expect(404);
 
       expect(response.body).toHaveProperty("error");
     });
@@ -386,8 +376,7 @@ describe("Activity Master Data API - Integration Tests", () => {
         request(app).get(
           "/api/activity-master-data?q[activity_name_cont]=Test&sort=activity_name_asc&page=1&per_page=2",
         ),
-      )
-        .expect(200);
+      ).expect(200);
 
       expect(response.body.data.length).toBeLessThanOrEqual(2);
       expect(response.body.pagination.per_page).toBe(2);

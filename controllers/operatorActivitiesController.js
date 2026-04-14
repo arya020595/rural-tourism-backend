@@ -73,9 +73,13 @@ exports.getOperatorsByActivityId = async (req, res) => {
       ...op.dataValues,
       user_id: op.user_id,
       business_name:
-        op.operator?.company?.company_name || op.operator?.name || "Not Provided",
+        op.operator?.company?.company_name ||
+        op.operator?.name ||
+        "Not Provided",
       operator_name:
-        op.operator?.company?.company_name || op.operator?.name || "Unknown Operator",
+        op.operator?.company?.company_name ||
+        op.operator?.name ||
+        "Unknown Operator",
       company_logo: op.operator?.company?.operator_logo_image || null,
       services_provided_list: parseJSONField(op.services_provided),
       available_dates_list: parseJSONField(op.available_dates),
@@ -136,13 +140,8 @@ exports.getOperatorActivityById = async (req, res) => {
 // Create a new operator activity
 exports.createOperatorActivity = async (req, res) => {
   try {
-    const {
-      activity_id,
-      user_id,
-      address,
-      price_per_pax,
-      available_dates,
-    } = req.body;
+    const { activity_id, user_id, address, price_per_pax, available_dates } =
+      req.body;
 
     const ownerUserId = user_id;
 

@@ -21,13 +21,14 @@ const normalizeDecodedPayload = (decoded = {}) => {
 
   if (normalized.id === undefined || normalized.id === null) {
     normalized.id = isOperator
-      ? decoded.unified_user_id ?? decoded.id ?? null
+      ? (decoded.unified_user_id ?? decoded.id ?? null)
       : normalized.legacy_user_id;
   }
 
   if (
     isOperator &&
-    (normalized.unified_user_id === undefined || normalized.unified_user_id === null)
+    (normalized.unified_user_id === undefined ||
+      normalized.unified_user_id === null)
   ) {
     normalized.unified_user_id = normalized.id ?? null;
   }

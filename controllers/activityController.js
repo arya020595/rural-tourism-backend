@@ -7,8 +7,8 @@ const operatorActivityService = require("../services/operatorActivityService");
 const getRequesterContext = (req) => {
   const requesterId = Number(
     req.user?.user_type === "operator"
-      ? req.user?.unified_user_id ?? req.user?.id
-      : req.user?.legacy_user_id ?? req.user?.id,
+      ? (req.user?.unified_user_id ?? req.user?.id)
+      : (req.user?.legacy_user_id ?? req.user?.id),
   );
   return {
     requesterId: Number.isNaN(requesterId) ? null : requesterId,
@@ -220,7 +220,8 @@ exports.createActivity = async (req, res) => {
       String(payloadUserId) !== String(requesterId)
     ) {
       return res.status(403).json({
-        error: "Forbidden. You can only create activities for your own account.",
+        error:
+          "Forbidden. You can only create activities for your own account.",
       });
     }
 
@@ -232,7 +233,11 @@ exports.createActivity = async (req, res) => {
     // Resolve the referenced activity master record.
     let masterActivityId = null;
 
-    if (activity_id !== undefined && activity_id !== null && activity_id !== "") {
+    if (
+      activity_id !== undefined &&
+      activity_id !== null &&
+      activity_id !== ""
+    ) {
       const parsedActivityId = Number(activity_id);
       if (Number.isNaN(parsedActivityId) || parsedActivityId <= 0) {
         return res.status(400).json({ error: "Invalid activity_id." });
@@ -501,7 +506,8 @@ exports.getOperatorActivityById = async (req, res) => {
             user_id: activity.operator.id,
             business_name: activity.operator.company?.company_name || null,
             full_name: activity.operator.name,
-            company_logo: activity.operator.company?.operator_logo_image || null,
+            company_logo:
+              activity.operator.company?.operator_logo_image || null,
           }
         : null,
       // Include parsed arrays for frontend
