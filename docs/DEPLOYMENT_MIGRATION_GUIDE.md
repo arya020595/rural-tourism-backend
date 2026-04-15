@@ -4,6 +4,11 @@
 
 This guide explains how database migrations are automatically executed during deployment to ensure schema changes are applied before the application restarts.
 
+For RBAC rollout-specific controls (targeted seeders, contract smoke tests, and rollback sequence), see:
+
+- `docs/RBAC_ROLLOUT_RUNBOOK.md`
+- `docs/RBAC_ADMIN_BOOTSTRAP.md`
+
 ## Migration Strategy
 
 ### Automatic Migration on Deployment

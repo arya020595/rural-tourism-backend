@@ -1,21 +1,26 @@
 require("dotenv").config();
 const { Sequelize } = require("sequelize");
 
+const isTestEnv = process.env.NODE_ENV === "test";
+const resolvedDatabaseName = isTestEnv
+  ? process.env.DB_TEST_NAME || `${process.env.DB_NAME}_test`
+  : process.env.DB_NAME;
+
 // Create a new instance of Sequelize using environment variables
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
+  resolvedDatabaseName,
   process.env.DB_USER,
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST, // Use environment variable for host
     port: process.env.DB_PORT || 3306, // Specify the port from environment variable
     dialect: "mysql", // Specify the dialect as MySQL
-    logging: process.env.NODE_ENV === "test" ? false : console.log, // Disable logging in test environment
+    logging: isTestEnv ? false : console.log, // Disable logging in test environment
   },
 );
 
 // Only auto-connect in non-test environments
-if (process.env.NODE_ENV !== "test") {
+if (!isTestEnv) {
   sequelize
     .authenticate()
     .then(() => console.log("Database connected successfully"))
@@ -45,7 +50,7 @@ const syncDatabase = async () => {
 };
 
 // Call the test connection function only in non-test environment
-if (process.env.NODE_ENV !== "test") {
+if (!isTestEnv) {
   testConnection();
   // sync tables
   syncDatabase();

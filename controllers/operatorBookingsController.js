@@ -2,7 +2,8 @@ const ActivityBooking = require("../models/bookingActivityModel");
 const AccommodationBooking = require("../models/bookingAccommodationModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const Accom = require("../models/accomModel");
-const User = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
+const Company = require("../models/companyModel");
 const ActivityMasterData = require("../models/activityMasterDataModel"); // For activity details
 const FormResponse = require("../models/formModel");
 
@@ -25,7 +26,7 @@ exports.getAllBookingsForOperator = async (req, res) => {
         {
           model: OperatorActivity,
           as: "operatorActivity",
-          where: { rt_user_id: operatorId }, // <-- operator foreign key
+          where: { user_id: operatorId },
           include: [
             {
               model: ActivityMasterData,
@@ -33,9 +34,17 @@ exports.getAllBookingsForOperator = async (req, res) => {
               attributes: ["id", "activity_name"],
             },
             {
-              model: User,
+              model: UnifiedUser,
               as: "operator",
-              attributes: ["user_id", "full_name", "username"],
+              attributes: ["id", "name", "username"],
+              include: [
+                {
+                  model: Company,
+                  as: "company",
+                  attributes: ["company_name"],
+                  required: false,
+                },
+              ],
             },
           ],
         },
@@ -55,7 +64,7 @@ exports.getAllBookingsForOperator = async (req, res) => {
         {
           model: Accom,
           as: "accommodation",
-          where: { rt_user_id: operatorId }, // <-- operator foreign key
+          where: { user_id: operatorId },
           attributes: ["name"],
         },
         {
@@ -76,7 +85,8 @@ exports.getAllBookingsForOperator = async (req, res) => {
         activity_name: b.operatorActivity?.activity?.activity_name,
         activityName: b.operatorActivity?.activity?.activity_name,
         operatorName:
-          b.operatorActivity?.operator?.full_name ||
+          b.operatorActivity?.operator?.company?.company_name ||
+          b.operatorActivity?.operator?.name ||
           b.operatorActivity?.operator?.username,
         location: b.operatorActivity?.address || "",
         citizenship: b.nationality || "",

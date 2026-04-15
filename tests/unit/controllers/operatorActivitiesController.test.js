@@ -50,7 +50,7 @@ describe("parseJSONField (via controller response mapping)", () => {
     const mockData = [
       {
         dataValues: { id: 1 },
-        rt_user: { user_id: 10, business_name: "Biz" },
+        operator: { id: 10, name: "Biz", company: { company_name: "Biz" } },
         services_provided: "not-valid-json{{{",
         available_dates: "also-invalid",
       },
@@ -73,7 +73,7 @@ describe("derivePriceFromDates (via createOperatorActivity)", () => {
     const createdRecord = {
       id: 1,
       activity_id: 5,
-      rt_user_id: 10,
+      user_id: 10,
       address: "Test Address",
       price_per_pax: 75,
       available_dates: [
@@ -86,7 +86,7 @@ describe("derivePriceFromDates (via createOperatorActivity)", () => {
     const { req, res } = mockReqRes({
       body: {
         activity_id: 5,
-        rt_user_id: 10,
+        user_id: 10,
         address: "Test Address",
         available_dates: [
           { date: "2026-03-10", time: "Full Day", price: 75 },
@@ -111,7 +111,7 @@ describe("derivePriceFromDates (via createOperatorActivity)", () => {
     const { req, res } = mockReqRes({
       body: {
         activity_id: 5,
-        rt_user_id: 10,
+        user_id: 10,
         address: "Test",
         price_per_pax: 100,
         available_dates: [{ date: "2026-03-10", time: "Full Day", price: 75 }],
@@ -132,7 +132,7 @@ describe("derivePriceFromDates (via createOperatorActivity)", () => {
     const { req, res } = mockReqRes({
       body: {
         activity_id: 5,
-        rt_user_id: 10,
+        user_id: 10,
         address: "Test",
         // no available_dates, no price_per_pax
       },
@@ -152,7 +152,7 @@ describe("derivePriceFromDates (via createOperatorActivity)", () => {
     const { req, res } = mockReqRes({
       body: {
         activity_id: 5,
-        rt_user_id: 10,
+        user_id: 10,
         address: "Test",
         price_per_pax: 0, // explicitly 0
         available_dates: [{ date: "2026-03-10", time: "Full Day", price: 999 }],
@@ -173,7 +173,7 @@ describe("derivePriceFromDates (via createOperatorActivity)", () => {
 describe("createOperatorActivity - validation", () => {
   afterEach(() => jest.clearAllMocks());
 
-  test("should return 400 if rt_user_id is missing", async () => {
+  test("should return 400 if user_id is missing", async () => {
     const { req, res } = mockReqRes({
       body: { activity_id: 5 },
     });
@@ -182,13 +182,13 @@ describe("createOperatorActivity - validation", () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ error: expect.stringContaining("rt_user_id") }),
+      expect.objectContaining({ error: expect.stringContaining("user_id") }),
     );
   });
 
   test("should return 400 if activity_id is missing", async () => {
     const { req, res } = mockReqRes({
-      body: { rt_user_id: 10 },
+      body: { user_id: 10 },
     });
 
     await controller.createOperatorActivity(req, res);
@@ -201,13 +201,13 @@ describe("createOperatorActivity - validation", () => {
     );
   });
 
-  test("should parse rt_user_id and activity_id as integers", async () => {
+  test("should parse user_id and activity_id as integers", async () => {
     OperatorActivity.create = jest.fn().mockResolvedValue({ id: 1 });
 
     const { req, res } = mockReqRes({
       body: {
         activity_id: "5",
-        rt_user_id: "10",
+        user_id: "10",
         address: "Test",
       },
     });
@@ -217,7 +217,7 @@ describe("createOperatorActivity - validation", () => {
     expect(OperatorActivity.create).toHaveBeenCalledWith(
       expect.objectContaining({
         activity_id: 5,
-        rt_user_id: 10,
+        user_id: 10,
       }),
     );
   });
@@ -232,7 +232,11 @@ describe("getOperatorsByActivityId", () => {
     OperatorActivity.findAll = jest.fn().mockResolvedValue([
       {
         dataValues: { id: 1, activity_id: 2 },
-        rt_user: { user_id: 10, business_name: "TestBiz" },
+        operator: {
+          id: 10,
+          name: "TestBiz",
+          company: { company_name: "TestBiz" },
+        },
         services_provided: null,
         available_dates: null,
       },
@@ -268,7 +272,7 @@ describe("getOperatorsByActivityId", () => {
     const mockData = [
       {
         dataValues: { id: 1 },
-        rt_user: { user_id: 10, business_name: "Biz" },
+        operator: { id: 10, name: "Biz", company: { company_name: "Biz" } },
         services_provided: JSON.stringify([
           { title: "Safety", description: "Life jacket" },
         ]),

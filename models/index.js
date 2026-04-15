@@ -1,21 +1,13 @@
 const sequelize = require("../config/db");
 
-const User = require("./userModel");
+const TouristUser = require("./touristModel");
+const AssociationUser = require("./associationUserModel");
+const User = require("./unifiedUserModel");
 const Association = require("./associationModel");
-
-// ======================
-// Define Associations
-// ======================
-
-User.belongsTo(Association, {
-  foreignKey: "associationId",
-  as: "association",
-});
-
-Association.hasMany(User, {
-  foreignKey: "associationId",
-  as: "users",
-});
+const Company = require("./companyModel");
+const Role = require("./roleModel");
+const Permission = require("./permissionModel");
+const RolePermission = require("./rolePermissionModel");
 
 // ======================
 // Export Models
@@ -26,6 +18,13 @@ const db = {};
 db.sequelize = sequelize;
 
 db.User = User;
+db.TouristUser = TouristUser;
+db.AssociationUser = AssociationUser;
+db.UnifiedUser = User;
 db.Association = Association;
+db.Company = Company;
+db.Role = Role;
+db.Permission = Permission;
+db.RolePermission = RolePermission;
 
 module.exports = db;

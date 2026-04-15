@@ -2,7 +2,8 @@ const ActivityBooking = require("../models/bookingActivityModel");
 const AccommodationBooking = require("../models/bookingAccommodationModel");
 const Accom = require("../models/accomModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
-const User = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
+const Company = require("../models/companyModel");
 const ActivityMasterData = require("../models/activityMasterDataModel"); 
 
 
@@ -31,9 +32,17 @@ const ActivityMasterData = require("../models/activityMasterDataModel");
             attributes: ['id', 'activity_name'], // match DB column
           },
           {
-            model: User,
+            model: UnifiedUser,
             as: 'operator',
-            attributes: ['user_id', 'business_name'],
+            attributes: ['id', 'name', 'username'],
+            include: [
+              {
+                model: Company,
+                as: 'company',
+                attributes: ['company_name'],
+                required: false,
+              },
+            ],
           },
         ],
       },
@@ -56,7 +65,10 @@ const ActivityMasterData = require("../models/activityMasterDataModel");
         ...activityBookings.map(b => ({
         ...b.dataValues,
         activityName: b.operatorActivity?.activity?.activity_name,
-        operatorName: b.operatorActivity?.operator?.business_name,
+        operatorName:
+          b.operatorActivity?.operator?.company?.company_name ||
+          b.operatorActivity?.operator?.name ||
+          b.operatorActivity?.operator?.username,
         type: 'activity',
       })),
 

@@ -30,6 +30,9 @@ const operatorActivitiesRoutes = require("./routes/operatorActivitiesRoutes");
 const associationUserRoutes = require("./routes/associationUserRoutes");
 const associationRoutes = require("./routes/associationRoutes");
 const passwordResetRoutes = require("./routes/passwordResetRoutes");
+const authRoutes = require("./routes/authRoutes");
+const roleRoutes = require("./routes/roleRoutes");
+const permissionRoutes = require("./routes/permissionRoutes");
 
 const app = express();
 
@@ -87,6 +90,9 @@ app.get("/api", (req, res) => {
       "Rural Tourism Backend - Tourism & Accommodation Management System",
     endpoints: {
       users: "/api/users",
+      auth: "/api/auth",
+      roles: "/api/roles",
+      permissions: "/api/permissions",
       tourists: "/api/tourists",
       accommodations: "/api/accom",
       activities: "/api/activity",
@@ -102,6 +108,9 @@ app.get("/api", (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/roles", roleRoutes);
+app.use("/api/permissions", permissionRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/accom", accomRoutes);

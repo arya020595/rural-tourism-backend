@@ -47,7 +47,7 @@ exports.createBooking = async (req, res) => {
       const operatorActivity = await OperatorActivities.findOne({
         where: {
           activity_id,
-          ...(operator_user_id ? { rt_user_id: operator_user_id } : {}),
+          ...(operator_user_id ? { user_id: operator_user_id } : {}),
         },
       });
 
