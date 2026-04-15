@@ -11,6 +11,7 @@
  */
 
 const sequelize = require("../config/db");
+const mysql = require("mysql2/promise");
 
 // Import all models in dependency order to ensure proper table creation
 require("../models/userModel");
@@ -28,6 +29,25 @@ require("../models/associations");
 module.exports = async () => {
   try {
     console.log("🔧 Setting up test database...");
+
+    if (process.env.NODE_ENV === "test") {
+      const testDatabaseName =
+        process.env.DB_TEST_NAME || `${process.env.DB_NAME}_test`;
+
+      const bootstrapConnection = await mysql.createConnection({
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT || 3306,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+      });
+
+      await bootstrapConnection.query(
+        `CREATE DATABASE IF NOT EXISTS \`${testDatabaseName}\``,
+      );
+      await bootstrapConnection.end();
+
+      console.log(`✓ Test database ready (${testDatabaseName})`);
+    }
 
     // Authenticate database connection
     await sequelize.authenticate();

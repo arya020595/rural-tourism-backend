@@ -1,8 +1,20 @@
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
-const User = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
+const Company = require("../models/companyModel");
 const operatorActivityService = require("../services/operatorActivityService");
-const { v4: uuidv4 } = require("uuid");
+
+const getRequesterContext = (req) => {
+  const requesterId = Number(
+    req.user?.user_type === "operator"
+      ? (req.user?.unified_user_id ?? req.user?.id)
+      : (req.user?.legacy_user_id ?? req.user?.id),
+  );
+  return {
+    requesterId: Number.isNaN(requesterId) ? null : requesterId,
+    isAdmin: req.user?.role === "admin",
+  };
+};
 
 /**
  * Activity Controller
@@ -54,11 +66,11 @@ exports.getAllActivities = async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error("Error fetching activities:", err);
     // Return 400 for invalid date filters
     if (err.message && err.message.includes("Invalid")) {
       return res.status(400).json({ error: err.message });
     }
+    console.error("Error fetching activities:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -73,7 +85,7 @@ exports.getActivitiesByUser = async (req, res) => {
     const { user_id } = req.params;
 
     const activities = await OperatorActivity.findAll({
-      where: { rt_user_id: user_id },
+      where: { user_id },
       include: [
         {
           model: ActivityMasterData,
@@ -97,7 +109,7 @@ exports.getActivitiesByUser = async (req, res) => {
         ? activity.activity_master.activity_name
         : "Unknown",
       location: activity.address,
-      user_id: activity.rt_user_id,
+      user_id: activity.user_id,
     }));
 
     res.json(result);
@@ -159,14 +171,14 @@ exports.getActivityById = async (req, res) => {
         ? activity.activity_master.activity_name
         : "Unknown",
       location: filtered.address,
-      user_id: filtered.rt_user_id,
+      user_id: filtered.user_id,
     });
   } catch (err) {
-    console.error("Error fetching activity by ID:", err);
     // Return 400 for invalid date filters
     if (err.message && err.message.includes("Invalid")) {
       return res.status(400).json({ error: err.message });
     }
+    console.error("Error fetching activity by ID:", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -178,6 +190,12 @@ exports.getActivityById = async (req, res) => {
  */
 exports.createActivity = async (req, res) => {
   try {
+    const { requesterId, isAdmin } = getRequesterContext(req);
+
+    if (!isAdmin && requesterId === null) {
+      return res.status(401).json({ error: "Unauthorized user context." });
+    }
+
     const {
       activity_id,
       activity_name,
@@ -193,12 +211,41 @@ exports.createActivity = async (req, res) => {
       available_dates,
     } = req.body;
 
-    // Generate unique ID if not provided
-    const id = activity_id || `act_${uuidv4().substring(0, 8)}`;
+    const payloadUserId = user_id;
 
-    // Find activity master ID
-    let masterActivityId = 1;
-    if (activity_name) {
+    if (
+      !isAdmin &&
+      payloadUserId !== undefined &&
+      payloadUserId !== null &&
+      String(payloadUserId) !== String(requesterId)
+    ) {
+      return res.status(403).json({
+        error:
+          "Forbidden. You can only create activities for your own account.",
+      });
+    }
+
+    const finalUserId = isAdmin ? payloadUserId : requesterId;
+    if (!finalUserId) {
+      return res.status(400).json({ error: "User ID is required." });
+    }
+
+    // Resolve the referenced activity master record.
+    let masterActivityId = null;
+
+    if (
+      activity_id !== undefined &&
+      activity_id !== null &&
+      activity_id !== ""
+    ) {
+      const parsedActivityId = Number(activity_id);
+      if (Number.isNaN(parsedActivityId) || parsedActivityId <= 0) {
+        return res.status(400).json({ error: "Invalid activity_id." });
+      }
+      masterActivityId = parsedActivityId;
+    }
+
+    if (!masterActivityId && activity_name) {
       const masterActivity = await ActivityMasterData.findOne({
         where: { activity_name },
       });
@@ -207,11 +254,16 @@ exports.createActivity = async (req, res) => {
       }
     }
 
+    if (!masterActivityId) {
+      return res.status(400).json({
+        error: "A valid activity_id or existing activity_name is required.",
+      });
+    }
+
     // Create activity
     const newActivity = await OperatorActivity.create({
-      id,
       activity_id: masterActivityId,
-      rt_user_id: user_id,
+      user_id: finalUserId,
       description: description || "",
       address: address || location || "",
       district: district || "",
@@ -226,7 +278,7 @@ exports.createActivity = async (req, res) => {
       ...newActivity.dataValues,
       activity_id: newActivity.id,
       activity_name: activity_name || "Activity",
-      user_id: newActivity.rt_user_id,
+      user_id: newActivity.user_id,
       location: newActivity.address,
     });
   } catch (err) {
@@ -263,6 +315,13 @@ exports.updateActivity = async (req, res) => {
       return res.status(404).json({ error: "Activity not found." });
     }
 
+    const { requesterId, isAdmin } = getRequesterContext(req);
+    if (!isAdmin && Number(activity.user_id) !== requesterId) {
+      return res.status(403).json({
+        error: "Forbidden. You can only update your own activities.",
+      });
+    }
+
     // Update fields
     if (description !== undefined) activity.description = description;
     if (address !== undefined) activity.address = address;
@@ -276,14 +335,20 @@ exports.updateActivity = async (req, res) => {
     if (available_dates !== undefined)
       activity.available_dates = available_dates;
     if (price !== undefined) activity.price_per_pax = price;
-    if (user_id !== undefined) activity.rt_user_id = user_id;
+    if (!isAdmin && user_id !== undefined) {
+      return res.status(403).json({
+        error: "Forbidden. Only admin can reassign activity ownership.",
+      });
+    }
+
+    if (isAdmin && user_id !== undefined) activity.user_id = user_id;
 
     await activity.save();
 
     res.json({
       ...activity.dataValues,
       activity_name: activity_name || "Activity",
-      user_id: activity.rt_user_id,
+      user_id: activity.user_id,
       location: activity.address,
     });
   } catch (err) {
@@ -310,9 +375,18 @@ exports.getOperatorActivitiesByActivityId = async (req, res) => {
           attributes: ["id", "activity_name", "description"],
         },
         {
-          model: User,
+          model: UnifiedUser,
           as: "operator",
-          attributes: ["user_id", "business_name", "full_name", "company_logo"],
+          attributes: ["id", "name", "username"],
+          required: false,
+          include: [
+            {
+              model: Company,
+              as: "company",
+              attributes: ["company_name", "operator_logo_image"],
+              required: false,
+            },
+          ],
         },
       ],
     });
@@ -333,12 +407,17 @@ exports.getOperatorActivitiesByActivityId = async (req, res) => {
           ? activity.activity_master.activity_name
           : "Unknown",
         location: activity.address,
+        user_id: activity.user_id,
         // Include business_name from operator association
-        business_name: activity.operator?.business_name || "No Business Name",
+        business_name:
+          activity.operator?.company?.company_name ||
+          activity.operator?.name ||
+          "No Business Name",
         operator_name:
-          activity.operator?.business_name ||
-          activity.operator?.full_name ||
+          activity.operator?.company?.company_name ||
+          activity.operator?.name ||
           "Unknown Operator",
+        company_logo: activity.operator?.company?.operator_logo_image || null,
         // Include parsed arrays for frontend
         available_dates_list: availableDates,
         activity_slots: availableDates,
@@ -374,9 +453,18 @@ exports.getOperatorActivityById = async (req, res) => {
 
     if (includeUser) {
       includeOptions.push({
-        model: User,
+        model: UnifiedUser,
         as: "operator",
-        attributes: ["user_id", "business_name", "full_name", "company_logo"],
+        attributes: ["id", "name", "username"],
+        required: false,
+        include: [
+          {
+            model: Company,
+            as: "company",
+            attributes: ["company_name", "operator_logo_image"],
+            required: false,
+          },
+        ],
       });
     }
 
@@ -403,18 +491,23 @@ exports.getOperatorActivityById = async (req, res) => {
         ? activity.activity_master.activity_name
         : "Unknown",
       location: activity.address,
+      user_id: activity.user_id,
       // Include business_name from operator association
-      business_name: activity.operator?.business_name || "No Business Name",
+      business_name:
+        activity.operator?.company?.company_name ||
+        activity.operator?.name ||
+        "No Business Name",
       operator_name:
-        activity.operator?.business_name ||
-        activity.operator?.full_name ||
+        activity.operator?.company?.company_name ||
+        activity.operator?.name ||
         "Unknown Operator",
       rt_user: activity.operator
         ? {
-            user_id: activity.operator.user_id,
-            business_name: activity.operator.business_name,
-            full_name: activity.operator.full_name,
-            company_logo: activity.operator.company_logo,
+            user_id: activity.operator.id,
+            business_name: activity.operator.company?.company_name || null,
+            full_name: activity.operator.name,
+            company_logo:
+              activity.operator.company?.operator_logo_image || null,
           }
         : null,
       // Include parsed arrays for frontend
@@ -442,6 +535,13 @@ exports.deleteActivity = async (req, res) => {
     const activity = await OperatorActivity.findOne({ where: { id } });
     if (!activity) {
       return res.status(404).json({ error: "Activity not found." });
+    }
+
+    const { requesterId, isAdmin } = getRequesterContext(req);
+    if (!isAdmin && Number(activity.user_id) !== requesterId) {
+      return res.status(403).json({
+        error: "Forbidden. You can only delete your own activities.",
+      });
     }
 
     await activity.destroy();

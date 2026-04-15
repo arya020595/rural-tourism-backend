@@ -76,6 +76,10 @@ const User = sequelize.define(
       allowNull: true,
       field: "association_id",
     },
+    role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   },
   {
     tableName: "rt_users",
@@ -84,8 +88,5 @@ const User = sequelize.define(
     updatedAt: "updated_at",
   },
 );
-
-// Associations should be set after exporting or in a separate file
-//User.hasMany(OperatorActivity, { foreignKey: 'rt_user_id', as: 'activities' }); // ✅ Move this
 
 module.exports = User;

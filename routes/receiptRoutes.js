@@ -3,15 +3,17 @@ const router = express.Router();
 const receiptController = require('../controllers/receiptController');  // Adjust the path if necessary
 const multer = require('multer');
 const db = require('../config/db');
+const { authenticate } = require('../middleware/auth');
+const { authorize } = require('../middleware/authorize');
 
 
 
 const storage = multer.memoryStorage(); // Store files in memory for immediate processing
 const upload = multer({ storage: storage }).single('receiptImage'); // 'receiptImage' is the field name you use in the form
 
-router.post('/generate-pdf-from-image', upload, receiptController.generatePdfFromImage);
+router.post('/generate-pdf-from-image', authenticate, authorize('receipt:create'), upload, receiptController.generatePdfFromImage);
 // Route to handle voiding the receipt
-router.post('/void-receipt', (req, res) => {
+router.post('/void-receipt', authenticate, authorize('receipt:create'), (req, res) => {
     const { receipt_id } = req.body; // 'receipt_id' is coming from the frontend
 
     if (!receipt_id) {

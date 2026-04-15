@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const OperatorActivities = require("./operatorActivitiesModel");
-const User = require("./userModel");
+const TouristUser = require("./touristModel");
 const FormResponse = require("./formModel");
 
 /**
@@ -161,7 +161,7 @@ ActivityBooking.belongsTo(OperatorActivities, {
   as: "operatorActivity",
 });
 
-ActivityBooking.belongsTo(User, {
+ActivityBooking.belongsTo(TouristUser, {
   foreignKey: "tourist_user_id",
   as: "tourist",
 });

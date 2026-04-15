@@ -55,6 +55,9 @@ exports.createAssociationUser = async (req, res) => {
 // Update association user
 exports.updateAssociationUser = async (req, res) => {
   try {
+    // role_id changes are reserved for role-management flows.
+    delete req.body.role_id;
+
     const user = await AssociationUser.findByPk(req.params.id);
 
     if (!user) {

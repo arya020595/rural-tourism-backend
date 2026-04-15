@@ -9,10 +9,10 @@ const Accom = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
-    rt_user_id: {
+    user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: "rt_user_id",
+      field: "user_id",
     },
     name: {
       type: DataTypes.STRING,
@@ -84,13 +84,6 @@ const Accom = sequelize.define(
       get() {
         return this.getDataValue("accommodation_id");
       },
-    },
-    user_id: {
-      type: DataTypes.VIRTUAL,
-      get() {
-        return this.getDataValue("rt_user_id");
-      },
-      // Note: To set user_id, use rt_user_id directly. VIRTUAL fields are read-only aliases.
     },
   },
   {

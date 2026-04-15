@@ -1,7 +1,7 @@
 const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const TouristUser = require("./touristModel");
-const RtUser = require("./userModel");
+const UnifiedUser = require("./unifiedUserModel");
 
 const FormResponse = sequelize.define(
   "form_responses",
@@ -43,7 +43,7 @@ FormResponse.belongsTo(TouristUser, {
   as: "tourist",
 });
 
-FormResponse.belongsTo(RtUser, {
+FormResponse.belongsTo(UnifiedUser, {
   foreignKey: "operator_user_id",
   as: "operator",
 });
