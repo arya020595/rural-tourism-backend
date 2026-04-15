@@ -78,7 +78,8 @@ exports.updateRolePermissions = async (req, res) => {
       data: role,
     });
   } catch (error) {
-    const statusCode = error.message === "Role not found" ? 404 : 500;
+    const statusCode =
+      error.statusCode || (error.message === "Role not found" ? 404 : 500);
 
     return res.status(statusCode).json({
       success: false,

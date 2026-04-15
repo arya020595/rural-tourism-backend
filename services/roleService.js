@@ -51,15 +51,58 @@ class RoleService {
       throw new Error("Role not found");
     }
 
-    await RolePermission.destroy({ where: { role_id: roleId } });
+    const normalizedPermissionIds = this.normalizePermissionIds(permissionIds);
 
-    if (permissionIds.length > 0) {
-      await RolePermission.bulkCreate(
-        permissionIds.map((permissionId) => ({
-          role_id: roleId,
-          permission_id: permissionId,
-        })),
+    if (permissionIds.length > 0 && normalizedPermissionIds.length === 0) {
+      const error = new Error("Invalid permission IDs provided");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (normalizedPermissionIds.length > 0) {
+      const existingPermissions = await Permission.findAll({
+        where: { id: normalizedPermissionIds },
+        attributes: ["id"],
+      });
+
+      const existingIds = new Set(
+        existingPermissions.map((permission) => permission.id),
       );
+      const invalidIds = normalizedPermissionIds.filter(
+        (id) => !existingIds.has(id),
+      );
+
+      if (invalidIds.length > 0) {
+        const error = new Error(
+          `Invalid permission IDs: ${invalidIds.join(", ")}`,
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
+    const transaction = await Role.sequelize.transaction();
+
+    try {
+      await RolePermission.destroy({
+        where: { role_id: roleId },
+        transaction,
+      });
+
+      if (normalizedPermissionIds.length > 0) {
+        await RolePermission.bulkCreate(
+          normalizedPermissionIds.map((permissionId) => ({
+            role_id: roleId,
+            permission_id: permissionId,
+          })),
+          { transaction },
+        );
+      }
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
 
     return this.getRoleWithPermissions(roleId);
