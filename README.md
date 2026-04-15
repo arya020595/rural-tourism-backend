@@ -81,6 +81,16 @@ NODE_ENV=development
 JWT_SECRET=your_super_secret_jwt_key_change_in_production
 JWT_EXPIRES_IN=24h
 
+# SMTP Configuration (Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_gmail_address@gmail.com
+SMTP_PASS=your_gmail_app_password
+SMTP_FROM=your_gmail_address@gmail.com
+
+# Frontend URL for password reset link
+FRONTEND_URL=http://localhost:8100
+
 # CORS Configuration
 CORS_ORIGIN=http://localhost:8100
 CORS_ORIGIN2=http://ruraltourismsabah.com
@@ -100,6 +110,18 @@ CORS_ORIGIN_EXTERNAL=http://192.168.1.8:8100
 | `NODE_ENV`    | Environment mode          | `development`         |
 | `JWT_SECRET`  | Secret key for JWT tokens | Change in production! |
 | `CORS_ORIGIN` | Allowed origins for CORS  | Frontend URL          |
+| `SMTP_HOST`   | SMTP host                 | `smtp.gmail.com`      |
+| `SMTP_PORT`   | SMTP port                 | `587`                 |
+| `SMTP_USER`   | SMTP username             | Gmail address         |
+| `SMTP_PASS`   | SMTP password             | Gmail App Password    |
+| `SMTP_FROM`   | Sender email              | Gmail address         |
+| `FRONTEND_URL`| Frontend base URL         | `http://localhost:8100` |
+
+### Gmail SMTP Notes
+
+- Use a Gmail account with 2-Step Verification enabled.
+- Generate a Gmail App Password and use it as `SMTP_PASS`.
+- Do not use your normal Gmail password for SMTP.
 
 ---
 
