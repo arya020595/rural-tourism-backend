@@ -1,11 +1,33 @@
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
-const User = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
 const { emailService } = require("./emailService");
 const { ValidationError, TokenExpiredError } = require("./errors/AppError");
 
 class PasswordResetService {
+  async findUserByEmail(email) {
+    return UnifiedUser.findOne({ where: { email } });
+  }
+
+  async findActiveUserByResetToken(hashedToken) {
+    return UnifiedUser.findOne({
+      where: {
+        reset_token: hashedToken,
+        reset_token_expires: { [Op.gt]: new Date() },
+      },
+    });
+  }
+
+  async findExpiredUserByResetToken(hashedToken) {
+    return UnifiedUser.findOne({
+      where: {
+        reset_token: hashedToken,
+        reset_token_expires: { [Op.lte]: new Date() },
+      },
+    });
+  }
+
   hashToken(rawToken) {
     return crypto.createHash("sha256").update(rawToken).digest("hex");
   }
@@ -24,7 +46,7 @@ class PasswordResetService {
       throw new ValidationError("Valid email address is required");
     }
 
-    const user = await User.findOne({ where: { user_email: normalizedEmail } });
+    const user = await this.findUserByEmail(normalizedEmail);
 
     // Return silently to avoid user/email enumeration
     if (!user) {
@@ -40,10 +62,13 @@ class PasswordResetService {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8100";
     const resetUrl = `${frontendUrl}/forgot-password?step=reset&token=${rawToken}`;
 
+    const targetEmail = user.email;
+    const targetName = user.name || user.username || "User";
+
     await emailService.sendPasswordResetEmail(
-      user.user_email,
+      targetEmail,
       resetUrl,
-      user.full_name || user.username || "User",
+      targetName,
     );
   }
 
@@ -61,20 +86,10 @@ class PasswordResetService {
 
     const hashedToken = this.hashToken(rawToken);
 
-    const user = await User.findOne({
-      where: {
-        reset_token: hashedToken,
-        reset_token_expires: { [Op.gt]: new Date() },
-      },
-    });
+    const user = await this.findActiveUserByResetToken(hashedToken);
 
     if (!user) {
-      const expiredUser = await User.findOne({
-        where: {
-          reset_token: hashedToken,
-          reset_token_expires: { [Op.lte]: new Date() },
-        },
-      });
+      const expiredUser = await this.findExpiredUserByResetToken(hashedToken);
 
       if (expiredUser) {
         throw new TokenExpiredError();
@@ -85,7 +100,7 @@ class PasswordResetService {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.confirmed_password = hashedPassword;
+    user.confirm_password = hashedPassword;
     user.reset_token = null;
     user.reset_token_expires = null;
     await user.save();

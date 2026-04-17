@@ -31,6 +31,14 @@ const UnifiedUser = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
     },
+    reset_token: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    reset_token_expires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     association_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
