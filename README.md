@@ -81,6 +81,16 @@ NODE_ENV=development
 JWT_SECRET=your_super_secret_jwt_key_change_in_production
 JWT_EXPIRES_IN=24h
 
+# SMTP Configuration (Gmail)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_gmail_address@gmail.com
+SMTP_PASS=your_gmail_app_password
+SMTP_FROM=your_gmail_address@gmail.com
+
+# Frontend URL for password reset link
+FRONTEND_URL=http://localhost:8100
+
 # CORS Configuration
 CORS_ORIGIN=http://localhost:8100
 CORS_ORIGIN2=http://ruraltourismsabah.com
@@ -100,6 +110,18 @@ CORS_ORIGIN_EXTERNAL=http://192.168.1.8:8100
 | `NODE_ENV`    | Environment mode          | `development`         |
 | `JWT_SECRET`  | Secret key for JWT tokens | Change in production! |
 | `CORS_ORIGIN` | Allowed origins for CORS  | Frontend URL          |
+| `SMTP_HOST`   | SMTP host                 | `smtp.gmail.com`      |
+| `SMTP_PORT`   | SMTP port                 | `587`                 |
+| `SMTP_USER`   | SMTP username             | Gmail address         |
+| `SMTP_PASS`   | SMTP password             | Gmail App Password    |
+| `SMTP_FROM`   | Sender email              | Gmail address         |
+| `FRONTEND_URL`| Frontend base URL         | `http://localhost:8100` |
+
+### Gmail SMTP Notes
+
+- Use a Gmail account with 2-Step Verification enabled.
+- Generate a Gmail App Password and use it as `SMTP_PASS`.
+- Do not use your normal Gmail password for SMTP.
 
 ---
 
@@ -234,8 +256,13 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 | Resource                  | Endpoints                                         |
 | ------------------------- | ------------------------------------------------- |
 | **Test / Health**         | GET `/test`, GET `/health`, GET `/`               |
+| **Auth (RBAC)**           | POST `/auth/login`, POST `/auth/register`, GET `/auth/me` |
+| **Roles (RBAC)**          | GET `/roles`, GET `/roles/:id`, PUT `/roles/:id/permissions` |
+| **Permissions (RBAC)**    | GET `/permissions`                                |
 | **Users**                 | GET/POST/PUT/DELETE `/users`, POST `/users/login` |
 | **Tourists**              | GET/POST/PUT `/tourists`, POST `/tourists/login`  |
+| **Association Users**     | GET/POST/PUT/DELETE `/association-users`, POST `/association-users/login` |
+| **Associations**          | GET `/associations/public`, GET `/associations`   |
 | **Accommodations**        | GET/POST/PUT/DELETE `/accom`                      |
 | **Activities**            | GET/POST/PUT/DELETE `/activity`                   |
 | **Activity Master Data**  | GET/POST `/activity-master-data`                  |
@@ -259,6 +286,7 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 | `npm start`                 | Start production server                          |
 | `npm run server`            | Start server directly with `node server.js`      |
 | `npm run console`           | Open interactive REPL with models loaded         |
+| `npm run rbac:bootstrap-admin -- --user-type operator --user-id 1` | Assign admin role to an existing account |
 | `npm run db:sync`           | Sync database schema from models                 |
 | `npm run db:migrate`        | Run all pending migrations                       |
 | `npm run db:migrate:undo`   | Rollback last migration                          |
@@ -306,7 +334,10 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 For detailed guides on specific topics:
 
 - **[DEPLOYMENT_MIGRATION_GUIDE.md](docs/DEPLOYMENT_MIGRATION_GUIDE.md)** - Migration workflows, CI/CD deployment, rollback strategies
-- **[REFACTORING_SUMMARY.md](docs/REFACTORING_SUMMARY.md)** - Schema changes history, model refactoring details
+- **[RBAC_ROUTE_PERMISSION_MATRIX.md](docs/RBAC_ROUTE_PERMISSION_MATRIX.md)** - Frozen endpoint-to-permission contract
+- **[RBAC_LEGACY_LOGIN_DEPRECATION.md](docs/RBAC_LEGACY_LOGIN_DEPRECATION.md)** - Legacy login deprecation timeline and compatibility details
+- **[RBAC_ADMIN_BOOTSTRAP.md](docs/RBAC_ADMIN_BOOTSTRAP.md)** - Procedure for assigning initial admin role
+- **[RBAC_ROLLOUT_RUNBOOK.md](docs/RBAC_ROLLOUT_RUNBOOK.md)** - RBAC migration/seed/verification/rollback runbook
 - **[SOLID_ARCHITECTURE.md](docs/SOLID_ARCHITECTURE.md)** - Architecture principles and best practices
 
 ---

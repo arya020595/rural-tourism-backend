@@ -6,7 +6,8 @@
 
 const FormResponse = require("../models/formModel");
 const TouristUser = require("../models/touristModel");
-const RtUser = require("../models/userModel");
+const UnifiedUser = require("../models/unifiedUserModel");
+const Company = require("../models/companyModel");
 const OperatorActivity = require("../models/operatorActivitiesModel");
 const ActivityMasterData = require("../models/activityMasterDataModel");
 const { bookingService } = require("./bookingService");
@@ -153,9 +154,17 @@ class FormService {
           attributes: ["tourist_user_id", "full_name", "email", "contact_no"],
         },
         {
-          model: RtUser,
+          model: UnifiedUser,
           as: "operator",
-          attributes: ["user_id", "business_name", "full_name", "company_logo"],
+          attributes: ["id", "name", "username", "email"],
+          include: [
+            {
+              model: Company,
+              as: "company",
+              attributes: ["company_name", "operator_logo_image"],
+              required: false,
+            },
+          ],
         },
       ],
     });

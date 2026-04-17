@@ -11,12 +11,23 @@
 
 const request = require("supertest");
 const app = require("../../server");
+const { generateToken } = require("../../middleware/auth");
+
+const adminToken = generateToken({
+  id: 1,
+  unified_user_id: 1,
+  user_type: "operator",
+  username: "integration_admin",
+  role: "admin",
+  permissions: ["*:*"],
+});
+
+const withAdminAuth = (req) => req.set("Authorization", `Bearer ${adminToken}`);
 
 describe("Activity Booking-Aware Filtering - Integration Tests", () => {
   describe("GET /api/activity - Basic Functionality", () => {
     it("should return activities array without filters", async () => {
-      const response = await request(app)
-        .get("/api/activity")
+      const response = await withAdminAuth(request(app).get("/api/activity"))
         .expect(200)
         .expect("Content-Type", /json/);
 
@@ -24,8 +35,11 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
     });
 
     it("should filter by date range", async () => {
-      const response = await request(app)
-        .get("/api/activity?startDate=2026-02-01&endDate=2026-02-03")
+      const response = await withAdminAuth(
+        request(app).get(
+          "/api/activity?startDate=2026-02-01&endDate=2026-02-03",
+        ),
+      )
         .expect(200)
         .expect("Content-Type", /json/);
 
@@ -48,8 +62,9 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
     });
 
     it("should filter by single date", async () => {
-      const response = await request(app)
-        .get("/api/activity?date=2026-02-01")
+      const response = await withAdminAuth(
+        request(app).get("/api/activity?date=2026-02-01"),
+      )
         .expect(200)
         .expect("Content-Type", /json/);
 
@@ -65,7 +80,9 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
     });
 
     it("should return activities with proper structure", async () => {
-      const response = await request(app).get("/api/activity").expect(200);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity"),
+      ).expect(200);
 
       // If activities exist, verify structure
       if (response.body.length > 0) {
@@ -78,9 +95,9 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
 
   describe("GET /api/activity/user/:user_id - User Activities", () => {
     it("should return 404 for non-existent user", async () => {
-      const response = await request(app)
-        .get("/api/activity/user/NONEXISTENT_USER_999")
-        .expect(404);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity/user/NONEXISTENT_USER_999"),
+      ).expect(404);
 
       expect(response.body).toHaveProperty("error");
     });
@@ -88,9 +105,9 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
 
   describe("GET /api/activity/:id - Single Activity", () => {
     it("should return 404 for non-existent activity", async () => {
-      const response = await request(app)
-        .get("/api/activity/NONEXISTENT_ACTIVITY_999")
-        .expect(404);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity/NONEXISTENT_ACTIVITY_999"),
+      ).expect(404);
 
       expect(response.body).toHaveProperty("error");
     });
@@ -101,6 +118,7 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
       // Test that errors are properly handled and returned as JSON
       const response = await request(app)
         .get("/api/activity/INVALID_ID_999")
+        .set("Authorization", `Bearer ${adminToken}`)
         .expect(404);
 
       expect(response.body).toHaveProperty("error");
@@ -111,9 +129,9 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
       // This test verifies that the refactoring maintained functionality
       // Routes -> Controllers -> Services -> Models
 
-      const response = await request(app)
-        .get("/api/activity?startDate=2026-02-01")
-        .expect(200);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity?startDate=2026-02-01"),
+      ).expect(200);
 
       // If we get a valid response, the architecture layers are working
       expect(Array.isArray(response.body)).toBe(true);
@@ -127,25 +145,25 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
     });
 
     it("should return HTTP 400 for invalid date filters", async () => {
-      const response = await request(app)
-        .get("/api/activity?startDate=invalid-date")
-        .expect(400);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity?startDate=invalid-date"),
+      ).expect(400);
 
       expect(response.body).toHaveProperty("error");
     });
 
     it("should return HTTP 400 for invalid endDate filter", async () => {
-      const response = await request(app)
-        .get("/api/activity?endDate=not-a-date")
-        .expect(400);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity?endDate=not-a-date"),
+      ).expect(400);
 
       expect(response.body).toHaveProperty("error");
     });
 
     it("should return HTTP 400 for invalid date filter", async () => {
-      const response = await request(app)
-        .get("/api/activity?date=xyz")
-        .expect(400);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity?date=xyz"),
+      ).expect(400);
 
       expect(response.body).toHaveProperty("error");
     });
@@ -154,9 +172,11 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
   describe("Status-Based Filtering Logic", () => {
     it("should apply booking-aware filtering to results", async () => {
       // This test verifies that the service layer processes activities
-      const response = await request(app)
-        .get("/api/activity?startDate=2026-02-01&endDate=2026-02-05")
-        .expect(200);
+      const response = await withAdminAuth(
+        request(app).get(
+          "/api/activity?startDate=2026-02-01&endDate=2026-02-05",
+        ),
+      ).expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
 
@@ -175,7 +195,9 @@ describe("Activity Booking-Aware Filtering - Integration Tests", () => {
 
     it("should preserve activity_master association when activities exist", async () => {
       // Verify that Sequelize associations are preserved after filtering
-      const response = await request(app).get("/api/activity").expect(200);
+      const response = await withAdminAuth(
+        request(app).get("/api/activity"),
+      ).expect(200);
 
       // If activities exist, verify association is preserved
       if (response.body.length > 0) {

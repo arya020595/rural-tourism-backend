@@ -33,6 +33,10 @@ const AssociationUser = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    role_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
   },
   {
     tableName: "association_users",

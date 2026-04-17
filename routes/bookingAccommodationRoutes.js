@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const accommodationBookingController = require("../controllers/bookingAccommodationController");
 const AccommodationBooking = require("../models/bookingAccommodationModel");
+const { authenticate } = require("../middleware/auth");
+const { authorize, authorizeOwnership } = require("../middleware/authorize");
 
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -9,29 +11,38 @@ const asyncHandler = (fn) => (req, res, next) =>
 // Create a new accommodation booking
 router.post(
   "/",
+  authenticate,
+  authorize(["booking:create", "booking:update"]),
   asyncHandler(accommodationBookingController.createAccommodationBooking),
 );
 
 // Get booked dates for a specific accommodation (must be before /:id to prevent conflict)
 router.get(
   "/booked-dates/:accommodation_id",
+  authenticate,
+  authorize("booking:read"),
   asyncHandler(accommodationBookingController.getBookedDatesByAccommodation),
 );
 
 // Get accommodation booking by ID
 router.get(
   "/:id",
+  authenticate,
+  authorize("booking:read"),
   asyncHandler(accommodationBookingController.getAccommodationBookingById),
 );
 
 // Get all accommodation bookings for a specific tourist
 router.get(
   "/user/:tourist_user_id",
+  authenticate,
+  authorize("booking:read"),
+  authorizeOwnership("tourist_user_id"),
   asyncHandler(accommodationBookingController.getAccommodationBookingsByUser),
 );
 
 // PATCH /api/accommodation-booking/mark-paid/:id
-router.patch("/mark-paid/:id", async (req, res) => {
+router.patch("/mark-paid/:id", authenticate, authorize("booking:update"), async (req, res) => {
   try {
     const booking = await AccommodationBooking.findByPk(req.params.id);
     if (!booking)

@@ -5,7 +5,7 @@ require("../models/associations");
 
 // Import all models
 const Accom = require("../models/accomModel");
-const User = require("../models/userModel");
+const User = require("../models/unifiedUserModel");
 const Tourist = require("../models/touristModel");
 const BookingActivity = require("../models/bookingActivityModel");
 const BookingAccommodation = require("../models/bookingAccommodationModel");
@@ -21,7 +21,7 @@ async function startConsole() {
     console.log("📦 Available models:");
     console.log("   Accom, User, Tourist, BookingActivity,");
     console.log(
-      "   BookingAccommodation, OperatorActivity, ActivityMasterData,"
+      "   BookingAccommodation, OperatorActivity, ActivityMasterData,",
     );
     console.log("   Notification, Form, sequelize\n");
     console.log("💡 Examples:");
