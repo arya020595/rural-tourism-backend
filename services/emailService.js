@@ -1,5 +1,14 @@
 const nodemailer = require("nodemailer");
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport({
@@ -24,12 +33,14 @@ class EmailService {
   }
 
   async sendPasswordResetEmail(to, resetUrl, name = "User") {
+    const safeName = escapeHtml(name);
+    const safeResetUrlText = escapeHtml(resetUrl);
     const subject = "Reset Your Password";
     const html = `
-      <p>Hello ${name},</p>
+      <p>Hello ${safeName},</p>
       <p>We received a request to reset your password.</p>
       <p>Click the link below to set a new password:</p>
-      <p><a href="${resetUrl}" target="_blank" rel="noopener noreferrer">${resetUrl}</a></p>
+      <p><a href="${resetUrl}" target="_blank" rel="noopener noreferrer">${safeResetUrlText}</a></p>
       <p>This link expires in 1 hour and can only be used once.</p>
       <p>If you did not request this, you can ignore this email.</p>
     `;
