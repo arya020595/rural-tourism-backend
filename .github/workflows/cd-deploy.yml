@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
     environment: production
+    permissions:
+      packages: read
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
@@ -67,7 +69,7 @@ jobs:
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v1
         env:
-          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -78,6 +80,7 @@ jobs:
           command_timeout: 10m
           envs: GHCR_TOKEN,GITHUB_ACTOR
           script: |
+            set -e
             cd ~/st_rural_tourism
 
             # Login to GHCR
