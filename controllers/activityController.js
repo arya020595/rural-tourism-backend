@@ -12,7 +12,7 @@ const getRequesterContext = (req) => {
   );
   return {
     requesterId: Number.isNaN(requesterId) ? null : requesterId,
-    isAdmin: req.user?.role === "admin",
+    isAdmin: req.user?.role === "superadmin",
   };
 };
 

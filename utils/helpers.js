@@ -7,6 +7,23 @@ const asyncHandler = (fn) => (req, res, next) => {
 };
 
 /**
+ * Convert an uploaded file buffer to a base64 data URI string.
+ */
+const toBase64DataUri = (file) => {
+  if (!file || !file.buffer) return null;
+  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+};
+
+/**
+ * Parse a value as an integer, returning null for empty/invalid values.
+ */
+const parseNullableInt = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+};
+
+/**
  * Standard success response
  */
 const successResponse = (res, data, message = "Success", statusCode = 200) => {
@@ -18,24 +35,31 @@ const successResponse = (res, data, message = "Success", statusCode = 200) => {
 };
 
 /**
- * Standard error response
+ * Standard error response.
+ *
+ * Accepts either an Error object or positional args:
+ *   errorResponse(res, err)                        – reads err.statusCode & err.message
+ *   errorResponse(res, message, statusCode, errors) – legacy positional
  */
-const errorResponse = (
-  res,
-  message = "Error",
-  statusCode = 500,
-  errors = null
-) => {
+const errorResponse = (res, messageOrError, statusCode, errors) => {
+  if (messageOrError instanceof Error) {
+    const err = messageOrError;
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      message: err.message || "Internal server error",
+    });
+  }
+
   const response = {
     success: false,
-    message,
+    message: messageOrError || "Error",
   };
 
   if (errors) {
     response.errors = errors;
   }
 
-  return res.status(statusCode).json(response);
+  return res.status(statusCode || 500).json(response);
 };
 
 /**
@@ -83,6 +107,8 @@ const validateRequired = (fields, body) => {
 
 module.exports = {
   asyncHandler,
+  toBase64DataUri,
+  parseNullableInt,
   successResponse,
   errorResponse,
   paginate,

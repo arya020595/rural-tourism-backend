@@ -20,7 +20,7 @@ class ApplicationPolicy {
 
   isAdmin() {
     return (
-      this.user.role === "admin" ||
+      this.user.role === "superadmin" ||
       (Array.isArray(this.user.permissions) &&
         this.user.permissions.includes("*:*"))
     );

@@ -8,7 +8,7 @@ const adminToken = generateToken({
   unified_user_id: 1,
   user_type: "operator",
   username: "integration_admin",
-  role: "admin",
+  role: "superadmin",
   permissions: ["*:*"],
 });
 

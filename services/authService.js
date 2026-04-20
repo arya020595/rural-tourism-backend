@@ -15,7 +15,7 @@ const USER_TYPE_TOURIST = "tourist";
 const USER_TYPE_ASSOCIATION = "association";
 
 const DEFAULT_ROLE_BY_USER_TYPE = {
-  [USER_TYPE_OPERATOR]: "operator",
+  [USER_TYPE_OPERATOR]: "operator_admin",
   [USER_TYPE_TOURIST]: "tourist",
   [USER_TYPE_ASSOCIATION]: "association",
 };
@@ -225,7 +225,15 @@ class AuthService {
       return normalizedRole;
     }
 
-    // Keep admin compatible with existing operator dashboards/routes.
+    // operator_admin & operator_staff map to the "operator" user type.
+    if (
+      normalizedRole === "operator_admin" ||
+      normalizedRole === "operator_staff"
+    ) {
+      return USER_TYPE_OPERATOR;
+    }
+
+    // Keep superadmin compatible with existing operator dashboards/routes.
     return USER_TYPE_OPERATOR;
   }
 
@@ -342,11 +350,9 @@ class AuthService {
       .trim()
       .toLowerCase();
 
-    if (
-      !Object.values(DEFAULT_ROLE_BY_USER_TYPE).includes(normalizedUserType)
-    ) {
+    if (!Object.keys(DEFAULT_ROLE_BY_USER_TYPE).includes(normalizedUserType)) {
       const error = new Error(
-        `Invalid user_type. Allowed values: ${Object.values(DEFAULT_ROLE_BY_USER_TYPE).join(", ")}.`,
+        `Invalid user_type. Allowed values: ${Object.keys(DEFAULT_ROLE_BY_USER_TYPE).join(", ")}.`,
       );
       error.statusCode = 400;
       throw error;
@@ -659,7 +665,7 @@ class AuthService {
       .map((permission) => permission.code)
       .filter(Boolean);
 
-    if (role.name === "admin" && !codes.includes("*:*")) {
+    if (role.name === "superadmin" && !codes.includes("*:*")) {
       codes.push("*:*");
     }
 

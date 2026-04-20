@@ -6,11 +6,18 @@ const SALT_ROUNDS = 10;
 
 const DEFAULT_USERS = [
   {
+    name: "Superadmin User",
+    username: "superadmin_seed",
+    email: "superadmin.seed@example.com",
+    password: "superadmin123",
+    roleName: "superadmin",
+  },
+  {
     name: "Operator User",
     username: "operator_seed",
     email: "operator.seed@example.com",
     password: "operator123",
-    roleName: "operator",
+    roleName: "operator_admin",
   },
   {
     name: "Tourist User",

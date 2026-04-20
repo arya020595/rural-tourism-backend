@@ -7,6 +7,7 @@ const mockGetAllUsers = jest.fn();
 const mockGetUserById = jest.fn();
 const mockCreateUser = jest.fn();
 const mockUpdateUser = jest.fn();
+const mockUpdateUserProfile = jest.fn();
 const mockDeleteUser = jest.fn();
 const mockSearchUsers = jest.fn();
 
@@ -19,6 +20,7 @@ jest.mock("../../../services/userService", () => ({
   getUserById: (...args) => mockGetUserById(...args),
   createUser: (...args) => mockCreateUser(...args),
   updateUser: (...args) => mockUpdateUser(...args),
+  updateUserProfile: (...args) => mockUpdateUserProfile(...args),
   deleteUser: (...args) => mockDeleteUser(...args),
   searchUsers: (...args) => mockSearchUsers(...args),
 }));
@@ -26,6 +28,11 @@ jest.mock("../../../services/userService", () => ({
 jest.mock("../../../services/authService", () => ({
   login: jest.fn(),
   register: jest.fn(),
+}));
+
+const mockRoleFindOne = jest.fn();
+jest.mock("../../../models/roleModel", () => ({
+  findOne: (...args) => mockRoleFindOne(...args),
 }));
 
 const userRoutes = require("../../../routes/userRoutes");
@@ -48,7 +55,7 @@ const buildApp = () => {
 /**
  * Generate a JWT token with specified permissions & role.
  */
-const makeToken = (permissions = [], role = "operator", overrides = {}) =>
+const makeToken = (permissions = [], role = "operator_admin", overrides = {}) =>
   generateToken({
     id: 100,
     unified_user_id: 100,
@@ -59,26 +66,26 @@ const makeToken = (permissions = [], role = "operator", overrides = {}) =>
     ...overrides,
   });
 
-const ADMIN_TOKEN = makeToken([], "admin");
+const ADMIN_TOKEN = makeToken([], "superadmin");
 
 const USER_WITH_ALL_PERMS = makeToken(
   ["user:read", "user:create", "user:update", "user:delete"],
-  "operator",
+  "operator_admin",
   { company_id: 1 },
 );
 
-const USER_WITH_READ_ONLY = makeToken(["user:read"], "operator", {
+const USER_WITH_READ_ONLY = makeToken(["user:read"], "operator_admin", {
   company_id: 1,
 });
 
 const USER_WITH_NO_USER_PERMS = makeToken(
   ["activity:read", "booking:read"],
-  "operator",
+  "operator_admin",
 );
 
 const USER_WITH_PROFILE_PERMS = makeToken(
   ["profile:read", "profile:update"],
-  "operator",
+  "operator_admin",
 );
 
 // ── Sample data ────────────────────────────────────────────────────────────
@@ -90,7 +97,7 @@ const sampleUser = {
   association_id: null,
   role_id: 2,
   company_id: 1,
-  role: { id: 2, name: "operator" },
+  role: { id: 2, name: "operator_admin" },
   association: null,
   company: null,
   created_at: "2026-04-20T00:00:00.000Z",
@@ -126,7 +133,7 @@ const sampleUserDiffCompany = {
   association_id: null,
   role_id: 2,
   company_id: 2,
-  role: { id: 2, name: "operator" },
+  role: { id: 2, name: "operator_admin" },
   association: null,
   company: null,
   created_at: "2026-04-20T00:00:00.000Z",
@@ -267,15 +274,18 @@ describe("Users API – CRUD & RBAC", () => {
     describe("POST /api/users", () => {
       test("should return 201 and created user", async () => {
         const app = buildApp();
+        mockRoleFindOne.mockResolvedValue({ id: 5, name: "operator_staff" });
         mockCreateUser.mockResolvedValue(sampleUser);
 
-        const res = await request(app).post("/api/users").send({
-          name: "John Doe",
-          username: "johndoe",
-          email: "john@example.com",
-          password: "secure123",
-          role_id: 2,
-        });
+        const res = await request(app)
+          .post("/api/users")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`)
+          .send({
+            name: "John Doe",
+            username: "johndoe",
+            email: "john@example.com",
+            password: "secure123",
+          });
 
         expect(res.status).toBe(201);
         expect(res.body.success).toBe(true);
@@ -286,23 +296,27 @@ describe("Users API – CRUD & RBAC", () => {
           username: "johndoe",
           email: "john@example.com",
           password: "secure123",
-          role_id: 2,
-          association_id: undefined,
-          company_id: undefined,
+          role_id: 5,
+          association_id: null,
+          company_id: 1,
         });
       });
 
       test("should return 400 for missing required fields", async () => {
         const app = buildApp();
+        mockRoleFindOne.mockResolvedValue({ id: 5, name: "operator_staff" });
         const error = new Error(
           "name, username, email, and password are required",
         );
         error.statusCode = 400;
         mockCreateUser.mockRejectedValue(error);
 
-        const res = await request(app).post("/api/users").send({
-          username: "johndoe",
-        });
+        const res = await request(app)
+          .post("/api/users")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`)
+          .send({
+            username: "johndoe",
+          });
 
         expect(res.status).toBe(400);
         expect(res.body.success).toBe(false);
@@ -310,16 +324,20 @@ describe("Users API – CRUD & RBAC", () => {
 
       test("should return 409 for duplicate username/email", async () => {
         const app = buildApp();
+        mockRoleFindOne.mockResolvedValue({ id: 5, name: "operator_staff" });
         const error = new Error("Username or email already exists");
         error.statusCode = 409;
         mockCreateUser.mockRejectedValue(error);
 
-        const res = await request(app).post("/api/users").send({
-          name: "John Doe",
-          username: "johndoe",
-          email: "john@example.com",
-          password: "secure123",
-        });
+        const res = await request(app)
+          .post("/api/users")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`)
+          .send({
+            name: "John Doe",
+            username: "johndoe",
+            email: "john@example.com",
+            password: "secure123",
+          });
 
         expect(res.status).toBe(409);
         expect(res.body.success).toBe(false);
@@ -509,7 +527,7 @@ describe("Users API – CRUD & RBAC", () => {
         "Forbidden. You do not have permission to perform this action.",
       );
       expect(res.body.data.required).toEqual(["user:read"]);
-      expect(res.body.data.your_role).toBe("operator");
+      expect(res.body.data.your_role).toBe("operator_admin");
       expect(mockGetAllUsers).not.toHaveBeenCalled();
     });
 
@@ -621,11 +639,10 @@ describe("Users API – CRUD & RBAC", () => {
     });
   });
 
-  // ── POST /api/users is public (no auth required) ────────────────────────
-  describe("POST /api/users (public)", () => {
-    test("should allow user creation without authentication", async () => {
+  // ── POST /api/users requires authentication ──────────────────────────────
+  describe("POST /api/users (requires auth)", () => {
+    test("should return 401 without authentication", async () => {
       const app = buildApp();
-      mockCreateUser.mockResolvedValue(sampleUser);
 
       const res = await request(app).post("/api/users").send({
         name: "John Doe",
@@ -634,8 +651,25 @@ describe("Users API – CRUD & RBAC", () => {
         password: "secure123",
       });
 
-      expect(res.status).toBe(201);
-      expect(res.body.success).toBe(true);
+      expect(res.status).toBe(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    test("should return 403 without user:create permission", async () => {
+      const app = buildApp();
+
+      const res = await request(app)
+        .post("/api/users")
+        .set("Authorization", `Bearer ${USER_WITH_NO_USER_PERMS}`)
+        .send({
+          name: "John Doe",
+          username: "johndoe",
+          email: "john@example.com",
+          password: "secure123",
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
     });
   });
 

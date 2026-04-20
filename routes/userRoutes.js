@@ -7,20 +7,20 @@ const upload = require("../middleware/uploadLogo");
 const authService = require("../services/authService");
 const { authenticate } = require("../middleware/auth");
 const { authorize, authorizeOwnership } = require("../middleware/authorize");
+const { asyncHandler } = require("../utils/helpers");
+const {
+  validateCreateUser,
+  validateUpdateUser,
+} = require("../validators/userValidator");
 
-const operatorRegistrationUploadFields = upload.fields([
+const operatorUploadFields = upload.fields([
   { name: "operator_logo_image", maxCount: 1 },
   { name: "motac_license_file", maxCount: 1 },
   { name: "trading_operation_license", maxCount: 1 },
   { name: "homestay_certificate", maxCount: 1 },
 ]);
 
-// Middleware for error handling
-const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
-
-// Route to get all users
+// List users
 router.get(
   "/",
   authenticate,
@@ -28,7 +28,7 @@ router.get(
   asyncHandler(userController.getAllUsers),
 );
 
-// Route to get a user by ID
+// Get user by ID
 router.get(
   "/:id(\\d+)",
   authenticate,
@@ -37,24 +37,39 @@ router.get(
   asyncHandler(userController.getUserById),
 );
 
-// // Route to create a new user
-// router.post('/', asyncHandler(userController.createUser));
+// Create user (authenticated — operator_admin or superadmin)
 router.post(
   "/",
-  operatorRegistrationUploadFields,
+  authenticate,
+  authorize("user:create"),
+  operatorUploadFields,
+  validateCreateUser,
   asyncHandler(userController.createUser),
 );
 
-// Route to update an existing user
+// Update user (handles both user fields and company/file uploads)
 router.put(
   "/:id",
   authenticate,
   authorize(["user:update", "profile:update"]),
   authorizeOwnership("id", ["user:update"]),
+  operatorUploadFields,
+  validateUpdateUser,
   asyncHandler(userController.updateUser),
 );
 
-// Route to delete a user
+// Update user (alternate path — same handler)
+router.put(
+  "/update/:id",
+  authenticate,
+  authorize(["user:update", "profile:update"]),
+  authorizeOwnership("id", ["user:update"]),
+  operatorUploadFields,
+  validateUpdateUser,
+  asyncHandler(userController.updateUser),
+);
+
+// Delete user
 router.delete(
   "/:id",
   authenticate,
@@ -62,22 +77,12 @@ router.delete(
   asyncHandler(userController.deleteUser),
 );
 
-// Route to search users by name (optional)
+// Search users by name
 router.get(
   "/search",
   authenticate,
   authorize("user:read"),
   asyncHandler(userController.searchUsers),
-);
-
-// Legacy update user route with file upload (operator profile flow)
-router.put(
-  "/update/:id",
-  authenticate,
-  authorize(["user:update", "profile:update"]),
-  authorizeOwnership("id", ["user:update"]),
-  operatorRegistrationUploadFields,
-  userController.updateUserLegacy,
 );
 
 // Login route

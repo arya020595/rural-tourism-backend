@@ -4,10 +4,10 @@ const ApplicationPolicy = require("./applicationPolicy");
  * Pundit-style policy for the User resource.
  *
  * Scoping rules:
- *  - admin  → can see / manage ALL users
- *  - operator → can only see / manage users that belong to the SAME company
- *  - association → can only see users within the same association
- *  - others → can only see their own record
+ *  - superadmin     → can see / manage ALL users
+ *  - operator_admin → can only see / manage users that belong to the SAME company
+ *  - association    → can only see users within the same association
+ *  - others         → can only see their own record
  */
 class UserPolicy extends ApplicationPolicy {
   /* ── Action guards ───────────────────────────────────────────── */
