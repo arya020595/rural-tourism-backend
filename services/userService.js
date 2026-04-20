@@ -21,15 +21,39 @@ const USER_INCLUDES = [
 
 class UserService {
   /**
-   * Get all users with associations.
+   * Get all users with associations, search, and pagination.
    * @param {object} [scope={}] – Sequelize `where` clause from policy scope.
+   * @param {object} [options={}] – { where, order, search, page, perPage }
    */
-  async getAllUsers(scope = {}) {
-    return UnifiedUser.findAll({
-      where: scope,
+  async getAllUsers(
+    scope = {},
+    { where = {}, order = [], search, page = 1, perPage = 10 } = {},
+  ) {
+    // ?search= shortcut — searches name + email with LIKE
+    if (search) {
+      const pattern = `%${search}%`;
+      where[Op.or] = [
+        { name: { [Op.like]: pattern } },
+        { email: { [Op.like]: pattern } },
+      ];
+    }
+
+    // Policy scope keys (company_id, etc.) always win over ransack where
+    const mergedWhere = { ...where, ...scope };
+
+    const result = await UnifiedUser.paginate({
+      where: mergedWhere,
       include: USER_INCLUDES,
-      order: [["id", "ASC"]],
+      order: order.length ? order : [["id", "ASC"]],
+      page,
+      paginate: perPage,
     });
+
+    return {
+      docs: result.docs,
+      total: result.total,
+      pages: result.pages,
+    };
   }
 
   /**
@@ -156,22 +180,6 @@ class UserService {
     const user = await UnifiedUser.findByPk(id);
     if (!user) throw new NotFoundError("User not found");
     await user.destroy();
-  }
-
-  /**
-   * Search users by name.
-   * @param {string} query – Search term.
-   * @param {object} [scope={}] – Sequelize `where` clause from policy scope.
-   */
-  async searchUsers(query, scope = {}) {
-    return UnifiedUser.findAll({
-      where: {
-        ...scope,
-        name: { [Op.like]: `%${query}%` },
-      },
-      include: USER_INCLUDES,
-      order: [["id", "ASC"]],
-    });
   }
 
   /* ── Private ─────────────────────────────────────────────────── */

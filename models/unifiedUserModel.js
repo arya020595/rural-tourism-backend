@@ -60,4 +60,8 @@ const UnifiedUser = sequelize.define(
   },
 );
 
+// Add pagination plugin
+const sequelizePaginate = require("sequelize-paginate");
+sequelizePaginate.paginate(UnifiedUser);
+
 module.exports = UnifiedUser;

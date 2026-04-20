@@ -82,10 +82,26 @@ Error contract:
 | POST   | /api/users            | Yes         | user:create                   | -                           |
 | PUT    | /api/users/:id        | Yes         | user:update or profile:update | owner or user:update bypass |
 | DELETE | /api/users/:id        | Yes         | user:delete                   | -                           |
-| GET    | /api/users/search     | Yes         | user:read                     | -                           |
 | PUT    | /api/users/update/:id | Yes         | user:update or profile:update | owner or user:update bypass |
 | POST   | /api/users/login      | No (legacy) | -                             | -                           |
 | POST   | /api/users/reset-pass | No          | -                             | -                           |
+
+**GET /api/users query parameters:**
+
+| Parameter       | Example              | Description                                         |
+| --------------- | -------------------- | --------------------------------------------------- |
+| `search`        | `?search=John`       | Shortcut — searches `name` + `email` (LIKE)         |
+| `q[field_pred]` | `?q[name_cont]=John` | Ransack predicate (cont, eq, gt, lt, in, etc.)      |
+| `sort`          | `?sort=name_desc`    | Sort field + direction (or `?sort=name&order=DESC`) |
+| `page`          | `?page=2`            | Page number (default: 1)                            |
+| `per_page`      | `?per_page=5`        | Items per page (default: 10, alias: `limit`)        |
+
+### /api/companies
+
+| Method | Endpoint           | Auth | Permission | Ownership                                         |
+| ------ | ------------------ | ---- | ---------- | ------------------------------------------------- |
+| GET    | /api/companies/:id | Yes  | -          | Pundit policy: superadmin or operator_admin (own) |
+| PUT    | /api/companies/:id | Yes  | -          | Pundit policy: superadmin or operator_admin (own) |
 
 ### /api/tourists
 

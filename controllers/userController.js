@@ -1,7 +1,11 @@
 const userService = require("../services/userService");
 const { policy, policyScope } = require("../policies");
 const { serialize, serializeMany } = require("../serializers/userSerializer");
-const { successResponse, errorResponse } = require("../utils/helpers");
+const {
+  successResponse,
+  paginatedResponse,
+  errorResponse,
+} = require("../utils/helpers");
 const {
   ForbiddenError,
   BadRequestError,
@@ -10,16 +14,27 @@ const Role = require("../models/roleModel");
 
 /* ── Controller actions ────────────────────────────────────────── */
 
-// GET /api/users — policy-scoped list
+// GET /api/users — policy-scoped list with search, filter, sort, pagination
 exports.getAllUsers = async (req, res) => {
   try {
     const scope = policyScope("user", req.user);
-    const users = await userService.getAllUsers(scope);
+    const { where, order } = req.ransack;
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
-    return successResponse(
+    const result = await userService.getAllUsers(scope, {
+      where,
+      order,
+      search: req.query.search,
+      page,
+      perPage,
+    });
+
+    return paginatedResponse(
       res,
-      serializeMany(users),
+      serializeMany(result.docs),
       "Users fetched successfully",
+      { total: result.total, page, perPage, pages: result.pages },
     );
   } catch (err) {
     return errorResponse(res, err);
@@ -133,22 +148,6 @@ exports.deleteUser = async (req, res) => {
     await userService.deleteUser(req.params.id);
 
     return successResponse(res, null, "User deleted successfully");
-  } catch (err) {
-    return errorResponse(res, err);
-  }
-};
-
-// GET /api/users/search — policy-scoped
-exports.searchUsers = async (req, res) => {
-  try {
-    const scope = policyScope("user", req.user);
-    const users = await userService.searchUsers(req.query.name || "", scope);
-
-    return successResponse(
-      res,
-      serializeMany(users),
-      "Search results fetched successfully",
-    );
   } catch (err) {
     return errorResponse(res, err);
   }

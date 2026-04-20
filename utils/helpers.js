@@ -88,6 +88,31 @@ const paginate = async (model, page = 1, limit = 10, options = {}) => {
 };
 
 /**
+ * Standard paginated success response.
+ * Keeps the same { success, message, data } envelope and adds `pagination`.
+ */
+const paginatedResponse = (
+  res,
+  data,
+  message = "Success",
+  { total, page, perPage, pages },
+) => {
+  return res.status(200).json({
+    success: true,
+    message,
+    data,
+    pagination: {
+      total,
+      page,
+      per_page: perPage,
+      total_pages: pages,
+      has_next: page < pages,
+      has_prev: page > 1,
+    },
+  });
+};
+
+/**
  * Validate required fields
  */
 const validateRequired = (fields, body) => {
@@ -110,6 +135,7 @@ module.exports = {
   toBase64DataUri,
   parseNullableInt,
   successResponse,
+  paginatedResponse,
   errorResponse,
   paginate,
   validateRequired,

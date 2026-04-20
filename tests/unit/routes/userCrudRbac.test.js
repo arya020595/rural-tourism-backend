@@ -9,7 +9,6 @@ const mockCreateUser = jest.fn();
 const mockUpdateUser = jest.fn();
 const mockUpdateUserProfile = jest.fn();
 const mockDeleteUser = jest.fn();
-const mockSearchUsers = jest.fn();
 
 jest.mock("../../../middleware/uploadLogo", () => ({
   fields: () => (req, res, next) => next(),
@@ -22,7 +21,6 @@ jest.mock("../../../services/userService", () => ({
   updateUser: (...args) => mockUpdateUser(...args),
   updateUserProfile: (...args) => mockUpdateUserProfile(...args),
   deleteUser: (...args) => mockDeleteUser(...args),
-  searchUsers: (...args) => mockSearchUsers(...args),
 }));
 
 jest.mock("../../../services/authService", () => ({
@@ -187,13 +185,6 @@ describe("Users API – CRUD & RBAC", () => {
       expect(res.status).toBe(401);
     });
 
-    test("GET /api/users/search should return 401 without token", async () => {
-      const app = buildApp();
-      const res = await request(app).get("/api/users/search?name=test");
-
-      expect(res.status).toBe(401);
-    });
-
     test("should return 401 with invalid token", async () => {
       const app = buildApp();
       const res = await request(app)
@@ -210,7 +201,11 @@ describe("Users API – CRUD & RBAC", () => {
     describe("GET /api/users", () => {
       test("should return 200 and list users with user:read", async () => {
         const app = buildApp();
-        mockGetAllUsers.mockResolvedValue([sampleUser, sampleUser2]);
+        mockGetAllUsers.mockResolvedValue({
+          docs: [sampleUser, sampleUser2],
+          total: 2,
+          pages: 1,
+        });
 
         const res = await request(app)
           .get("/api/users")
@@ -222,12 +217,20 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.body.data).toHaveLength(2);
         expect(res.body.data[0].id).toBe(1);
         expect(res.body.data[1].id).toBe(2);
+        expect(res.body.pagination).toEqual({
+          total: 2,
+          page: 1,
+          per_page: 10,
+          total_pages: 1,
+          has_next: false,
+          has_prev: false,
+        });
         expect(mockGetAllUsers).toHaveBeenCalledTimes(1);
       });
 
       test("should return 200 with read-only permission", async () => {
         const app = buildApp();
-        mockGetAllUsers.mockResolvedValue([]);
+        mockGetAllUsers.mockResolvedValue({ docs: [], total: 0, pages: 0 });
 
         const res = await request(app)
           .get("/api/users")
@@ -236,6 +239,65 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.data).toEqual([]);
+        expect(res.body.pagination).toBeDefined();
+      });
+
+      test("should pass page and per_page to service", async () => {
+        const app = buildApp();
+        mockGetAllUsers.mockResolvedValue({ docs: [], total: 0, pages: 0 });
+
+        await request(app)
+          .get("/api/users?page=2&per_page=5")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
+
+        expect(mockGetAllUsers).toHaveBeenCalledWith(
+          { company_id: 1 },
+          expect.objectContaining({ page: 2, perPage: 5 }),
+        );
+      });
+
+      test("should pass ?search= as name+email LIKE filter", async () => {
+        const app = buildApp();
+        mockGetAllUsers.mockResolvedValue({
+          docs: [sampleUser],
+          total: 1,
+          pages: 1,
+        });
+
+        const res = await request(app)
+          .get("/api/users?search=John")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
+
+        expect(res.status).toBe(200);
+        expect(res.body.data).toHaveLength(1);
+        // Verify the service received the search param
+        const callArgs = mockGetAllUsers.mock.calls[0];
+        expect(callArgs[1].search).toBe("John");
+      });
+
+      test("should pass ransack q[name_cont] to service", async () => {
+        const app = buildApp();
+        mockGetAllUsers.mockResolvedValue({ docs: [], total: 0, pages: 0 });
+
+        await request(app)
+          .get("/api/users?q[name_cont]=Jane")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
+
+        const callArgs = mockGetAllUsers.mock.calls[0];
+        const ransackWhere = callArgs[1].where;
+        expect(ransackWhere).toHaveProperty("name");
+      });
+
+      test("should pass sort to service", async () => {
+        const app = buildApp();
+        mockGetAllUsers.mockResolvedValue({ docs: [], total: 0, pages: 0 });
+
+        await request(app)
+          .get("/api/users?sort=name_desc")
+          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
+
+        const callArgs = mockGetAllUsers.mock.calls[0];
+        expect(callArgs[1].order).toEqual([["name", "DESC"]]);
       });
     });
 
@@ -439,41 +501,17 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.body.success).toBe(false);
       });
     });
-
-    describe("GET /api/users/search", () => {
-      test("should return 200 with matching users", async () => {
-        const app = buildApp();
-        mockSearchUsers.mockResolvedValue([sampleUser]);
-
-        const res = await request(app)
-          .get("/api/users/search?name=John")
-          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body.success).toBe(true);
-        expect(res.body.data).toHaveLength(1);
-        expect(mockSearchUsers).toHaveBeenCalledWith("John", { company_id: 1 });
-      });
-
-      test("should return empty array when no match", async () => {
-        const app = buildApp();
-        mockSearchUsers.mockResolvedValue([]);
-
-        const res = await request(app)
-          .get("/api/users/search?name=nonexistent")
-          .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
-
-        expect(res.status).toBe(200);
-        expect(res.body.data).toEqual([]);
-      });
-    });
   });
 
   // ── Authorization: admin role (bypass all permissions) ───────────────────
   describe("Admin role (bypass)", () => {
     test("GET /api/users should return 200 for admin", async () => {
       const app = buildApp();
-      mockGetAllUsers.mockResolvedValue([sampleUser]);
+      mockGetAllUsers.mockResolvedValue({
+        docs: [sampleUser],
+        total: 1,
+        pages: 1,
+      });
 
       const res = await request(app)
         .get("/api/users")
@@ -566,17 +604,6 @@ describe("Users API – CRUD & RBAC", () => {
       expect(res.status).toBe(403);
       expect(res.body.data.required).toEqual(["user:delete"]);
       expect(mockDeleteUser).not.toHaveBeenCalled();
-    });
-
-    test("GET /api/users/search should return 403 without user:read", async () => {
-      const app = buildApp();
-
-      const res = await request(app)
-        .get("/api/users/search?name=test")
-        .set("Authorization", `Bearer ${USER_WITH_NO_USER_PERMS}`);
-
-      expect(res.status).toBe(403);
-      expect(mockSearchUsers).not.toHaveBeenCalled();
     });
   });
 
@@ -675,9 +702,13 @@ describe("Users API – CRUD & RBAC", () => {
 
   // ── Response envelope contract ──────────────────────────────────────────
   describe("Response envelope contract", () => {
-    test("success responses should have { success: true, message, data }", async () => {
+    test("success responses should have { success: true, message, data, pagination }", async () => {
       const app = buildApp();
-      mockGetAllUsers.mockResolvedValue([sampleUser]);
+      mockGetAllUsers.mockResolvedValue({
+        docs: [sampleUser],
+        total: 1,
+        pages: 1,
+      });
 
       const res = await request(app)
         .get("/api/users")
@@ -686,6 +717,7 @@ describe("Users API – CRUD & RBAC", () => {
       expect(res.body).toHaveProperty("success", true);
       expect(res.body).toHaveProperty("message");
       expect(res.body).toHaveProperty("data");
+      expect(res.body).toHaveProperty("pagination");
     });
 
     test("error responses should have { success: false, message }", async () => {
@@ -701,7 +733,11 @@ describe("Users API – CRUD & RBAC", () => {
 
     test("serialized user should include expected fields", async () => {
       const app = buildApp();
-      mockGetAllUsers.mockResolvedValue([sampleUser]);
+      mockGetAllUsers.mockResolvedValue({
+        docs: [sampleUser],
+        total: 1,
+        pages: 1,
+      });
 
       const res = await request(app)
         .get("/api/users")

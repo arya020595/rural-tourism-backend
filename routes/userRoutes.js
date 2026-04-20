@@ -8,6 +8,7 @@ const authService = require("../services/authService");
 const { authenticate } = require("../middleware/auth");
 const { authorize, authorizeOwnership } = require("../middleware/authorize");
 const { asyncHandler } = require("../utils/helpers");
+const { ransackMiddleware } = require("../middleware/ransackSearch");
 const {
   validateCreateUser,
   validateUpdateUser,
@@ -20,11 +21,12 @@ const operatorUploadFields = upload.fields([
   { name: "homestay_certificate", maxCount: 1 },
 ]);
 
-// List users
+// List users (with search, filter, sort, pagination)
 router.get(
   "/",
   authenticate,
   authorize("user:read"),
+  ransackMiddleware,
   asyncHandler(userController.getAllUsers),
 );
 
@@ -75,14 +77,6 @@ router.delete(
   authenticate,
   authorize("user:delete"),
   asyncHandler(userController.deleteUser),
-);
-
-// Search users by name
-router.get(
-  "/search",
-  authenticate,
-  authorize("user:read"),
-  asyncHandler(userController.searchUsers),
 );
 
 // Login route
