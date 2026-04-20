@@ -21,7 +21,7 @@
 
 ## Authentication
 
-All endpoints (except **POST /api/users**) require a valid JWT token in the `Authorization` header:
+**All endpoints require a valid JWT token** in the `Authorization` header:
 
 ```
 Authorization: Bearer <token>
@@ -31,11 +31,20 @@ Obtain a token via `POST /api/auth/login`:
 
 ```json
 {
-  "identifier": "admin_seed",
-  "password": "admin123",
+  "identifier": "superadmin_seed",
+  "password": "superadmin123",
   "user_type": "operator"
 }
 ```
+
+### Seed Users
+
+| Username           | Password         | Role             | Permissions                |
+| ------------------ | ---------------- | ---------------- | -------------------------- |
+| `superadmin_seed`  | `superadmin123`  | `superadmin`     | `*:*` (full access)        |
+| `operator_seed`    | `operator123`    | `operator_admin` | `user:*`, resources CRUD   |
+| `tourist_seed`     | `tourist123`     | `tourist`        | `profile:*`, booking, read |
+| `association_seed` | `association123` | `association`    | `profile:*`, assoc, read   |
 
 | Scenario          | Status | Response                               |
 | ----------------- | ------ | -------------------------------------- |
@@ -47,14 +56,22 @@ Obtain a token via `POST /api/auth/login`:
 
 ## Authorization (RBAC)
 
-The system uses **Role-Based Access Control**. Each user has a role (e.g. `admin`, `operator`, `tourist`, `association`) and each role has a set of permissions.
+The system uses **Role-Based Access Control** with five roles:
+
+| Role             | Scope                      | Description                                           |
+| ---------------- | -------------------------- | ----------------------------------------------------- |
+| `superadmin`     | Global                     | Full access to everything (`*:*`)                     |
+| `operator_admin` | Company-scoped             | Full CRUD on users + resources within their company   |
+| `operator_staff` | Company-scoped (read-only) | Read-only on resources + own profile                  |
+| `tourist`        | Self                       | Own profile + bookings + read resources               |
+| `association`    | Association-scoped         | Own profile + association management + read resources |
 
 ### Permission Codes for Users Module
 
 | Permission       | Description                            |
 | ---------------- | -------------------------------------- |
 | `user:read`      | List all users, get user by ID, search |
-| `user:create`    | Create new users (admin/management)    |
+| `user:create`    | Create new users                       |
 | `user:update`    | Update any user's data                 |
 | `user:delete`    | Delete any user                        |
 | `profile:read`   | Read own user profile only             |
@@ -62,9 +79,10 @@ The system uses **Role-Based Access Control**. Each user has a role (e.g. `admin
 
 ### Access Rules
 
-- **`admin` role** bypasses all permission checks — full access to every endpoint.
+- **`superadmin` role** bypasses all permission checks — full access to every endpoint.
 - **Wildcard permission `*:*`** also grants unrestricted access.
 - **Ownership check**: Endpoints `GET /:id` and `PUT /:id` apply `authorizeOwnership` — users with only `profile:read` / `profile:update` can access **their own resource** but not others'.
+- **Company scoping**: `operator_admin` can only see/manage users within their own `company_id` (enforced by policy).
 
 ---
 
@@ -94,7 +112,7 @@ GET /api/users
       "role_id": 2,
       "association_id": null,
       "company_id": null,
-      "role": { "id": 2, "name": "operator" },
+      "role": { "id": 2, "name": "operator_admin" },
       "association": null,
       "company": null,
       "created_at": "2026-04-20T00:00:00.000Z",
@@ -129,7 +147,7 @@ GET /api/users/:id
     "role_id": 2,
     "association_id": null,
     "company_id": null,
-    "role": { "id": 2, "name": "operator" },
+    "role": { "id": 2, "name": "operator_admin" },
     "association": null,
     "company": null,
     "created_at": "2026-04-20T00:00:00.000Z",
@@ -155,21 +173,37 @@ GET /api/users/:id
 POST /api/users
 ```
 
-**Auth**: Not required (public registration)
+**Auth**: Required  
+**Permission**: `user:create`
+
+> **Auto-assign behavior**: When an `operator_admin` creates a user, the new user is automatically assigned the `operator_staff` role and the caller's `company_id`. Only `superadmin` can freely assign any `role_id`, `company_id`, or `association_id`.
 
 **Request Body**:
 
-| Field            | Type     | Required | Description         |
-| ---------------- | -------- | -------- | ------------------- |
-| `name`           | `string` | Yes      | Full name           |
-| `username`       | `string` | Yes      | Unique username     |
-| `email`          | `string` | Yes      | Unique email        |
-| `password`       | `string` | Yes      | Plain-text password |
-| `role_id`        | `int`    | No       | Role ID to assign   |
-| `association_id` | `int`    | No       | Association FK      |
-| `company_id`     | `int`    | No       | Company FK          |
+| Field            | Type     | Required | Description                                            |
+| ---------------- | -------- | -------- | ------------------------------------------------------ |
+| `name`           | `string` | Yes      | Full name                                              |
+| `username`       | `string` | Yes      | Unique username                                        |
+| `email`          | `string` | Yes      | Unique email                                           |
+| `password`       | `string` | Yes      | Plain-text password                                    |
+| `role_id`        | `int`    | No       | Role ID (superadmin only — ignored for operator_admin) |
+| `association_id` | `int`    | No       | Association FK (superadmin only)                       |
+| `company_id`     | `int`    | No       | Company FK (superadmin only)                           |
 
-**Example**:
+**Example (operator_admin creating staff)**:
+
+```json
+{
+  "name": "New Staff Member",
+  "username": "new_staff",
+  "email": "staff@example.com",
+  "password": "secure123"
+}
+```
+
+_The `role_id` and `company_id` are auto-assigned from the caller's JWT._
+
+**Example (superadmin creating any user)**:
 
 ```json
 {

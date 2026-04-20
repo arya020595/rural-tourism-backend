@@ -20,6 +20,13 @@ const DEFAULT_USERS = [
     roleName: "operator_admin",
   },
   {
+    name: "Operator Staff User",
+    username: "operator_staff_seed",
+    email: "operator.staff.seed@example.com",
+    password: "staff123",
+    roleName: "operator_staff",
+  },
+  {
     name: "Tourist User",
     username: "tourist_seed",
     email: "tourist.seed@example.com",

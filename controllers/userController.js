@@ -2,7 +2,6 @@ const userService = require("../services/userService");
 const { policy, policyScope } = require("../policies");
 const { serialize, serializeMany } = require("../serializers/userSerializer");
 const { successResponse, errorResponse } = require("../utils/helpers");
-const { extractCompanyFields } = require("../parsers/userParser");
 const {
   ForbiddenError,
   BadRequestError,
@@ -112,15 +111,7 @@ exports.updateUser = async (req, res) => {
       throw new BadRequestError("Password and confirm password do not match.");
     }
 
-    const companyFields = extractCompanyFields(req.body, req.files);
-
-    const user = companyFields
-      ? await userService.updateUserProfile(
-          req.params.id,
-          req.body,
-          companyFields,
-        )
-      : await userService.updateUser(req.params.id, req.body);
+    const user = await userService.updateUser(req.params.id, req.body);
 
     return successResponse(res, serialize(user), "User updated successfully");
   } catch (err) {
