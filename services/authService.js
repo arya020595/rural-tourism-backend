@@ -301,6 +301,10 @@ class AuthService {
       tokenPayload.legacy_user_id = resolvedOwnerId;
     }
 
+    if (user.company_id) {
+      tokenPayload.company_id = user.company_id;
+    }
+
     if (user.association_id) {
       tokenPayload.association_id = user.association_id;
     }

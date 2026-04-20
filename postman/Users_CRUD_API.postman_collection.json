@@ -1,0 +1,684 @@
+{
+  "info": {
+    "name": "Users CRUD API",
+    "description": "CRUD endpoints for the `users` table with RBAC authorization.\n\n## Setup\n1. Set the `baseUrl` variable (default: `http://localhost:3000`)\n2. Run **Login (Operator Admin)** first to auto-set the `token` variable\n3. All protected requests use `{{token}}` from the collection variables",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints to obtain JWT tokens for testing.",
+      "item": [
+        {
+          "name": "Login (Operator Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "    pm.test('Token saved to collection variables', function () {",
+                  "        pm.expect(pm.collectionVariables.get('token')).to.not.be.empty;",
+                  "    });",
+                  "}",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success envelope', function () {",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res.data).to.have.property('token');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin_seed\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as operator admin to get a JWT token. Has `*:*` (all permissions). The token is automatically saved to the `token` collection variable."
+          }
+        },
+        {
+          "name": "Login (Operator Staff – no user perms)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "}",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"operator_seed\",\n  \"password\": \"operator123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as operator staff. Has NO user:* permissions — expect 403 on users endpoints. Only has profile:read/update and accommodation/activity/booking/receipt permissions."
+          }
+        },
+        {
+          "name": "Login (Association – no user perms)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "}",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"association_seed\",\n  \"password\": \"association123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as association user. Has NO user:* permissions — expect 403 on users endpoints. Only has profile, association, accommodation, activity, booking permissions."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users CRUD",
+      "description": "Core CRUD operations on the `users` table.",
+      "item": [
+        {
+          "name": "List All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success envelope', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res).to.have.property('data');",
+                  "    pm.expect(res.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Get all users.\n\n**Permission**: `user:read`"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res.data).to.have.property('id');",
+                  "    pm.expect(res.data).to.have.property('username');",
+                  "    pm.expect(res.data).to.have.property('email');",
+                  "    pm.expect(res.data).to.not.have.property('password');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Get a single user by ID.\n\n**Permission**: `user:read` or `profile:read` (own resource only)"
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('User created successfully', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res.message).to.eql('User created successfully');",
+                  "    pm.expect(res.data).to.have.property('id');",
+                  "});",
+                  "",
+                  "// Save the new user ID for subsequent requests",
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "    pm.collectionVariables.set('userId', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Test User\",\n  \"username\": \"new_test_user\",\n  \"email\": \"newtest@example.com\",\n  \"password\": \"password123\",\n  \"role_id\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Create a new user (public — no auth required).\n\nThe created user's ID is saved to `{{userId}}` for use in subsequent requests."
+          }
+        },
+        {
+          "name": "Update User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User updated successfully', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res.message).to.eql('User updated successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"email\": \"updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Update an existing user.\n\n**Permission**: `user:update` or `profile:update` (own resource only)"
+          }
+        },
+        {
+          "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User deleted successfully', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res.message).to.eql('User deleted successfully');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "{{userId}}"]
+            },
+            "description": "Delete a user by ID.\n\n**Permission**: `user:delete`"
+          }
+        },
+        {
+          "name": "Search Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is search result array', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(true);",
+                  "    pm.expect(res.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?name=test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "test",
+                  "description": "Partial name match (SQL LIKE %query%)"
+                }
+              ]
+            },
+            "description": "Search users by name.\n\n**Permission**: `user:read`"
+          }
+        }
+      ]
+    },
+    {
+      "name": "RBAC – Access Denied (403)",
+      "description": "These requests demonstrate 403 Forbidden responses when the logged-in user lacks the required permissions.\n\n**How to test:**\n1. Run **Login (Operator Staff – no user perms)** or **Login (Association – no user perms)** first\n2. Then run any request in this folder — all should return 403",
+      "item": [
+        {
+          "name": "List Users – 403 (no user:read)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Forbidden response with required permissions', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "    pm.expect(res.message).to.contain('Forbidden');",
+                  "    pm.expect(res.data.required).to.include('user:read');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Expects 403. Login as operator staff or association first (no `user:read` permission)."
+          }
+        },
+        {
+          "name": "Get User – 403 (no user:read / profile:read)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Forbidden response', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Expects 403. Login as operator staff or association first."
+          }
+        },
+        {
+          "name": "Update User – 403 (no user:update / profile:update)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Forbidden response', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hacker\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Expects 403. Login as operator staff or association first."
+          }
+        },
+        {
+          "name": "Delete User – 403 (no user:delete)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Forbidden response', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "Expects 403. Login as operator staff or association first."
+          }
+        },
+        {
+          "name": "Search Users – 403 (no user:read)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Forbidden response', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/search?name=test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "test"
+                }
+              ]
+            },
+            "description": "Expects 403. Login as operator staff or association first."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth – No Token (401)",
+      "description": "These requests have no Authorization header — all should return 401.",
+      "item": [
+        {
+          "name": "List Users – 401 (no token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Access denied message', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "    pm.expect(res.message).to.eql('Access denied. No token provided.');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users"]
+            },
+            "description": "No Authorization header — expects 401."
+          }
+        },
+        {
+          "name": "Delete User – 401 (no token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "users", "1"]
+            },
+            "description": "No Authorization header — expects 401."
+          }
+        }
+      ]
+    }
+  ]
+}

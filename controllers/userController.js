@@ -2,6 +2,8 @@ const { Op } = require("sequelize"); // For search queries
 const bcrypt = require("bcrypt");
 const { User, Association, Company } = require("../models");
 const authService = require("../services/authService");
+const userService = require("../services/userService");
+const { policy, policyScope } = require("../policies");
 
 const DEFAULT_LOGO = "/uploads/default-logo.png";
 
@@ -27,6 +29,24 @@ function parsePoscode(value) {
   const normalized = String(value).trim();
   if (!/^\d{5}$/.test(normalized)) return null;
   return normalized;
+}
+
+function serializeUser(user) {
+  const plain = user.toJSON ? user.toJSON() : user;
+  return {
+    id: plain.id,
+    name: plain.name,
+    username: plain.username,
+    email: plain.email,
+    association_id: plain.association_id || null,
+    role_id: plain.role_id || null,
+    company_id: plain.company_id || null,
+    role: plain.role || null,
+    association: plain.association || null,
+    company: plain.company || null,
+    created_at: plain.created_at,
+    updated_at: plain.updated_at,
+  };
 }
 
 function serializeUnifiedUser(user) {
@@ -60,89 +80,87 @@ function serializeUnifiedUser(user) {
   };
 }
 
-// Get all users
+// Get all users (policy-scoped)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
-      include: [
-        {
-          model: Association,
-          as: "association",
-          required: false,
-        },
-        {
-          model: Company,
-          as: "company",
-          required: false,
-        },
-      ],
-      order: [["id", "ASC"]],
-    });
+    const scope = policyScope("user", req.user);
+    const users = await userService.getAllUsers(scope);
 
-    res.json(users.map((user) => serializeUnifiedUser(user)));
+    return res.status(200).json({
+      success: true,
+      message: "Users fetched successfully",
+      data: users.map((user) => serializeUser(user)),
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database query error." });
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Failed to fetch users",
+    });
   }
 };
 
-// Get user by ID
+// Get user by ID (policy-authorized)
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id, {
-      include: [
-        {
-          model: Association,
-          as: "association",
-          required: false,
-        },
-        {
-          model: Company,
-          as: "company",
-          required: false,
-        },
-      ],
-    });
-    if (!user) return res.status(404).json({ message: "User not found." });
+    const user = await userService.getUserById(req.params.id);
 
-    res.json(serializeUnifiedUser(user));
+    const userPolicy = policy("user", req.user, user);
+    if (!userPolicy.show()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Forbidden. You can only access users within your own company.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      data: serializeUser(user),
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database query error." });
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Failed to fetch user",
+    });
   }
 };
 
 // Create a new user
 exports.createUser = async (req, res) => {
   try {
-    const registerResult = await authService.register({
-      userType: "operator",
-      payload: req.body,
-      files: req.files,
+    const {
+      name,
+      username,
+      email,
+      password,
+      role_id,
+      association_id,
+      company_id,
+    } = req.body;
+
+    const user = await userService.createUser({
+      name,
+      username,
+      email,
+      password,
+      role_id,
+      association_id,
+      company_id,
     });
 
-    const createdUser = await User.findByPk(registerResult.user.id, {
-      include: [
-        {
-          model: Association,
-          as: "association",
-          required: false,
-        },
-        {
-          model: Company,
-          as: "company",
-          required: false,
-        },
-      ],
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: serializeUser(user),
     });
-
-    res.status(201).json(
-      createdUser ? serializeUnifiedUser(createdUser) : registerResult.user,
-    );
   } catch (err) {
     const statusCode = err.statusCode || 500;
-    res.status(statusCode).json({
-      error: err.message || "Server error. Please try again later.",
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Failed to create user",
     });
   }
 };
@@ -191,8 +209,57 @@ exports.createUser = async (req, res) => {
 //     }
 // };
 
-// Update user
+// Update user (simple CRUD via service)
 exports.updateUser = async (req, res) => {
+  try {
+    const updates = {};
+
+    const nextName =
+      req.body.owner_full_name ?? req.body.full_name ?? req.body.name;
+    if (nextName !== undefined) updates.name = nextName;
+
+    if (req.body.username !== undefined) updates.username = req.body.username;
+
+    const nextEmail =
+      req.body.user_email ?? req.body.email_address ?? req.body.email;
+    if (nextEmail !== undefined) updates.email = nextEmail;
+
+    if (req.body.password !== undefined) updates.password = req.body.password;
+    if (req.body.role_id !== undefined) updates.role_id = req.body.role_id;
+    if (req.body.association_id !== undefined)
+      updates.association_id = req.body.association_id;
+    if (req.body.company_id !== undefined)
+      updates.company_id = req.body.company_id;
+
+    // Policy check: fetch the target user first to verify scope
+    const targetUser = await userService.getUserById(req.params.id);
+    const userPolicy = policy("user", req.user, targetUser);
+    if (!userPolicy.update()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Forbidden. You can only update users within your own company.",
+      });
+    }
+
+    const user = await userService.updateUser(req.params.id, updates);
+
+    return res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+      data: serializeUser(user),
+    });
+  } catch (err) {
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Failed to update user",
+    });
+  }
+};
+
+// Update user (legacy operator profile flow with company & file uploads)
+exports.updateUserLegacy = async (req, res) => {
   try {
     // role_id changes are reserved for role-management flows.
     delete req.body.role_id;
@@ -216,18 +283,21 @@ exports.updateUser = async (req, res) => {
       userUpdates.username = String(req.body.username || "").trim();
     }
 
-    const nextEmail = req.body.user_email ?? req.body.email_address ?? req.body.email;
+    const nextEmail =
+      req.body.user_email ?? req.body.email_address ?? req.body.email;
     if (nextEmail !== undefined) {
       userUpdates.email = String(nextEmail || "").trim();
       companyUpdates.email = String(nextEmail || "").trim();
     }
 
-    const nextName = req.body.owner_full_name ?? req.body.full_name ?? req.body.name;
+    const nextName =
+      req.body.owner_full_name ?? req.body.full_name ?? req.body.name;
     if (nextName !== undefined) {
       userUpdates.name = String(nextName || "").trim();
     }
 
-    const associationIdInput = req.body.association_id ?? req.body.associationId;
+    const associationIdInput =
+      req.body.association_id ?? req.body.associationId;
     if (associationIdInput !== undefined) {
       const parsedAssociationId = parseNullableInt(associationIdInput);
       if (
@@ -235,7 +305,9 @@ exports.updateUser = async (req, res) => {
         associationIdInput !== null &&
         parsedAssociationId === null
       ) {
-        return res.status(400).json({ error: "Association ID must be an integer." });
+        return res
+          .status(400)
+          .json({ error: "Association ID must be an integer." });
       }
       userUpdates.association_id = parsedAssociationId;
     }
@@ -263,8 +335,10 @@ exports.updateUser = async (req, res) => {
       req.files?.trading_operation_license?.[0] || null;
     const homestayFile = req.files?.homestay_certificate?.[0] || null;
 
-    if (logoFile) companyUpdates.operator_logo_image = toBase64DataUri(logoFile);
-    if (motacFile) companyUpdates.motac_license_file = toBase64DataUri(motacFile);
+    if (logoFile)
+      companyUpdates.operator_logo_image = toBase64DataUri(logoFile);
+    if (motacFile)
+      companyUpdates.motac_license_file = toBase64DataUri(motacFile);
     if (tradingOperationFile)
       companyUpdates.trading_operation_license =
         toBase64DataUri(tradingOperationFile);
@@ -283,7 +357,8 @@ exports.updateUser = async (req, res) => {
       !tradingOperationFile &&
       req.body.trading_operation_license !== undefined
     ) {
-      companyUpdates.trading_operation_license = req.body.trading_operation_license;
+      companyUpdates.trading_operation_license =
+        req.body.trading_operation_license;
     }
 
     if (!homestayFile && req.body.homestay_certificate !== undefined) {
@@ -428,45 +503,52 @@ exports.updateUser = async (req, res) => {
 //     }
 // };
 
-// Delete user
+// Delete user (policy-authorized)
 exports.deleteUser = async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found." });
+    const targetUser = await userService.getUserById(req.params.id);
+    const userPolicy = policy("user", req.user, targetUser);
+    if (!userPolicy.destroy()) {
+      return res.status(403).json({
+        success: false,
+        message:
+          "Forbidden. You can only delete users within your own company.",
+      });
+    }
 
-    await user.destroy();
-    res.status(204).send();
+    await userService.deleteUser(req.params.id);
+
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database query error." });
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Failed to delete user",
+    });
   }
 };
 
-// Search users by name
+// Search users by name (policy-scoped)
 exports.searchUsers = async (req, res) => {
   const { name } = req.query;
   try {
-    const users = await User.findAll({
-      where: {
-        name: { [Op.like]: `%${name}%` },
-      },
-      include: [
-        {
-          model: Association,
-          as: "association",
-          required: false,
-        },
-        {
-          model: Company,
-          as: "company",
-          required: false,
-        },
-      ],
+    const scope = policyScope("user", req.user);
+    const users = await userService.searchUsers(name || "", scope);
+
+    return res.status(200).json({
+      success: true,
+      message: "Search results fetched successfully",
+      data: users.map((user) => serializeUser(user)),
     });
-    res.json(users.map((user) => serializeUnifiedUser(user)));
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database query error." });
+    const statusCode = err.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message || "Failed to search users",
+    });
   }
 };
 

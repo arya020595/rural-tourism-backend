@@ -33,7 +33,6 @@ const ROLE_PERMISSION_MAP = {
     "association:read",
     "association:update",
     "association:manage_users",
-    "user:read",
     "accommodation:read",
     "activity:read",
     "booking:read",
@@ -57,7 +56,9 @@ module.exports = {
 
     const now = new Date();
 
-    for (const [roleName, permissionCodes] of Object.entries(ROLE_PERMISSION_MAP)) {
+    for (const [roleName, permissionCodes] of Object.entries(
+      ROLE_PERMISSION_MAP,
+    )) {
       const roleId = roleByName.get(roleName);
       if (!roleId) continue;
 
@@ -121,7 +122,11 @@ module.exports = {
     );
 
     await queryInterface.sequelize.query("UPDATE rt_users SET role_id = NULL");
-    await queryInterface.sequelize.query("UPDATE tourist_users SET role_id = NULL");
-    await queryInterface.sequelize.query("UPDATE association_users SET role_id = NULL");
+    await queryInterface.sequelize.query(
+      "UPDATE tourist_users SET role_id = NULL",
+    );
+    await queryInterface.sequelize.query(
+      "UPDATE association_users SET role_id = NULL",
+    );
   },
 };

@@ -51,10 +51,8 @@ router.put(
   authenticate,
   authorize(["user:update", "profile:update"]),
   authorizeOwnership("id", ["user:update"]),
-  operatorRegistrationUploadFields,
-  userController.updateUser,
+  asyncHandler(userController.updateUser),
 );
-//router.put('/:id', asyncHandler(userController.updateUser));
 
 // Route to delete a user
 router.delete(
@@ -72,17 +70,14 @@ router.get(
   asyncHandler(userController.searchUsers),
 );
 
-// Create user route with file upload
-//router.post('/create', upload.single('company_logo'), userController.createUser);
-
-// Update user route with file upload (optional)
+// Legacy update user route with file upload (operator profile flow)
 router.put(
   "/update/:id",
   authenticate,
   authorize(["user:update", "profile:update"]),
   authorizeOwnership("id", ["user:update"]),
   operatorRegistrationUploadFields,
-  userController.updateUser,
+  userController.updateUserLegacy,
 );
 
 // Login route
@@ -92,7 +87,7 @@ router.post("/login", async (req, res) => {
   try {
     res.set("Deprecation", "true");
     res.set("Sunset", "Thu, 31 Dec 2026 23:59:59 GMT");
-    res.set("Link", "</api/auth/login>; rel=\"successor-version\"");
+    res.set("Link", '</api/auth/login>; rel="successor-version"');
 
     const authResult = await authService.login({
       identifier: username,
