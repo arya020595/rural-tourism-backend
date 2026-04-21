@@ -372,7 +372,7 @@ All responses follow a consistent envelope:
   "message": "Forbidden. You do not have permission to perform this action.",
   "data": {
     "required": ["user:read"],
-    "your_role": "operator"
+    "your_role": "operator_staff"
   }
 }
 ```
