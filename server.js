@@ -33,6 +33,7 @@ const passwordResetRoutes = require("./routes/passwordResetRoutes");
 const authRoutes = require("./routes/authRoutes");
 const roleRoutes = require("./routes/roleRoutes");
 const permissionRoutes = require("./routes/permissionRoutes");
+const companyRoutes = require("./routes/companyRoutes");
 
 const app = express();
 
@@ -103,6 +104,7 @@ app.get("/api", (req, res) => {
       receipts: "/api/receipts",
       notifications: "/api/notifications",
       associations: "/api/associations",
+      companies: "/api/companies",
     },
   });
 });
@@ -125,6 +127,7 @@ app.use("/api/operator-bookings", operatorBookingsRoutes);
 app.use("/api/operator-activities", operatorActivitiesRoutes);
 app.use("/api/association-users", associationUserRoutes);
 app.use("/api/associations", associationRoutes);
+app.use("/api/companies", companyRoutes);
 app.use("/api/password", passwordResetRoutes);
 
 // Catch 404 and forward to error handler

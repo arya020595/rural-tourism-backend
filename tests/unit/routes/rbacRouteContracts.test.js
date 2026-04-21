@@ -43,7 +43,7 @@ const buildApp = () => {
   return app;
 };
 
-const makeToken = (permissions = [], role = "operator") =>
+const makeToken = (permissions = [], role = "operator_admin") =>
   generateToken({
     id: 100,
     unified_user_id: 100,
@@ -70,7 +70,7 @@ describe("RBAC route contracts", () => {
           unified_user_id: 1,
           username: "operator1",
           email: "operator@example.com",
-          role: { id: 2, name: "operator" },
+          role: { id: 2, name: "operator_admin" },
           permissions: ["activity:read"],
         },
       });
@@ -93,7 +93,7 @@ describe("RBAC route contracts", () => {
             unified_user_id: 1,
             username: "operator1",
             email: "operator@example.com",
-            role: { id: 2, name: "operator" },
+            role: { id: 2, name: "operator_admin" },
             permissions: ["activity:read"],
           },
         },
@@ -151,7 +151,7 @@ describe("RBAC route contracts", () => {
 
     test("GET /api/roles should return 403 with insufficient permission", async () => {
       const app = buildApp();
-      const token = makeToken(["activity:read"], "operator");
+      const token = makeToken(["activity:read"], "operator_admin");
 
       const response = await request(app)
         .get("/api/roles")
@@ -164,9 +164,9 @@ describe("RBAC route contracts", () => {
 
     test("GET /api/roles should return 200 with role:read", async () => {
       const app = buildApp();
-      const token = makeToken(["role:read"], "operator");
+      const token = makeToken(["role:read"], "operator_admin");
       mockGetAllRoles.mockResolvedValue([
-        { id: 1, name: "admin", permissions: [] },
+        { id: 1, name: "superadmin", permissions: [] },
       ]);
 
       const response = await request(app)
@@ -176,13 +176,13 @@ describe("RBAC route contracts", () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual([
-        { id: 1, name: "admin", permissions: [] },
+        { id: 1, name: "superadmin", permissions: [] },
       ]);
     });
 
     test("GET /api/permissions should return 200 with permission:read", async () => {
       const app = buildApp();
-      const token = makeToken(["permission:read"], "operator");
+      const token = makeToken(["permission:read"], "operator_admin");
       mockGetAllPermissions.mockResolvedValue([
         { id: 1, code: "activity:read" },
         { id: 2, code: "booking:update" },

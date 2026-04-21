@@ -79,7 +79,7 @@ describe("auth middleware", () => {
         unified_user_id: 42,
         user_type: "operator",
         username: "operator1",
-        role: "operator",
+        role: "operator_admin",
         permissions: ["activity:read"],
       });
 
@@ -95,7 +95,7 @@ describe("auth middleware", () => {
         unified_user_id: 42,
         user_type: "operator",
         username: "operator1",
-        role: "operator",
+        role: "operator_admin",
         permissions: ["activity:read"],
       });
       expect(req.user.legacy_user_id).toBeUndefined();

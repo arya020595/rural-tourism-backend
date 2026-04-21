@@ -4,7 +4,13 @@
 module.exports = {
   async up(queryInterface) {
     const now = new Date();
-    const roles = ["admin", "operator", "tourist", "association"];
+    const roles = [
+      "superadmin",
+      "operator_admin",
+      "operator_staff",
+      "tourist",
+      "association",
+    ];
 
     for (const roleName of roles) {
       await queryInterface.sequelize.query(
@@ -28,7 +34,13 @@ module.exports = {
     await queryInterface.bulkDelete(
       "roles",
       {
-        name: ["admin", "operator", "tourist", "association"],
+        name: [
+          "superadmin",
+          "operator_admin",
+          "operator_staff",
+          "tourist",
+          "association",
+        ],
       },
       {},
     );

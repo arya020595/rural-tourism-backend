@@ -17,14 +17,14 @@ module.exports = {
     const passwordHash = await bcrypt.hash(ADMIN_USER.password, 10);
 
     const roles = await queryInterface.sequelize.query(
-      `SELECT id, name FROM roles WHERE name = 'admin'`,
+      `SELECT id, name FROM roles WHERE name = 'superadmin'`,
       { type: QueryTypes.SELECT },
     );
 
     const adminRoleId = Number(roles[0]?.id || 0);
     if (!adminRoleId) {
       throw new Error(
-        "Missing RBAC role 'admin'. Run RBAC role seeders first.",
+        "Missing RBAC role 'superadmin'. Run RBAC role seeders first.",
       );
     }
 
