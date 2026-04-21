@@ -28,7 +28,7 @@ describe("authorize middleware", () => {
     });
 
     test("should allow admin role", () => {
-      const req = { user: { role: "admin", permissions: [] } };
+      const req = { user: { role: "superadmin", permissions: [] } };
       const res = createMockRes();
       const next = jest.fn();
 
@@ -109,7 +109,7 @@ describe("authorize middleware", () => {
 
     test("should allow admin bypass", () => {
       const req = {
-        user: { role: "admin", legacy_user_id: 2, permissions: [] },
+        user: { role: "superadmin", legacy_user_id: 2, permissions: [] },
         params: { user_id: "99" },
       };
       const res = createMockRes();

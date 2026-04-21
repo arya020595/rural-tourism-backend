@@ -76,7 +76,7 @@ const buildApp = () => {
   return app;
 };
 
-const makeToken = (permissions = [], role = "operator") =>
+const makeToken = (permissions = [], role = "operator_admin") =>
   generateToken({
     id: 1,
     unified_user_id: 1,

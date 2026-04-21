@@ -105,10 +105,10 @@ const run = async () => {
 
   const where = resolveLookupWhere(args, config);
 
-  const adminRole = await Role.findOne({ where: { name: "admin" } });
+  const adminRole = await Role.findOne({ where: { name: "superadmin" } });
   if (!adminRole) {
     throw new Error(
-      "Admin role not found. Run RBAC role/permission seeders before bootstrapping admin.",
+      "Superadmin role not found. Run RBAC role/permission seeders before bootstrapping admin.",
     );
   }
 

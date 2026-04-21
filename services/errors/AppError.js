@@ -8,6 +8,13 @@ class AppError extends Error {
   }
 }
 
+class BadRequestError extends AppError {
+  constructor(message = "Bad request") {
+    super(message, 400, "BAD_REQUEST");
+    this.name = "BadRequestError";
+  }
+}
+
 class ValidationError extends AppError {
   constructor(message = "Validation failed") {
     super(message, 400, "VALIDATION_ERROR");
@@ -22,6 +29,20 @@ class NotFoundError extends AppError {
   }
 }
 
+class ConflictError extends AppError {
+  constructor(message = "Resource already exists") {
+    super(message, 409, "CONFLICT");
+    this.name = "ConflictError";
+  }
+}
+
+class ForbiddenError extends AppError {
+  constructor(message = "Forbidden") {
+    super(message, 403, "FORBIDDEN");
+    this.name = "ForbiddenError";
+  }
+}
+
 class TokenExpiredError extends AppError {
   constructor(message = "Reset token has expired. Please request a new one.") {
     super(message, 400, "TOKEN_EXPIRED");
@@ -31,7 +52,10 @@ class TokenExpiredError extends AppError {
 
 module.exports = {
   AppError,
+  BadRequestError,
   ValidationError,
   NotFoundError,
+  ConflictError,
+  ForbiddenError,
   TokenExpiredError,
 };

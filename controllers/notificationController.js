@@ -1,20 +1,20 @@
-const Notification = require('../models/notificationModel');
+const Notification = require("../models/notificationModel");
 
 const resolveRoleName = (user) => {
   if (!user?.role) return null;
-  if (typeof user.role === 'string') return user.role;
+  if (typeof user.role === "string") return user.role;
   return user.role.name || null;
 };
 
 const hasAdminBypass = (user) => {
   const permissions = Array.isArray(user?.permissions) ? user.permissions : [];
-  return resolveRoleName(user) === 'admin' || permissions.includes('*:*');
+  return resolveRoleName(user) === "superadmin" || permissions.includes("*:*");
 };
 
 const resolveRequesterOwnerId = (user) => {
   if (!user) return null;
 
-  const isOperator = user.user_type === 'operator';
+  const isOperator = user.user_type === "operator";
   const rawId = isOperator
     ? (user.unified_user_id ?? user.id)
     : (user.legacy_user_id ?? user.id);
@@ -31,12 +31,16 @@ exports.createNotification = async (req, res) => {
   const { user_id, title, message, type, related_id } = req.body;
 
   if (!user_id || !title || !related_id) {
-    return res.status(400).json({ error: 'user_id, title, and related_id are required.' });
+    return res
+      .status(400)
+      .json({ error: "user_id, title, and related_id are required." });
   }
 
   const targetUserId = Number(user_id);
   if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
-    return res.status(400).json({ error: 'user_id must be a positive integer.' });
+    return res
+      .status(400)
+      .json({ error: "user_id must be a positive integer." });
   }
 
   const requesterOwnerId = resolveRequesterOwnerId(req.user);
@@ -45,7 +49,8 @@ exports.createNotification = async (req, res) => {
   if (!isAdminBypass && String(targetUserId) !== requesterOwnerId) {
     return res.status(403).json({
       success: false,
-      message: 'Forbidden. You can only create notifications for your own account.',
+      message:
+        "Forbidden. You can only create notifications for your own account.",
     });
   }
 
@@ -56,13 +61,15 @@ exports.createNotification = async (req, res) => {
       message,
       type,
       related_id,
-      is_read: 0
+      is_read: 0,
     });
 
     res.status(201).json(newNotification);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error while creating notification.' });
+    res
+      .status(500)
+      .json({ error: "Database error while creating notification." });
   }
 };
 
@@ -73,13 +80,15 @@ exports.getNotificationsByOperator = async (req, res) => {
   try {
     const notifications = await Notification.findAll({
       where: { user_id: operator_id },
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
     });
 
     res.json(notifications);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error while fetching notifications.' });
+    res
+      .status(500)
+      .json({ error: "Database error while fetching notifications." });
   }
 };
 
@@ -90,13 +99,15 @@ exports.markAllAsRead = async (req, res) => {
   try {
     const updated = await Notification.update(
       { is_read: 1 },
-      { where: { user_id: operator_id, is_read: 0 } }
+      { where: { user_id: operator_id, is_read: 0 } },
     );
 
-    res.json({ message: 'All notifications marked as read.', updated });
+    res.json({ message: "All notifications marked as read.", updated });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error while updating notifications.' });
+    res
+      .status(500)
+      .json({ error: "Database error while updating notifications." });
   }
 };
 
@@ -108,7 +119,7 @@ exports.markAsRead = async (req, res) => {
     const notification = await Notification.findByPk(id);
 
     if (!notification) {
-      return res.status(404).json({ message: 'Notification not found.' });
+      return res.status(404).json({ message: "Notification not found." });
     }
 
     const requesterOwnerId = resolveRequesterOwnerId(req.user);
@@ -117,20 +128,24 @@ exports.markAsRead = async (req, res) => {
     if (!isAdminBypass && String(notification.user_id) !== requesterOwnerId) {
       return res.status(403).json({
         success: false,
-        message: 'Forbidden. You can only modify your own notifications.',
+        message: "Forbidden. You can only modify your own notifications.",
       });
     }
 
     if (notification.is_read) {
-      return res.status(404).json({ message: 'Notification not found or already read.' });
+      return res
+        .status(404)
+        .json({ message: "Notification not found or already read." });
     }
 
     await notification.update({ is_read: 1 });
 
-    res.json({ message: 'Notification marked as read.' });
+    res.json({ message: "Notification marked as read." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error while updating notification.' });
+    res
+      .status(500)
+      .json({ error: "Database error while updating notification." });
   }
 };
 
@@ -140,12 +155,14 @@ exports.getUnreadCount = async (req, res) => {
 
   try {
     const count = await Notification.count({
-      where: { user_id: operator_id, is_read: 0 }
+      where: { user_id: operator_id, is_read: 0 },
     });
 
     res.json({ unreadCount: count });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Database error while counting notifications.' });
+    res
+      .status(500)
+      .json({ error: "Database error while counting notifications." });
   }
 };

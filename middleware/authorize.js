@@ -11,7 +11,7 @@ const hasRequiredPermission = (user, requiredPermissions) => {
     ? requiredPermissions
     : [requiredPermissions];
 
-  if (userRole === "admin" || userPermissions.includes("*:*")) {
+  if (userRole === "superadmin" || userPermissions.includes("*:*")) {
     return true;
   }
 
@@ -55,7 +55,7 @@ const authorizeOwnership = (ownerParamKey, bypassPermissions = []) => {
       });
     }
 
-    if (req.user.role === "admin") {
+    if (req.user.role === "superadmin") {
       return next();
     }
 

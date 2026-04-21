@@ -64,7 +64,7 @@ module.exports = {
       const operatorRoleRows = await queryInterface.sequelize.query(
         `SELECT id
          FROM roles
-         WHERE LOWER(name) = 'operator'
+         WHERE LOWER(name) = 'operator_admin'
          ORDER BY id ASC
          LIMIT 1`,
         {

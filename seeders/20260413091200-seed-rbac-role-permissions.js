@@ -1,10 +1,14 @@
 "use strict";
 
 const ROLE_PERMISSION_MAP = {
-  admin: ["*:*"],
-  operator: [
+  superadmin: ["*:*"],
+  operator_admin: [
     "profile:read",
     "profile:update",
+    "user:create",
+    "user:read",
+    "user:update",
+    "user:delete",
     "accommodation:create",
     "accommodation:read",
     "accommodation:update",
@@ -16,6 +20,14 @@ const ROLE_PERMISSION_MAP = {
     "booking:read",
     "booking:update",
     "receipt:create",
+    "receipt:read",
+  ],
+  operator_staff: [
+    "profile:read",
+    "profile:update",
+    "accommodation:read",
+    "activity:read",
+    "booking:read",
     "receipt:read",
   ],
   tourist: [
@@ -33,7 +45,6 @@ const ROLE_PERMISSION_MAP = {
     "association:read",
     "association:update",
     "association:manage_users",
-    "user:read",
     "accommodation:read",
     "activity:read",
     "booking:read",
@@ -57,7 +68,9 @@ module.exports = {
 
     const now = new Date();
 
-    for (const [roleName, permissionCodes] of Object.entries(ROLE_PERMISSION_MAP)) {
+    for (const [roleName, permissionCodes] of Object.entries(
+      ROLE_PERMISSION_MAP,
+    )) {
       const roleId = roleByName.get(roleName);
       if (!roleId) continue;
 
@@ -84,7 +97,7 @@ module.exports = {
       }
     }
 
-    const operatorRoleId = roleByName.get("operator") || null;
+    const operatorRoleId = roleByName.get("operator_admin") || null;
     const touristRoleId = roleByName.get("tourist") || null;
     const associationRoleId = roleByName.get("association") || null;
 
@@ -116,12 +129,16 @@ module.exports = {
         DELETE rp
         FROM roles_permissions rp
         INNER JOIN roles r ON r.id = rp.role_id
-        WHERE r.name IN ('admin', 'operator', 'tourist', 'association')
+        WHERE r.name IN ('superadmin', 'operator_admin', 'operator_staff', 'tourist', 'association')
       `,
     );
 
     await queryInterface.sequelize.query("UPDATE rt_users SET role_id = NULL");
-    await queryInterface.sequelize.query("UPDATE tourist_users SET role_id = NULL");
-    await queryInterface.sequelize.query("UPDATE association_users SET role_id = NULL");
+    await queryInterface.sequelize.query(
+      "UPDATE tourist_users SET role_id = NULL",
+    );
+    await queryInterface.sequelize.query(
+      "UPDATE association_users SET role_id = NULL",
+    );
   },
 };

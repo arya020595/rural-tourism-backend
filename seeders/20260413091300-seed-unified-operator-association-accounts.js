@@ -33,17 +33,19 @@ module.exports = {
     const passwordHash = await bcrypt.hash("password123", 10);
 
     const roles = await queryInterface.sequelize.query(
-      `SELECT id, name FROM roles WHERE name IN ('operator', 'association')`,
+      `SELECT id, name FROM roles WHERE name IN ('operator_admin', 'association')`,
       { type: QueryTypes.SELECT },
     );
 
-    const roleByName = new Map(roles.map((role) => [role.name, Number(role.id)]));
-    const operatorRoleId = roleByName.get("operator");
+    const roleByName = new Map(
+      roles.map((role) => [role.name, Number(role.id)]),
+    );
+    const operatorRoleId = roleByName.get("operator_admin");
     const associationRoleId = roleByName.get("association");
 
     if (!operatorRoleId || !associationRoleId) {
       throw new Error(
-        "Missing RBAC roles for operator/association. Run RBAC role seeders first.",
+        "Missing RBAC roles for operator_admin/association. Run RBAC role seeders first.",
       );
     }
 
@@ -140,7 +142,9 @@ module.exports = {
     }
 
     if (!companyId) {
-      throw new Error("Unable to resolve company_id for seeded operator account.");
+      throw new Error(
+        "Unable to resolve company_id for seeded operator account.",
+      );
     }
 
     const existingOperator = await queryInterface.sequelize.query(
