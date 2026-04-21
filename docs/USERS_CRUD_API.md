@@ -12,7 +12,6 @@
   - [Create User](#create-user)
   - [Update User](#update-user)
   - [Delete User](#delete-user)
-  - [Search Users](#search-users)
 - [Response Format](#response-format)
 - [Permission Matrix](#permission-matrix)
 - [Error Codes](#error-codes)
