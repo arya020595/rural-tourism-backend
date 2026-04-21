@@ -82,7 +82,6 @@ Error contract:
 | POST   | /api/users            | Yes         | user:create                   | -                           |
 | PUT    | /api/users/:id        | Yes         | user:update or profile:update | owner or user:update bypass |
 | DELETE | /api/users/:id        | Yes         | user:delete                   | -                           |
-| PUT    | /api/users/update/:id | Yes         | user:update or profile:update | owner or user:update bypass |
 | POST   | /api/users/login      | No (legacy) | -                             | -                           |
 | POST   | /api/users/reset-pass | No          | -                             | -                           |
 
