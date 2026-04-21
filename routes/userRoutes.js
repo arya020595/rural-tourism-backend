@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
-const upload = require("../middleware/uploadLogo");
 const { authenticate } = require("../middleware/auth");
 const { authorize, authorizeOwnership } = require("../middleware/authorize");
 const { asyncHandler } = require("../utils/helpers");
@@ -10,13 +9,6 @@ const {
   validateCreateUser,
   validateUpdateUser,
 } = require("../validators/userValidator");
-
-const operatorUploadFields = upload.fields([
-  { name: "operator_logo_image", maxCount: 1 },
-  { name: "motac_license_file", maxCount: 1 },
-  { name: "trading_operation_license", maxCount: 1 },
-  { name: "homestay_certificate", maxCount: 1 },
-]);
 
 // List users (with search, filter, sort, pagination)
 router.get(
@@ -41,7 +33,6 @@ router.post(
   "/",
   authenticate,
   authorize("user:create"),
-  operatorUploadFields,
   validateCreateUser,
   asyncHandler(userController.createUser),
 );
@@ -52,7 +43,6 @@ router.put(
   authenticate,
   authorize(["user:update", "profile:update"]),
   authorizeOwnership("id", ["user:update"]),
-  operatorUploadFields,
   validateUpdateUser,
   asyncHandler(userController.updateUser),
 );

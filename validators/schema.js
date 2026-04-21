@@ -3,9 +3,9 @@
  *
  * Usage:
  *   const schema = createSchema((field) => ({
- *     username: field.string().required().min(3),
- *     email:    field.string().required().email(),
- *     age:      field.number().optional().min(0),
+ *     username: field().string().required().min(3),
+ *     email:    field().string().required().email(),
+ *     age:      field().number().optional().min(0),
  *   }));
  *
  *   const { data, errors } = schema.validate(req.body);

@@ -120,6 +120,12 @@ exports.updateUser = async (req, res) => {
     // Only admins may change role_id
     if (!userPolicy.isAdmin()) delete req.body.role_id;
 
+    // Only superadmins may reassign tenancy-related fields
+    if (!userPolicy.isAdmin()) {
+      delete req.body.company_id;
+      delete req.body.association_id;
+    }
+
     // Password confirmation (when provided)
     const confirmPw = req.body.confirmed_password || req.body.confPass;
     if (req.body.password && confirmPw && req.body.password !== confirmPw) {

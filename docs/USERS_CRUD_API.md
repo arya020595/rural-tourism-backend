@@ -382,14 +382,14 @@ All responses follow a consistent envelope:
 
 ## Permission Matrix
 
-| Endpoint                | Admin | `user:read` | `user:update` | `user:delete` | `profile:read` | `profile:update` | No Perms  |
-| ----------------------- | ----- | ----------- | ------------- | ------------- | -------------- | ---------------- | --------- |
-| `GET /api/users`        | ✅    | ✅          | ❌            | ❌            | ❌             | ❌               | ❌ 403    |
-| `GET /api/users/:id`    | ✅    | ✅          | ❌            | ❌            | ✅ own only    | ❌               | ❌ 403    |
-| `POST /api/users`       | ✅    | ✅          | ✅            | ✅            | ✅             | ✅               | ✅ public |
-| `PUT /api/users/:id`    | ✅    | ❌          | ✅            | ❌            | ❌             | ✅ own only      | ❌ 403    |
-| `DELETE /api/users/:id` | ✅    | ❌          | ❌            | ✅            | ❌             | ❌               | ❌ 403    |
-| `GET /api/users/search` | ✅    | ✅          | ❌            | ❌            | ❌             | ❌               | ❌ 403    |
+| Endpoint                | Admin | `user:create` | `user:read` | `user:update` | `user:delete` | `profile:read` | `profile:update` | No Perms  |
+| ----------------------- | ----- | ------------- | ----------- | ------------- | ------------- | -------------- | ---------------- | --------- |
+| `GET /api/users`        | ✅    | ❌            | ✅          | ❌            | ❌            | ❌             | ❌               | ❌ 403    |
+| `GET /api/users/:id`    | ✅    | ❌            | ✅          | ❌            | ❌            | ✅ own only    | ❌               | ❌ 403    |
+| `POST /api/users`       | ✅    | ✅            | ❌          | ❌            | ❌            | ❌             | ❌               | ❌ 403    |
+| `PUT /api/users/:id`    | ✅    | ❌            | ❌          | ✅            | ❌            | ❌             | ✅ own only      | ❌ 403    |
+| `DELETE /api/users/:id` | ✅    | ❌            | ❌          | ❌            | ✅            | ❌             | ❌               | ❌ 403    |
+| `GET /api/users/search` | ✅    | ❌            | ✅          | ❌            | ❌            | ❌             | ❌               | ❌ 403    |
 
 ---
 
@@ -424,12 +424,12 @@ npm run test:unit
 
 The test suite covers **36 test cases** across these categories:
 
-| Category                       | Tests | Description                                                     |
-| ------------------------------ | ----- | --------------------------------------------------------------- |
-| **Authentication**             | 6     | 401 for missing/invalid tokens on all protected endpoints       |
-| **User WITH permissions**      | 14    | Full CRUD with `user:*` permissions, including error cases      |
-| **Admin role bypass**          | 3     | Admin can access all endpoints without specific permissions     |
-| **User WITHOUT permissions**   | 5     | 403 for users missing `user:*` permissions                      |
-| **Ownership-based access**     | 4     | `profile:read/update` grants own-resource access, blocks others |
-| **Public endpoint**            | 1     | POST /api/users works without authentication                    |
-| **Response envelope contract** | 3     | Validates response structure and field presence                 |
+| Category                       | Tests | Description                                                            |
+| ------------------------------ | ----- | ---------------------------------------------------------------------- |
+| **Authentication**             | 6     | 401 for missing/invalid tokens on all protected endpoints              |
+| **User WITH permissions**      | 14    | Full CRUD with `user:*` permissions, including error cases             |
+| **Admin role bypass**          | 3     | Admin can access all endpoints without specific permissions            |
+| **User WITHOUT permissions**   | 5     | 403 for users missing `user:*` permissions                             |
+| **Ownership-based access**     | 4     | `profile:read/update` grants own-resource access, blocks others        |
+| **Auth required (create)**     | 1     | POST /api/users returns 401 without auth, 403 without `user:create`    |
+| **Response envelope contract** | 3     | Validates response structure and field presence                        |
