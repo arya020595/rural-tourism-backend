@@ -57,17 +57,6 @@ router.put(
   asyncHandler(userController.updateUser),
 );
 
-// Update user (alternate path — same handler)
-router.put(
-  "/update/:id",
-  authenticate,
-  authorize(["user:update", "profile:update"]),
-  authorizeOwnership("id", ["user:update"]),
-  operatorUploadFields,
-  validateUpdateUser,
-  asyncHandler(userController.updateUser),
-);
-
 // Delete user
 router.delete(
   "/:id",
@@ -75,8 +64,5 @@ router.delete(
   authorize("user:delete"),
   asyncHandler(userController.deleteUser),
 );
-
-// Route to handle password reset
-router.post("/reset-pass", asyncHandler(userController.resetPassword));
 
 module.exports = router;

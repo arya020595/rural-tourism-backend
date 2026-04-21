@@ -152,11 +152,3 @@ exports.deleteUser = async (req, res) => {
     return errorResponse(res, err);
   }
 };
-
-// POST /api/users/reset-pass — deprecated
-exports.resetPassword = async (req, res) => {
-  return res.status(410).json({
-    error:
-      "Security-question password reset is no longer supported for operator accounts.",
-  });
-};
