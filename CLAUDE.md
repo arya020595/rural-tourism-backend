@@ -7,7 +7,7 @@ This file documents conventions for AI assistants (Claude, Copilot, etc.) workin
 ## Stack
 
 - Node.js + Express
-- Sequelize ORM (PostgreSQL)
+- Sequelize ORM (MySQL)
 - JWT authentication
 - Pundit-style policy authorization
 
