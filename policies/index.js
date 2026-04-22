@@ -1,9 +1,11 @@
 const UserPolicy = require("./userPolicy");
 const CompanyPolicy = require("./companyPolicy");
+const ProductPolicy = require("./productPolicy");
 
 const POLICY_MAP = {
   user: UserPolicy,
   company: CompanyPolicy,
+  product: ProductPolicy,
 };
 
 /**
