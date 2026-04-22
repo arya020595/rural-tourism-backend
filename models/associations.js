@@ -9,6 +9,7 @@ const Company = require("./companyModel");
 const Role = require("./roleModel");
 const Permission = require("./permissionModel");
 const RolePermission = require("./rolePermissionModel");
+const Product = require("./productModel");
 
 // User <-> OperatorActivity associations
 UnifiedUser.hasMany(OperatorActivity, {
@@ -106,6 +107,17 @@ Company.hasMany(UnifiedUser, {
 });
 
 UnifiedUser.belongsTo(Company, {
+  foreignKey: "company_id",
+  as: "company",
+});
+
+// Company <-> Product associations
+Company.hasMany(Product, {
+  foreignKey: "company_id",
+  as: "products",
+});
+
+Product.belongsTo(Company, {
   foreignKey: "company_id",
   as: "company",
 });
