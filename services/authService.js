@@ -73,6 +73,10 @@ class AuthService {
     throw error;
   }
 
+  /**
+   * Determines whether the authenticated identity can receive association BI URL data.
+   * Access is limited to association users with either bi_dashboard:read or wildcard permission.
+   */
   canViewBiDashboard(userType, permissions = []) {
     return (
       userType === USER_TYPE_ASSOCIATION &&
