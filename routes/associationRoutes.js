@@ -3,10 +3,7 @@ const router = express.Router();
 const associationController = require("../controllers/associationController");
 const { authenticate } = require("../middleware/auth");
 const { authorize } = require("../middleware/authorize");
-
-const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+const { asyncHandler } = require("../utils/helpers");
 
 // Public association listing for unauthenticated registration flows
 router.get("/public", asyncHandler(associationController.getAll));
@@ -14,7 +11,7 @@ router.get("/public", asyncHandler(associationController.getAll));
 router.get(
   "/",
   authenticate,
-  authorize("association:read"),
+  authorize("bi_dashboard:read"),
   asyncHandler(associationController.getAll),
 );
 
