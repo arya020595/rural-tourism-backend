@@ -63,6 +63,23 @@ const errorResponse = (res, messageOrError, statusCode, errors) => {
 };
 
 /**
+ * Build a standard pagination meta object (SRP — single source of truth).
+ * @param {number} total     – total matching records
+ * @param {number} page      – current page (1-based)
+ * @param {number} perPage   – records per page
+ * @param {number} pages     – total page count
+ * @returns {{ total, page, per_page, total_pages, has_next, has_prev }}
+ */
+const buildMeta = (total, page, perPage, pages) => ({
+  total,
+  page,
+  per_page: perPage,
+  total_pages: pages,
+  has_next: page < pages,
+  has_prev: page > 1,
+});
+
+/**
  * Pagination helper
  */
 const paginate = async (model, page = 1, limit = 10, options = {}) => {
@@ -74,22 +91,17 @@ const paginate = async (model, page = 1, limit = 10, options = {}) => {
     offset: parseInt(offset),
   });
 
+  const totalPages = Math.ceil(count / limit);
+
   return {
     data: rows,
-    pagination: {
-      total: count,
-      page: parseInt(page),
-      limit: parseInt(limit),
-      totalPages: Math.ceil(count / limit),
-      hasNextPage: page < Math.ceil(count / limit),
-      hasPrevPage: page > 1,
-    },
+    meta: buildMeta(count, parseInt(page), parseInt(limit), totalPages),
   };
 };
 
 /**
  * Standard paginated success response.
- * Keeps the same { success, message, data } envelope and adds `pagination`.
+ * Envelope: { success, message, data, meta }
  */
 const paginatedResponse = (
   res,
@@ -101,14 +113,7 @@ const paginatedResponse = (
     success: true,
     message,
     data,
-    pagination: {
-      total,
-      page,
-      per_page: perPage,
-      total_pages: pages,
-      has_next: page < pages,
-      has_prev: page > 1,
-    },
+    meta: buildMeta(total, page, perPage, pages),
   });
 };
 
@@ -138,5 +143,6 @@ module.exports = {
   paginatedResponse,
   errorResponse,
   paginate,
+  buildMeta,
   validateRequired,
 };
