@@ -1,15 +1,37 @@
-function serialize(record) {
+/**
+ * Association serializer.
+ * Public responses include id/name/image; Power BI URL is restricted to authorized contexts.
+ */
+function serialize(record, options = {}) {
   const plain = record.toJSON ? record.toJSON() : record;
-  return {
+  const serialized = {
     id: plain.id,
     name: plain.name,
     image: plain.image,
-    power_bi_url: plain.power_bi_url || null,
   };
+
+  if (options.includePowerBiUrl) {
+    serialized.power_bi_url = plain.power_bi_url || null;
+  }
+
+  return serialized;
 }
 
-function serializeMany(records) {
-  return records.map(serialize);
+function serializeAuthorized(record) {
+  return serialize(record, { includePowerBiUrl: true });
 }
 
-module.exports = { serialize, serializeMany };
+function serializeMany(records, options = {}) {
+  return records.map((record) => serialize(record, options));
+}
+
+function serializeManyAuthorized(records) {
+  return serializeMany(records, { includePowerBiUrl: true });
+}
+
+module.exports = {
+  serialize,
+  serializeAuthorized,
+  serializeMany,
+  serializeManyAuthorized,
+};

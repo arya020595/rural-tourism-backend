@@ -73,6 +73,13 @@ class AuthService {
     throw error;
   }
 
+  canViewBiDashboard(userType, permissions = []) {
+    return (
+      userType === USER_TYPE_ASSOCIATION &&
+      (permissions.includes("bi_dashboard:read") || permissions.includes("*:*"))
+    );
+  }
+
   async login({ identifier, password, allowedUserTypes } = {}) {
     const normalizedIdentifier = String(identifier || "").trim();
     const normalizedPassword = String(password || "");
@@ -192,7 +199,11 @@ class AuthService {
       );
 
       let powerBiUrl = null;
-      if (identity.association_id) {
+      const canViewBiDashboard = this.canViewBiDashboard(
+        resolver.userType,
+        permissions,
+      );
+      if (canViewBiDashboard && identity.association_id) {
         const assoc = await Association.findByPk(identity.association_id, {
           attributes: ["power_bi_url"],
         });
@@ -333,7 +344,11 @@ class AuthService {
     );
 
     let powerBiUrl = null;
-    if (user.association_id) {
+    const canViewBiDashboard = this.canViewBiDashboard(
+      resolvedUserType,
+      permissions,
+    );
+    if (canViewBiDashboard && user.association_id) {
       const assoc = await Association.findByPk(user.association_id, {
         attributes: ["power_bi_url"],
       });

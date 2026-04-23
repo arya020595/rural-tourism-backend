@@ -6,13 +6,13 @@ const { authorize } = require("../middleware/authorize");
 const { asyncHandler } = require("../utils/helpers");
 
 // Public association listing for unauthenticated registration flows
-router.get("/public", asyncHandler(associationController.getAll));
+router.get("/public", asyncHandler(associationController.getPublicList));
 
 router.get(
   "/",
   authenticate,
   authorize("bi_dashboard:read"),
-  asyncHandler(associationController.getAll),
+  asyncHandler(associationController.getMyAssociation),
 );
 
 module.exports = router;

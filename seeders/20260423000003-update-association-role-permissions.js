@@ -19,35 +19,39 @@ module.exports = {
 
     const roleId = associationRole.id;
 
-    // Remove all existing permissions for the association role
-    await queryInterface.sequelize.query(
-      "DELETE FROM roles_permissions WHERE role_id = :roleId",
-      { replacements: { roleId } },
-    );
-
-    // Find the bi_dashboard:read permission
     const [[biDashboardPermission]] = await queryInterface.sequelize.query(
       "SELECT id FROM permissions WHERE code = 'bi_dashboard:read' LIMIT 1",
     );
 
     if (!biDashboardPermission) {
-      return;
+      throw new Error(
+        "Permission bi_dashboard:read not found. Seed 20260423000002-add-bi-dashboard-permission.js first.",
+      );
     }
 
-    await queryInterface.sequelize.query(
-      `
-        INSERT IGNORE INTO roles_permissions (role_id, permission_id, created_at, updated_at)
-        VALUES (:roleId, :permissionId, :createdAt, :updatedAt)
-      `,
-      {
-        replacements: {
-          roleId,
-          permissionId: biDashboardPermission.id,
-          createdAt: now,
-          updatedAt: now,
+    await queryInterface.sequelize.transaction(async (transaction) => {
+      // Remove all existing permissions for the association role
+      await queryInterface.sequelize.query(
+        "DELETE FROM roles_permissions WHERE role_id = :roleId",
+        { replacements: { roleId }, transaction },
+      );
+
+      await queryInterface.sequelize.query(
+        `
+          INSERT IGNORE INTO roles_permissions (role_id, permission_id, created_at, updated_at)
+          VALUES (:roleId, :permissionId, :createdAt, :updatedAt)
+        `,
+        {
+          replacements: {
+            roleId,
+            permissionId: biDashboardPermission.id,
+            createdAt: now,
+            updatedAt: now,
+          },
+          transaction,
         },
-      },
-    );
+      );
+    });
   },
 
   async down(queryInterface) {

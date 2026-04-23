@@ -33,6 +33,10 @@ class AssociationService {
 
     return this.dedupeByName(associations);
   }
+
+  async getAssociationById(id) {
+    return Association.findByPk(id);
+  }
 }
 
 module.exports = new AssociationService();

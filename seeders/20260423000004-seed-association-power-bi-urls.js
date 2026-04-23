@@ -25,7 +25,9 @@ module.exports = {
         `
           UPDATE associations
           SET power_bi_url = :powerBiUrl
-          WHERE name = :name AND deleted_at IS NULL
+          WHERE name = :name
+            AND deleted_at IS NULL
+            AND power_bi_url IS NULL
         `,
         { replacements: { powerBiUrl, name } },
       );
@@ -33,8 +35,19 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.sequelize.query(
-      "UPDATE associations SET power_bi_url = NULL WHERE deleted_at IS NULL",
-    );
+    for (const [name, powerBiUrl] of Object.entries(
+      ASSOCIATION_POWER_BI_URLS,
+    )) {
+      await queryInterface.sequelize.query(
+        `
+          UPDATE associations
+          SET power_bi_url = NULL
+          WHERE name = :name
+            AND power_bi_url = :powerBiUrl
+            AND deleted_at IS NULL
+        `,
+        { replacements: { powerBiUrl, name } },
+      );
+    }
   },
 };
