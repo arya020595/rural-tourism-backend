@@ -44,7 +44,7 @@ class UserService {
     const result = await UnifiedUser.paginate({
       where: mergedWhere,
       include: USER_INCLUDES,
-      order: order.length ? order : [["id", "ASC"]],
+      order: order.length ? order : [["created_at", "DESC"]],
       page,
       paginate: perPage,
     });
@@ -171,6 +171,17 @@ class UserService {
     }
 
     return this.getUserById(id);
+  }
+
+  /**
+   * Resolve the id of the canonical "operator_staff" role.
+   * Centralises the DB lookup so controllers never import Role directly.
+   */
+  async getOperatorStaffRoleId() {
+    const staffRole = await Role.findOne({ where: { name: "operator_staff" } });
+    if (!staffRole)
+      throw new BadRequestError("operator_staff role not found. Run seeders.");
+    return staffRole.id;
   }
 
   /**
