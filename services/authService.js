@@ -191,6 +191,14 @@ class AuthService {
         process.env.JWT_EXPIRES_IN || "24h",
       );
 
+      let powerBiUrl = null;
+      if (identity.association_id) {
+        const assoc = await Association.findByPk(identity.association_id, {
+          attributes: ["power_bi_url"],
+        });
+        powerBiUrl = assoc ? assoc.power_bi_url || null : null;
+      }
+
       return {
         token,
         user: {
@@ -200,6 +208,8 @@ class AuthService {
           name: identity.name || null,
           username: identity.username,
           email: identity.email,
+          association_id: identity.association_id || null,
+          power_bi_url: powerBiUrl,
           role: {
             id: role.id,
             name: role.name,
@@ -322,6 +332,14 @@ class AuthService {
       process.env.JWT_EXPIRES_IN || "24h",
     );
 
+    let powerBiUrl = null;
+    if (user.association_id) {
+      const assoc = await Association.findByPk(user.association_id, {
+        attributes: ["power_bi_url"],
+      });
+      powerBiUrl = assoc ? assoc.power_bi_url || null : null;
+    }
+
     return {
       token,
       user: {
@@ -335,6 +353,7 @@ class AuthService {
         username: user.username,
         email: user.email,
         association_id: user.association_id || null,
+        power_bi_url: powerBiUrl,
         company_id: user.company_id || null,
         role: {
           id: role.id,
