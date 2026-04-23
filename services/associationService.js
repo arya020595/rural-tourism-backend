@@ -1,4 +1,5 @@
 const Association = require("../models/associationModel");
+const { ForbiddenError, NotFoundError } = require("./errors/AppError");
 
 class AssociationService {
   normalizeName(value) {
@@ -36,6 +37,19 @@ class AssociationService {
 
   async getAssociationById(id) {
     return Association.findByPk(id);
+  }
+
+  async getScopedAssociation(associationId) {
+    if (!associationId) {
+      throw new ForbiddenError("Association scope is required");
+    }
+
+    const association = await this.getAssociationById(associationId);
+    if (!association) {
+      throw new NotFoundError("Association not found");
+    }
+
+    return association;
   }
 }
 

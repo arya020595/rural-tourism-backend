@@ -4,10 +4,6 @@ const {
   serializeAuthorized,
 } = require("../serializers/associationSerializer");
 const { successResponse, errorResponse } = require("../utils/helpers");
-const {
-  ForbiddenError,
-  NotFoundError,
-} = require("../services/errors/AppError");
 
 exports.getPublicList = async (req, res) => {
   try {
@@ -24,17 +20,9 @@ exports.getPublicList = async (req, res) => {
 
 exports.getMyAssociation = async (req, res) => {
   try {
-    const associationId = req.user?.association_id;
-
-    if (!associationId) {
-      throw new ForbiddenError("Association scope is required");
-    }
-
-    const association = await associationService.getAssociationById(associationId);
-
-    if (!association) {
-      throw new NotFoundError("Association not found");
-    }
+    const association = await associationService.getScopedAssociation(
+      req.user?.association_id,
+    );
 
     return successResponse(
       res,
