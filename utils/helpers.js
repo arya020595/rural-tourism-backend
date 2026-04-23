@@ -95,13 +95,13 @@ const paginate = async (model, page = 1, limit = 10, options = {}) => {
 
   return {
     data: rows,
-    pagination: buildMeta(count, parseInt(page), parseInt(limit), totalPages),
+    meta: buildMeta(count, parseInt(page), parseInt(limit), totalPages),
   };
 };
 
 /**
  * Standard paginated success response.
- * Envelope: { success, message, data, pagination }
+ * Envelope: { success, message, data, meta }
  */
 const paginatedResponse = (
   res,
@@ -113,7 +113,7 @@ const paginatedResponse = (
     success: true,
     message,
     data,
-    pagination: buildMeta(total, page, perPage, pages),
+    meta: buildMeta(total, page, perPage, pages),
   });
 };
 
