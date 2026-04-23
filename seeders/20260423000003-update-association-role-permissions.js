@@ -25,7 +25,7 @@ module.exports = {
 
     if (!biDashboardPermission) {
       throw new Error(
-        "Permission bi_dashboard:read not found. Seed 20260423000002-add-bi-dashboard-permission.js first.",
+        "Permission bi_dashboard:read not found. Ensure the BI dashboard permission seeder has run first.",
       );
     }
 

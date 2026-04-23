@@ -77,7 +77,7 @@ class AuthService {
    * Determines whether the authenticated identity can receive association BI URL data.
    * Access is limited to association users with either bi_dashboard:read or wildcard permission.
    */
-  canViewBiDashboard(userType, permissions = []) {
+  hasBiDashboardPermission(userType, permissions = []) {
     return (
       userType === USER_TYPE_ASSOCIATION &&
       (permissions.includes("bi_dashboard:read") || permissions.includes("*:*"))
@@ -203,7 +203,7 @@ class AuthService {
       );
 
       let powerBiUrl = null;
-      const canViewBiDashboard = this.canViewBiDashboard(
+      const canViewBiDashboard = this.hasBiDashboardPermission(
         resolver.userType,
         permissions,
       );
@@ -348,7 +348,7 @@ class AuthService {
     );
 
     let powerBiUrl = null;
-    const canViewBiDashboard = this.canViewBiDashboard(
+    const canViewBiDashboard = this.hasBiDashboardPermission(
       resolvedUserType,
       permissions,
     );
