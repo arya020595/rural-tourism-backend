@@ -39,6 +39,7 @@ const DEFAULT_USERS = [
     email: "association.seed@example.com",
     password: "association123",
     roleName: "association",
+    resolveAssociationId: true,
   },
 ];
 
@@ -58,6 +59,15 @@ module.exports = {
       roleMap[role.name] = Number(role.id);
     }
 
+    // Resolve the first available association id for association users
+    const associations = await queryInterface.sequelize.query(
+      `SELECT id FROM associations WHERE deleted_at IS NULL ORDER BY id ASC LIMIT 1`,
+      { type: QueryTypes.SELECT },
+    );
+    const defaultAssociationId = associations[0]
+      ? Number(associations[0].id)
+      : null;
+
     for (const userData of DEFAULT_USERS) {
       const roleId = roleMap[userData.roleName];
       if (!roleId) {
@@ -68,6 +78,9 @@ module.exports = {
       }
 
       const passwordHash = await bcrypt.hash(userData.password, SALT_ROUNDS);
+      const associationId = userData.resolveAssociationId
+        ? defaultAssociationId
+        : null;
 
       const existing = await queryInterface.sequelize.query(
         `SELECT id FROM users WHERE username = :username OR email = :email LIMIT 1`,
@@ -96,7 +109,7 @@ module.exports = {
               email: userData.email,
               password: passwordHash,
               confirm_password: passwordHash,
-              association_id: null,
+              association_id: associationId,
               role_id: roleId,
               company_id: null,
               created_at: now,
@@ -110,6 +123,7 @@ module.exports = {
         `UPDATE users
          SET name = :name,
              role_id = :role_id,
+             association_id = COALESCE(:association_id, association_id),
              password = :password,
              confirm_password = :confirm_password,
              updated_at = :updated_at
@@ -118,6 +132,7 @@ module.exports = {
           replacements: {
             name: userData.name,
             role_id: roleId,
+            association_id: associationId,
             password: passwordHash,
             confirm_password: passwordHash,
             updated_at: now,
