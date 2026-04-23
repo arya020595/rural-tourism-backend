@@ -51,18 +51,24 @@ class UserPolicy extends ApplicationPolicy {
 
   scope() {
     const selfId = this.user.unified_user_id ?? this.user.id;
-    const excludeSelf = selfId ? { id: { [Op.ne]: selfId } } : {};
+    const excludeSelf = selfId ? { id: { [Op.ne]: selfId } } : null;
 
-    if (this.isAdmin()) return excludeSelf;
+    if (this.isAdmin()) {
+      return excludeSelf ? { [Op.and]: [excludeSelf] } : {};
+    }
 
     // Operator with user:read – scope to same company, excluding self
     if (this.user.company_id && this.hasPermission("user:read")) {
-      return { ...excludeSelf, company_id: this.user.company_id };
+      const conditions = [{ company_id: this.user.company_id }];
+      if (excludeSelf) conditions.push(excludeSelf);
+      return { [Op.and]: conditions };
     }
 
     // Association user – scope to same association, excluding self
     if (this.user.association_id && this.hasPermission("user:read")) {
-      return { ...excludeSelf, association_id: this.user.association_id };
+      const conditions = [{ association_id: this.user.association_id }];
+      if (excludeSelf) conditions.push(excludeSelf);
+      return { [Op.and]: conditions };
     }
 
     // Fallback: user can only see themselves

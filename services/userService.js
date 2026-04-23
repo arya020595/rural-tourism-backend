@@ -13,6 +13,11 @@ require("../models/associations");
 
 const SALT_ROUNDS = 10;
 
+const DEFAULT_USER_ORDER = [
+  ["created_at", "DESC"],
+  ["id", "DESC"],
+];
+
 const USER_INCLUDES = [
   { model: Association, as: "association", required: false },
   { model: Company, as: "company", required: false },
@@ -44,7 +49,7 @@ class UserService {
     const result = await UnifiedUser.paginate({
       where: mergedWhere,
       include: USER_INCLUDES,
-      order: order.length ? order : [["created_at", "DESC"]],
+      order: order.length ? order : DEFAULT_USER_ORDER,
       page,
       paginate: perPage,
     });
