@@ -17,6 +17,7 @@ const ROLE_PERMISSION_MAP = {
     "activity:read",
     "activity:update",
     "activity:delete",
+    "booking:create",
     "booking:read",
     "booking:update",
     "receipt:create",
