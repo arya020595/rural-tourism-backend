@@ -4,7 +4,9 @@
     "bin/",
     "routes/",
     "controllers/",
+    "services/",
     "models/",
+    "validators/",
     "middleware/",
     "config/",
     "utils/"

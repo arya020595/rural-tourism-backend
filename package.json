@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node ./bin/www",
     "dev": "nodemon",
+    "dev:legacy": "nodemon --legacy-watch",
     "server": "node server.js",
     "console": "node --experimental-repl-await scripts/console.js",
     "rbac:bootstrap-admin": "node scripts/bootstrapAdminRole.js",
