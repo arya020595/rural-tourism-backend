@@ -102,7 +102,7 @@ class BookingsService {
     return { checkInDate, checkOutDate, totalOfNight };
   }
 
-  async resolveOperatorContext(authUser) {
+  async resolveOperatorContext(authUser, transaction = null) {
     if (!authUser) {
       const error = new Error("Unauthorized. Please login first.");
       error.statusCode = 401;
@@ -128,6 +128,7 @@ class BookingsService {
 
     const user = await UnifiedUser.findByPk(operatorUserId, {
       attributes: ["id", "name", "username", "company_id"],
+      transaction,
       include: [
         {
           model: Company,
@@ -164,7 +165,7 @@ class BookingsService {
     };
   }
 
-  async resolveCompanySnapshot(companyId, fallbackName = "") {
+  async resolveCompanySnapshot(companyId, fallbackName = "", transaction = null) {
     const normalizedCompanyId = normalizeInt(companyId, null);
     if (normalizedCompanyId === null) {
       const error = new Error("Company id must be an integer.");
@@ -174,6 +175,7 @@ class BookingsService {
 
     const company = await Company.findByPk(normalizedCompanyId, {
       attributes: ["id", "company_name"],
+      transaction,
     });
 
     if (!company) {
@@ -240,7 +242,7 @@ class BookingsService {
     };
   }
 
-  async normalizePackageCompanies(rawItems = []) {
+  async normalizePackageCompanies(rawItems = [], transaction = null) {
     const items = Array.isArray(rawItems) ? rawItems : [];
 
     return Promise.all(
@@ -248,10 +250,12 @@ class BookingsService {
         const referrer = await this.resolveCompanySnapshot(
           item?.referrer_id,
           item?.referral_company,
+          transaction,
         );
         const referee = await this.resolveCompanySnapshot(
           item?.referee_id,
           item?.referee_company,
+          transaction,
         );
 
         const perPrice = normalizeNumber(item?.per_price, null);
@@ -552,27 +556,55 @@ class BookingsService {
     }
   }
 
-  async createBooking(data, authUser) {
-    const operatorContext = await this.resolveOperatorContext(authUser);
-    const payload = this.buildCreatePayload(data, operatorContext);
+  validateCreateRequiredFieldsForDraft(draft, errors) {
+    if (!normalizeString(draft.touristFullName)) {
+      errors.push("tourist_full_name is required");
+    }
 
+    if (!normalizeString(draft.citizenship)) {
+      errors.push("citizenship is required");
+    }
+
+    const paxAntarbangsa = normalizeInt(draft.noOfPaxAntarbangsa, null);
+    if (paxAntarbangsa === null || paxAntarbangsa < 0) {
+      errors.push("no_of_pax_antarbangsa must be an integer >= 0");
+    }
+
+    const paxDomestik = normalizeInt(draft.noOfPaxDomestik, null);
+    if (paxDomestik === null || paxDomestik < 0) {
+      errors.push("no_of_pax_domestik must be an integer >= 0");
+    }
+
+    const totalPrice = normalizeNumber(draft.totalPrice, null);
+    if (totalPrice === null || totalPrice < 0) {
+      errors.push("total_price must be numeric and >= 0");
+    }
+  }
+
+  async createBooking(data, authUser) {
     const packageCompaniesRaw = Array.isArray(data.package_companies)
       ? data.package_companies
       : [];
 
-    if (payload.bookingType === "package" && packageCompaniesRaw.length === 0) {
-      const error = new Error("package_companies is required for package booking");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const packageCompanies =
-      payload.bookingType === "package"
-        ? await this.normalizePackageCompanies(packageCompaniesRaw)
-        : [];
-
     const transaction = await Booking.sequelize.transaction();
     try {
+      const operatorContext = await this.resolveOperatorContext(
+        authUser,
+        transaction,
+      );
+      const payload = this.buildCreatePayload(data, operatorContext);
+
+      if (payload.bookingType === "package" && packageCompaniesRaw.length === 0) {
+        const error = new Error("package_companies is required for package booking");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const packageCompanies =
+        payload.bookingType === "package"
+          ? await this.normalizePackageCompanies(packageCompaniesRaw, transaction)
+          : [];
+
       const created = await Booking.create(payload, { transaction });
 
       if (packageCompanies.length > 0) {
@@ -674,9 +706,9 @@ class BookingsService {
     const totalPages = Math.ceil(count / perPage);
 
     return {
-      totalCount: count,
       data: rows.map((row) => this.serialize(row)),
-      pagination: {
+      meta: {
+        totalCount: count,
         page,
         per_page: perPage,
         total_pages: totalPages,
@@ -721,110 +753,136 @@ class BookingsService {
       throw error;
     }
 
-    const record = await Booking.findByPk(bookingId, {
-      include: [
-        {
-          model: BookingPackageCompany,
-          as: "package_companies",
-          required: false,
-        },
-      ],
-    });
-
-    if (!record) {
-      const error = new Error("Booking not found.");
-      error.statusCode = 404;
-      throw error;
-    }
-
-    const payload = this.buildUpdatePayload(data);
-
-    const draft = {
-      bookingType: payload.bookingType ?? record.bookingType,
-      productId:
-        payload.productId !== undefined ? payload.productId : record.productId,
-      productName:
-        payload.productName !== undefined
-          ? payload.productName
-          : record.productName,
-      activityDate:
-        payload.activityDate !== undefined
-          ? payload.activityDate
-          : record.activityDate,
-      checkInDate:
-        payload.checkInDate !== undefined
-          ? payload.checkInDate
-          : record.checkInDate,
-      checkOutDate:
-        payload.checkOutDate !== undefined
-          ? payload.checkOutDate
-          : record.checkOutDate,
-      totalOfNight:
-        payload.totalOfNight !== undefined
-          ? payload.totalOfNight
-          : record.totalOfNight,
-    };
-
-    const errors = [];
-    this.validateTypeSpecificRules(draft.bookingType, draft, errors);
-
-    if (draft.bookingType === "activity") {
-      payload.checkInDate = null;
-      payload.checkOutDate = null;
-      payload.totalOfNight = null;
-    }
-
-    if (draft.bookingType === "accommodation") {
-      payload.activityDate = null;
-      payload.checkInDate = draft.checkInDate;
-      payload.checkOutDate = draft.checkOutDate;
-      payload.totalOfNight = draft.totalOfNight;
-    }
-
-    if (draft.bookingType === "package") {
-      payload.activityDate = null;
-      payload.checkInDate = null;
-      payload.checkOutDate = null;
-      payload.totalOfNight = null;
-      payload.productId = null;
-      payload.productName = null;
-    }
-
-    const packageCompaniesRaw = data.package_companies;
-    const hasPackageCompaniesInput = packageCompaniesRaw !== undefined;
-
-    if (hasPackageCompaniesInput && !Array.isArray(packageCompaniesRaw)) {
-      const error = new Error("package_companies must be an array");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (draft.bookingType === "package") {
-      const incomingArray = hasPackageCompaniesInput ? packageCompaniesRaw : null;
-      const nextCount = hasPackageCompaniesInput
-        ? incomingArray.length
-        : (record.package_companies || []).length;
-
-      if (nextCount === 0) {
-        errors.push("package booking must have at least 1 package_companies item");
-      }
-    }
-
-    if (Object.keys(payload).length === 0 && !hasPackageCompaniesInput) {
-      const error = new Error("No valid fields provided for update");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    if (errors.length > 0) {
-      const error = new Error("Validation failed");
-      error.statusCode = 400;
-      error.details = errors;
-      throw error;
-    }
-
     const transaction = await Booking.sequelize.transaction();
     try {
+      const record = await Booking.findByPk(bookingId, {
+        transaction,
+        include: [
+          {
+            model: BookingPackageCompany,
+            as: "package_companies",
+            required: false,
+          },
+        ],
+      });
+
+      if (!record) {
+        const error = new Error("Booking not found.");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const payload = this.buildUpdatePayload(data);
+
+      const nextBookingType = payload.bookingType ?? record.bookingType;
+      const isBookingTypeChanged =
+        payload.bookingType !== undefined && payload.bookingType !== record.bookingType;
+
+      const draft = {
+        bookingType: nextBookingType,
+        touristFullName:
+          payload.touristFullName !== undefined
+            ? payload.touristFullName
+            : record.touristFullName,
+        citizenship:
+          payload.citizenship !== undefined
+            ? payload.citizenship
+            : record.citizenship,
+        noOfPaxAntarbangsa:
+          payload.noOfPaxAntarbangsa !== undefined
+            ? payload.noOfPaxAntarbangsa
+            : record.noOfPaxAntarbangsa,
+        noOfPaxDomestik:
+          payload.noOfPaxDomestik !== undefined
+            ? payload.noOfPaxDomestik
+            : record.noOfPaxDomestik,
+        totalPrice:
+          payload.totalPrice !== undefined ? payload.totalPrice : record.totalPrice,
+        productId:
+          payload.productId !== undefined ? payload.productId : record.productId,
+        productName:
+          payload.productName !== undefined
+            ? payload.productName
+            : record.productName,
+        activityDate:
+          payload.activityDate !== undefined
+            ? payload.activityDate
+            : record.activityDate,
+        checkInDate:
+          payload.checkInDate !== undefined
+            ? payload.checkInDate
+            : record.checkInDate,
+        checkOutDate:
+          payload.checkOutDate !== undefined
+            ? payload.checkOutDate
+            : record.checkOutDate,
+        totalOfNight:
+          payload.totalOfNight !== undefined
+            ? payload.totalOfNight
+            : record.totalOfNight,
+      };
+
+      const errors = [];
+      this.validateTypeSpecificRules(draft.bookingType, draft, errors);
+      if (isBookingTypeChanged) {
+        this.validateCreateRequiredFieldsForDraft(draft, errors);
+      }
+
+      if (draft.bookingType === "activity") {
+        payload.checkInDate = null;
+        payload.checkOutDate = null;
+        payload.totalOfNight = null;
+      }
+
+      if (draft.bookingType === "accommodation") {
+        payload.activityDate = null;
+        payload.checkInDate = draft.checkInDate;
+        payload.checkOutDate = draft.checkOutDate;
+        payload.totalOfNight = draft.totalOfNight;
+      }
+
+      if (draft.bookingType === "package") {
+        payload.activityDate = null;
+        payload.checkInDate = null;
+        payload.checkOutDate = null;
+        payload.totalOfNight = null;
+        payload.productId = null;
+        payload.productName = null;
+      }
+
+      const packageCompaniesRaw = data.package_companies;
+      const hasPackageCompaniesInput = packageCompaniesRaw !== undefined;
+
+      if (hasPackageCompaniesInput && !Array.isArray(packageCompaniesRaw)) {
+        const error = new Error("package_companies must be an array");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (draft.bookingType === "package") {
+        const incomingArray = hasPackageCompaniesInput ? packageCompaniesRaw : null;
+        const nextCount = hasPackageCompaniesInput
+          ? incomingArray.length
+          : (record.package_companies || []).length;
+
+        if (nextCount === 0) {
+          errors.push("package booking must have at least 1 package_companies item");
+        }
+      }
+
+      if (Object.keys(payload).length === 0 && !hasPackageCompaniesInput) {
+        const error = new Error("No valid fields provided for update");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (errors.length > 0) {
+        const error = new Error("Validation failed");
+        error.statusCode = 400;
+        error.details = errors;
+        throw error;
+      }
+
       await record.update(payload, { transaction });
 
       if (hasPackageCompaniesInput) {
@@ -834,7 +892,10 @@ class BookingsService {
         });
 
         if (packageCompaniesRaw.length > 0) {
-          const normalized = await this.normalizePackageCompanies(packageCompaniesRaw);
+          const normalized = await this.normalizePackageCompanies(
+            packageCompaniesRaw,
+            transaction,
+          );
           await BookingPackageCompany.bulkCreate(
             normalized.map((item) => ({
               bookingPackageId: record.id,
@@ -882,17 +943,24 @@ class BookingsService {
       throw error;
     }
 
-    const record = await Booking.findByPk(bookingId);
-    if (!record) {
-      const error = new Error("Booking not found.");
-      error.statusCode = 404;
+    const transaction = await Booking.sequelize.transaction();
+    try {
+      const record = await Booking.findByPk(bookingId, { transaction });
+      if (!record) {
+        const error = new Error("Booking not found.");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const normalizedStatus = this.ensureStatusAllowed(status);
+      await record.update({ status: normalizedStatus }, { transaction });
+      await transaction.commit();
+
+      return this.serialize(record);
+    } catch (error) {
+      await transaction.rollback();
       throw error;
     }
-
-    const normalizedStatus = this.ensureStatusAllowed(status);
-    await record.update({ status: normalizedStatus });
-
-    return this.serialize(record);
   }
 
   async deleteBooking(id) {
@@ -903,15 +971,22 @@ class BookingsService {
       throw error;
     }
 
-    const record = await Booking.findByPk(bookingId);
-    if (!record) {
-      const error = new Error("Booking not found.");
-      error.statusCode = 404;
+    const transaction = await Booking.sequelize.transaction();
+    try {
+      const record = await Booking.findByPk(bookingId, { transaction });
+      if (!record) {
+        const error = new Error("Booking not found.");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      await record.destroy({ transaction });
+      await transaction.commit();
+      return true;
+    } catch (error) {
+      await transaction.rollback();
       throw error;
     }
-
-    await record.destroy();
-    return true;
   }
 }
 
