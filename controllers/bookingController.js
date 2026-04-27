@@ -9,7 +9,11 @@ exports.createBooking = async (req, res) => {
     }
 
     const booking = await bookingsService.createBooking(req.body, req.user);
-    return res.status(201).json(booking);
+    return res.status(201).json({
+      success: true,
+      message: "Booking created successfully",
+      data: booking,
+    });
   } catch (error) {
     console.error("Error creating booking:", error);
 
@@ -29,7 +33,12 @@ exports.createBooking = async (req, res) => {
 exports.getBookings = async (req, res) => {
   try {
     const result = await bookingsService.getBookings(req.query);
-    return res.json(result);
+    return res.status(200).json({
+      success: true,
+      message: "Bookings fetched successfully",
+      data: result.data,
+      meta: result.meta,
+    });
   } catch (error) {
     console.error("Error fetching bookings:", error);
     return res.status(error.statusCode || 500).json({
@@ -41,7 +50,11 @@ exports.getBookings = async (req, res) => {
 exports.getBookingById = async (req, res) => {
   try {
     const booking = await bookingsService.getBookingById(req.params.id);
-    return res.json(booking);
+    return res.status(200).json({
+      success: true,
+      message: "Booking fetched successfully",
+      data: booking,
+    });
   } catch (error) {
     console.error("Error fetching booking by id:", error);
     return res.status(error.statusCode || 500).json({
@@ -58,7 +71,11 @@ exports.updateBooking = async (req, res) => {
     }
 
     const booking = await bookingsService.updateBooking(req.params.id, req.body);
-    return res.json(booking);
+    return res.status(200).json({
+      success: true,
+      message: "Booking updated successfully",
+      data: booking,
+    });
   } catch (error) {
     console.error("Error updating booking:", error);
 
@@ -88,7 +105,11 @@ exports.updateBookingStatus = async (req, res) => {
       req.body.status,
     );
 
-    return res.json(booking);
+    return res.status(200).json({
+      success: true,
+      message: "Booking status updated successfully",
+      data: booking,
+    });
   } catch (error) {
     console.error("Error updating booking status:", error);
     return res.status(error.statusCode || 500).json({
@@ -100,7 +121,11 @@ exports.updateBookingStatus = async (req, res) => {
 exports.deleteBooking = async (req, res) => {
   try {
     await bookingsService.deleteBooking(req.params.id);
-    return res.json({ message: "Booking deleted successfully." });
+    return res.status(200).json({
+      success: true,
+      message: "Booking deleted successfully",
+      data: null,
+    });
   } catch (error) {
     console.error("Error deleting booking:", error);
     return res.status(error.statusCode || 500).json({
