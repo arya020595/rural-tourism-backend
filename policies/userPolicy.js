@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const ApplicationPolicy = require("./applicationPolicy");
 
 /**
@@ -36,10 +37,12 @@ class UserPolicy extends ApplicationPolicy {
   }
 
   destroy() {
+    // Nobody can delete their own account.
+    if (this._isSelf()) return false;
     if (this.isAdmin()) return true;
     // An operator can delete a same-company user but not themselves.
     if (this.hasPermission("user:delete")) {
-      return this._sameScope() && !this._isSelf();
+      return this._sameScope();
     }
     return false;
   }
@@ -47,16 +50,25 @@ class UserPolicy extends ApplicationPolicy {
   /* ── Scope – returns a Sequelize `where` clause ──────────────── */
 
   scope() {
-    if (this.isAdmin()) return {};
+    const selfId = this.user.unified_user_id ?? this.user.id;
+    const excludeSelf = selfId ? { id: { [Op.ne]: selfId } } : null;
 
-    // Operator with user:read – scope to same company
-    if (this.user.company_id && this.hasPermission("user:read")) {
-      return { company_id: this.user.company_id };
+    if (this.isAdmin()) {
+      return excludeSelf ? { [Op.and]: [excludeSelf] } : {};
     }
 
-    // Association user – scope to same association
+    // Operator with user:read – scope to same company, excluding self
+    if (this.user.company_id && this.hasPermission("user:read")) {
+      const conditions = [{ company_id: this.user.company_id }];
+      if (excludeSelf) conditions.push(excludeSelf);
+      return { [Op.and]: conditions };
+    }
+
+    // Association user – scope to same association, excluding self
     if (this.user.association_id && this.hasPermission("user:read")) {
-      return { association_id: this.user.association_id };
+      const conditions = [{ association_id: this.user.association_id }];
+      if (excludeSelf) conditions.push(excludeSelf);
+      return { [Op.and]: conditions };
     }
 
     // Fallback: user can only see themselves

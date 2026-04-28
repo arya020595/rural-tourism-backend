@@ -71,11 +71,11 @@ describe("Activity Master Data API - Integration Tests", () => {
       ).expect(200);
 
       expect(response.body).toHaveProperty("data");
-      expect(response.body).toHaveProperty("pagination");
+      expect(response.body).toHaveProperty("meta");
       expect(Array.isArray(response.body.data)).toBe(true);
-      expect(response.body.pagination).toHaveProperty("total");
-      expect(response.body.pagination).toHaveProperty("page");
-      expect(response.body.pagination).toHaveProperty("per_page");
+      expect(response.body.meta).toHaveProperty("total");
+      expect(response.body.meta).toHaveProperty("page");
+      expect(response.body.meta).toHaveProperty("per_page");
     });
 
     test("should support custom pagination", async () => {
@@ -83,7 +83,7 @@ describe("Activity Master Data API - Integration Tests", () => {
         request(app).get("/api/activity-master-data?page=1&per_page=2"),
       ).expect(200);
 
-      expect(response.body.pagination.per_page).toBe(2);
+      expect(response.body.meta.per_page).toBe(2);
       expect(response.body.data.length).toBeLessThanOrEqual(2);
     });
   });
@@ -379,7 +379,7 @@ describe("Activity Master Data API - Integration Tests", () => {
       ).expect(200);
 
       expect(response.body.data.length).toBeLessThanOrEqual(2);
-      expect(response.body.pagination.per_page).toBe(2);
+      expect(response.body.meta.per_page).toBe(2);
 
       const names = response.body.data.map((a) => a.activity_name);
       const sortedNames = [...names].sort();
