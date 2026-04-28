@@ -35,6 +35,7 @@ const roleRoutes = require("./routes/roleRoutes");
 const permissionRoutes = require("./routes/permissionRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const productRoutes = require("./routes/productRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
 
 const app = express();
 
@@ -102,6 +103,7 @@ app.get("/api", (req, res) => {
       bookings: {
         activity: "/api/activity-booking",
         accommodation: "/api/accommodation-booking",
+        unified: "/api/bookings",
       },
       receipts: "/api/receipts",
       notifications: "/api/notifications",
@@ -115,6 +117,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/booking-activities", bookingRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/accom", accomRoutes);

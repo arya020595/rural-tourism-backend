@@ -8,6 +8,8 @@ const Company = require("./companyModel");
 const Role = require("./roleModel");
 const Permission = require("./permissionModel");
 const RolePermission = require("./rolePermissionModel");
+const Booking = require("./bookingModel");
+const BookingPackageCompany = require("./bookingPackageCompanyModel");
 
 // ======================
 // Export Models
@@ -26,5 +28,7 @@ db.Company = Company;
 db.Role = Role;
 db.Permission = Permission;
 db.RolePermission = RolePermission;
+db.Booking = Booking;
+db.BookingPackageCompany = BookingPackageCompany;
 
 module.exports = db;
