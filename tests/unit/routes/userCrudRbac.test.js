@@ -217,7 +217,7 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.body.data).toHaveLength(2);
         expect(res.body.data[0].id).toBe(1);
         expect(res.body.data[1].id).toBe(2);
-        expect(res.body.pagination).toEqual({
+        expect(res.body.meta).toEqual({
           total: 2,
           page: 1,
           per_page: 10,
@@ -239,7 +239,7 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.data).toEqual([]);
-        expect(res.body.pagination).toBeDefined();
+        expect(res.body.meta).toBeDefined();
       });
 
       test("should pass page and per_page to service", async () => {
@@ -702,7 +702,7 @@ describe("Users API – CRUD & RBAC", () => {
 
   // ── Response envelope contract ──────────────────────────────────────────
   describe("Response envelope contract", () => {
-    test("success responses should have { success: true, message, data, pagination }", async () => {
+    test("success responses should have { success: true, message, data, meta }", async () => {
       const app = buildApp();
       mockGetAllUsers.mockResolvedValue({
         docs: [sampleUser],
@@ -717,7 +717,7 @@ describe("Users API – CRUD & RBAC", () => {
       expect(res.body).toHaveProperty("success", true);
       expect(res.body).toHaveProperty("message");
       expect(res.body).toHaveProperty("data");
-      expect(res.body).toHaveProperty("pagination");
+      expect(res.body).toHaveProperty("meta");
     });
 
     test("error responses should have { success: false, message }", async () => {
