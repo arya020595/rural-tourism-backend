@@ -7,151 +7,180 @@ const { authenticate } = require("../middleware/auth");
 const { authorize } = require("../middleware/authorize");
 
 // ✅ 1. Get all activities with search & filter (Ransack-like)
-router.get("/", authenticate, authorize("activity:read"), ransackMiddleware, async (req, res) => {
-  try {
-    const { where, order } = req.ransack;
-    const page = parseInt(req.query.page) || 1;
-    const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
+router.get(
+  "/",
+  authenticate,
+  authorize("activity:read"),
+  ransackMiddleware,
+  async (req, res) => {
+    try {
+      const { where, order } = req.ransack;
+      const page = parseInt(req.query.page) || 1;
+      const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
-    // Get activities with operator_activities to include available_dates
-    const result = await ActivityMasterData.paginate({
-      where,
-      order,
-      page,
-      paginate: perPage,
-      include: [
-        {
-          model: OperatorActivity,
-          as: "operators",
-          attributes: ["available_dates"],
-        },
-      ],
-    });
+      // Get activities with operator_activities to include available_dates
+      const result = await ActivityMasterData.paginate({
+        where,
+        order,
+        page,
+        paginate: perPage,
+        include: [
+          {
+            model: OperatorActivity,
+            as: "operators",
+            attributes: ["available_dates"],
+          },
+        ],
+      });
 
-    // Merge available_dates from all operators for each activity
-    const activitiesWithDates = result.docs.map((activity) => {
-      const activityData = activity.toJSON();
-      let allAvailableDates = [];
+      // Merge available_dates from all operators for each activity
+      const activitiesWithDates = result.docs.map((activity) => {
+        const activityData = activity.toJSON();
+        let allAvailableDates = [];
 
-      if (activityData.operators && activityData.operators.length > 0) {
-        activityData.operators.forEach((op) => {
-          if (op.available_dates) {
-            // Parse if string, otherwise use as-is
-            const dates =
-              typeof op.available_dates === "string"
-                ? JSON.parse(op.available_dates)
-                : op.available_dates;
-            if (Array.isArray(dates)) {
-              dates.forEach((d) => {
-                // Handle both plain date strings and objects {date, time, price}
-                const dateStr = typeof d === "string" ? d : d.date;
-                if (dateStr) allAvailableDates.push(dateStr);
-              });
+        if (activityData.operators && activityData.operators.length > 0) {
+          activityData.operators.forEach((op) => {
+            if (op.available_dates) {
+              // Parse if string, otherwise use as-is
+              const dates =
+                typeof op.available_dates === "string"
+                  ? JSON.parse(op.available_dates)
+                  : op.available_dates;
+              if (Array.isArray(dates)) {
+                dates.forEach((d) => {
+                  // Handle both plain date strings and objects {date, time, price}
+                  const dateStr = typeof d === "string" ? d : d.date;
+                  if (dateStr) allAvailableDates.push(dateStr);
+                });
+              }
             }
-          }
-        });
-      }
+          });
+        }
 
-      // Remove duplicates and sort dates
-      allAvailableDates = [...new Set(allAvailableDates)].sort();
+        // Remove duplicates and sort dates
+        allAvailableDates = [...new Set(allAvailableDates)].sort();
 
-      // Remove operators array and add merged available_dates
-      delete activityData.operators;
-      return {
-        ...activityData,
-        available_dates: allAvailableDates,
-      };
-    });
+        // Remove operators array and add merged available_dates
+        delete activityData.operators;
+        return {
+          ...activityData,
+          available_dates: allAvailableDates,
+        };
+      });
 
-    res.json({
-      data: activitiesWithDates,
-      pagination: {
-        total: result.total,
-        page: page,
-        per_page: perPage,
-        total_pages: result.pages,
-        has_next: page < result.pages,
-        has_prev: page > 1,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching activities:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+      res.json({
+        data: activitiesWithDates,
+        meta: {
+          total: result.total,
+          page: page,
+          per_page: perPage,
+          total_pages: result.pages,
+          has_next: page < result.pages,
+          has_prev: page > 1,
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
 
 // ✅ 2. Get a single activity by ID
-router.get("/:id", authenticate, authorize("activity:read"), async (req, res) => {
-  const { id } = req.params;
-  try {
-    const activity = await ActivityMasterData.findByPk(id);
-    if (!activity) return res.status(404).json({ error: "Activity not found" });
-    res.json(activity);
-  } catch (error) {
-    console.error("Error fetching activity:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+router.get(
+  "/:id",
+  authenticate,
+  authorize("activity:read"),
+  async (req, res) => {
+    const { id } = req.params;
+    try {
+      const activity = await ActivityMasterData.findByPk(id);
+      if (!activity)
+        return res.status(404).json({ error: "Activity not found" });
+      res.json(activity);
+    } catch (error) {
+      console.error("Error fetching activity:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
 
 // ✅ 3. Create a new activity
-router.post("/", authenticate, authorize("activity:create"), async (req, res) => {
-  const { activity_name, description, address, things_to_know, image } =
-    req.body;
+router.post(
+  "/",
+  authenticate,
+  authorize("activity:create"),
+  async (req, res) => {
+    const { activity_name, description, address, things_to_know, image } =
+      req.body;
 
-  try {
-    const newActivity = await ActivityMasterData.create({
-      activity_name,
-      description,
-      address,
-      things_to_know,
-      image,
-    });
+    try {
+      const newActivity = await ActivityMasterData.create({
+        activity_name,
+        description,
+        address,
+        things_to_know,
+        image,
+      });
 
-    res.status(201).json(newActivity);
-  } catch (error) {
-    console.error("Error creating activity:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+      res.status(201).json(newActivity);
+    } catch (error) {
+      console.error("Error creating activity:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
 
 // ✅ 4. Update an existing activity
-router.put("/:id", authenticate, authorize("activity:update"), async (req, res) => {
-  const { id } = req.params;
-  const { activity_name, description, address, things_to_know, image } =
-    req.body;
+router.put(
+  "/:id",
+  authenticate,
+  authorize("activity:update"),
+  async (req, res) => {
+    const { id } = req.params;
+    const { activity_name, description, address, things_to_know, image } =
+      req.body;
 
-  try {
-    const activity = await ActivityMasterData.findByPk(id);
-    if (!activity) return res.status(404).json({ error: "Activity not found" });
+    try {
+      const activity = await ActivityMasterData.findByPk(id);
+      if (!activity)
+        return res.status(404).json({ error: "Activity not found" });
 
-    await activity.update({
-      activity_name,
-      description,
-      address,
-      things_to_know,
-      image,
-    });
+      await activity.update({
+        activity_name,
+        description,
+        address,
+        things_to_know,
+        image,
+      });
 
-    res.json(activity);
-  } catch (error) {
-    console.error("Error updating activity:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+      res.json(activity);
+    } catch (error) {
+      console.error("Error updating activity:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
 
 // ✅ 5. Delete an activity
-router.delete("/:id", authenticate, authorize("activity:delete"), async (req, res) => {
-  const { id } = req.params;
-  try {
-    const activity = await ActivityMasterData.findByPk(id);
-    if (!activity) return res.status(404).json({ error: "Activity not found" });
+router.delete(
+  "/:id",
+  authenticate,
+  authorize("activity:delete"),
+  async (req, res) => {
+    const { id } = req.params;
+    try {
+      const activity = await ActivityMasterData.findByPk(id);
+      if (!activity)
+        return res.status(404).json({ error: "Activity not found" });
 
-    await activity.destroy();
-    res.json({ message: "Activity deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting activity:", error);
-    res.status(500).json({ error: error.message });
-  }
-});
+      await activity.destroy();
+      res.json({ message: "Activity deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting activity:", error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+);
 
 module.exports = router;
