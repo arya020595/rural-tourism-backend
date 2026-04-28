@@ -9,7 +9,11 @@
     "validators/",
     "middleware/",
     "config/",
-    "utils/"
+    "utils/",
+    "policies/",
+    "services/",
+    "serializers/",
+    "validators/"
   ],
   "ignore": [
     "node_modules/",
