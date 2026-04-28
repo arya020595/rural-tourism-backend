@@ -10,7 +10,6 @@ const {
   ForbiddenError,
   BadRequestError,
 } = require("../services/errors/AppError");
-const Role = require("../models/roleModel");
 
 /* ── Controller actions ────────────────────────────────────────── */
 
@@ -64,22 +63,10 @@ exports.createUser = async (req, res) => {
     const { name, username, email, password } = req.body;
     let { role_id, association_id, company_id } = req.body;
 
-    const isSuperadmin =
-      req.user.role === "superadmin" ||
-      (Array.isArray(req.user.permissions) &&
-        req.user.permissions.includes("*:*"));
-
-    if (!isSuperadmin) {
-      // Operator Admin → auto-assign operator_staff role + own company
-      const staffRole = await Role.findOne({
-        where: { name: "operator_staff" },
-      });
-      if (!staffRole) {
-        throw new BadRequestError(
-          "operator_staff role not found. Run seeders.",
-        );
-      }
-      role_id = staffRole.id;
+    const userPolicy = policy("user", req.user);
+    if (!userPolicy.isAdmin()) {
+      // Non-admin → auto-assign operator_staff role + caller's own company
+      role_id = await userService.getOperatorStaffRoleId();
       company_id = req.user.company_id;
       association_id = req.user.association_id || null;
     }
