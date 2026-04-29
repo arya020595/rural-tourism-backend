@@ -17,7 +17,9 @@ async function tableExists(queryInterface, tableName) {
 }
 
 async function renameTableIfExists(queryInterface, fromTable, toTable) {
-  if (await tableExists(queryInterface, fromTable)) {
+  const sourceExists = await tableExists(queryInterface, fromTable);
+  const targetExists = await tableExists(queryInterface, toTable);
+  if (sourceExists && !targetExists) {
     await queryInterface.renameTable(fromTable, toTable);
   }
 }
