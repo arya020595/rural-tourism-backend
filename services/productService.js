@@ -1,15 +1,16 @@
 const { Op } = require("sequelize");
 const Product = require("../models/productModel");
 const Company = require("../models/companyModel");
-const {
-  NotFoundError,
-  BadRequestError,
-  ForbiddenError,
-} = require("./errors/AppError");
+const { NotFoundError, BadRequestError } = require("./errors/AppError");
 require("../models/associations");
 
 const PRODUCT_INCLUDES = [
-  { model: Company, as: "company", required: false, attributes: ["id", "company_name", "location"] },
+  {
+    model: Company,
+    as: "company",
+    required: false,
+    attributes: ["id", "company_name", "location"],
+  },
 ];
 
 class ProductService {
@@ -128,14 +129,18 @@ class ProductService {
    */
   async createProduct({ name, product_type, company_id }) {
     const trimmedName = String(name || "").trim();
-    const trimmedType = String(product_type || "").trim().toLowerCase();
+    const trimmedType = String(product_type || "")
+      .trim()
+      .toLowerCase();
 
     if (!trimmedName) {
       throw new BadRequestError("name is required");
     }
 
     if (!["activity", "accommodation"].includes(trimmedType)) {
-      throw new BadRequestError('product_type must be "activity" or "accommodation"');
+      throw new BadRequestError(
+        'product_type must be "activity" or "accommodation"',
+      );
     }
 
     if (!company_id) {
@@ -176,7 +181,9 @@ class ProductService {
     if (updates.product_type !== undefined) {
       const trimmedType = String(updates.product_type).trim().toLowerCase();
       if (!["activity", "accommodation"].includes(trimmedType)) {
-        throw new BadRequestError('product_type must be "activity" or "accommodation"');
+        throw new BadRequestError(
+          'product_type must be "activity" or "accommodation"',
+        );
       }
       fields.product_type = trimmedType;
     }

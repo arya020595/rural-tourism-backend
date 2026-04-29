@@ -25,12 +25,17 @@ class ProductPolicy extends ApplicationPolicy {
 
   /**
    * show() – View a single product
-   * Allowed: superadmin, or user with product:read + same company
+   * Allowed: superadmin, or any user with product:read.
+   *
+   * We intentionally do NOT restrict to same-company here because the
+   * /shared-by-location endpoint intentionally exposes products from other
+   * companies at the same location. The list endpoints already scope what
+   * can be returned; once a product is visible in a list a user should be
+   * able to GET it directly as well.
    */
   show() {
     if (this.isAdmin()) return true;
-    if (this.hasPermission("product:read")) return this._sameCompany();
-    return false;
+    return this.hasPermission("product:read");
   }
 
   /**

@@ -63,7 +63,7 @@ module.exports = {
 
     const existingCompany = await queryInterface.sequelize.query(
       `SELECT id
-       FROM company
+       FROM companies
        WHERE email = :email AND company_name = :companyName
        ORDER BY id DESC
        LIMIT 1`,
@@ -80,7 +80,7 @@ module.exports = {
 
     if (!companyId) {
       await queryInterface.sequelize.query(
-        `INSERT INTO company (
+        `INSERT INTO companies (
           company_name,
           address,
           email,
@@ -125,7 +125,7 @@ module.exports = {
 
       const insertedCompany = await queryInterface.sequelize.query(
         `SELECT id
-         FROM company
+         FROM companies
          WHERE email = :email AND company_name = :companyName
          ORDER BY id DESC
          LIMIT 1`,
@@ -321,7 +321,7 @@ module.exports = {
 
     await queryInterface.sequelize.query(
       `DELETE c
-       FROM company c
+       FROM companies c
        LEFT JOIN users u ON u.company_id = c.id
        WHERE c.email = :email
          AND c.company_name = :companyName
