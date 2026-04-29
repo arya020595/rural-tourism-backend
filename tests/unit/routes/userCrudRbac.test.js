@@ -9,6 +9,7 @@ const mockCreateUser = jest.fn();
 const mockUpdateUser = jest.fn();
 const mockUpdateUserProfile = jest.fn();
 const mockDeleteUser = jest.fn();
+const mockGetOperatorStaffRoleId = jest.fn();
 
 jest.mock("../../../middleware/uploadLogo", () => ({
   fields: () => (req, res, next) => next(),
@@ -21,6 +22,7 @@ jest.mock("../../../services/userService", () => ({
   updateUser: (...args) => mockUpdateUser(...args),
   updateUserProfile: (...args) => mockUpdateUserProfile(...args),
   deleteUser: (...args) => mockDeleteUser(...args),
+  getOperatorStaffRoleId: (...args) => mockGetOperatorStaffRoleId(...args),
 }));
 
 jest.mock("../../../services/authService", () => ({
@@ -217,7 +219,7 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.body.data).toHaveLength(2);
         expect(res.body.data[0].id).toBe(1);
         expect(res.body.data[1].id).toBe(2);
-        expect(res.body.pagination).toEqual({
+        expect(res.body.meta).toEqual({
           total: 2,
           page: 1,
           per_page: 10,
@@ -239,19 +241,20 @@ describe("Users API – CRUD & RBAC", () => {
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
         expect(res.body.data).toEqual([]);
-        expect(res.body.pagination).toBeDefined();
+        expect(res.body.meta).toBeDefined();
       });
 
       test("should pass page and per_page to service", async () => {
         const app = buildApp();
         mockGetAllUsers.mockResolvedValue({ docs: [], total: 0, pages: 0 });
+        const { Op } = require("sequelize");
 
         await request(app)
           .get("/api/users?page=2&per_page=5")
           .set("Authorization", `Bearer ${USER_WITH_ALL_PERMS}`);
 
         expect(mockGetAllUsers).toHaveBeenCalledWith(
-          { company_id: 1 },
+          { [Op.and]: [{ company_id: 1 }, { id: { [Op.ne]: 100 } }] },
           expect.objectContaining({ page: 2, perPage: 5 }),
         );
       });
@@ -336,7 +339,7 @@ describe("Users API – CRUD & RBAC", () => {
     describe("POST /api/users", () => {
       test("should return 201 and created user", async () => {
         const app = buildApp();
-        mockRoleFindOne.mockResolvedValue({ id: 5, name: "operator_staff" });
+        mockGetOperatorStaffRoleId.mockResolvedValue(5);
         mockCreateUser.mockResolvedValue(sampleUser);
 
         const res = await request(app)
@@ -366,7 +369,7 @@ describe("Users API – CRUD & RBAC", () => {
 
       test("should return 400 for missing required fields", async () => {
         const app = buildApp();
-        mockRoleFindOne.mockResolvedValue({ id: 5, name: "operator_staff" });
+        mockGetOperatorStaffRoleId.mockResolvedValue(5);
         const error = new Error(
           "name, username, email, and password are required",
         );
@@ -386,7 +389,7 @@ describe("Users API – CRUD & RBAC", () => {
 
       test("should return 409 for duplicate username/email", async () => {
         const app = buildApp();
-        mockRoleFindOne.mockResolvedValue({ id: 5, name: "operator_staff" });
+        mockGetOperatorStaffRoleId.mockResolvedValue(5);
         const error = new Error("Username or email already exists");
         error.statusCode = 409;
         mockCreateUser.mockRejectedValue(error);
@@ -702,7 +705,7 @@ describe("Users API – CRUD & RBAC", () => {
 
   // ── Response envelope contract ──────────────────────────────────────────
   describe("Response envelope contract", () => {
-    test("success responses should have { success: true, message, data, pagination }", async () => {
+    test("success responses should have { success: true, message, data, meta }", async () => {
       const app = buildApp();
       mockGetAllUsers.mockResolvedValue({
         docs: [sampleUser],
@@ -717,7 +720,7 @@ describe("Users API – CRUD & RBAC", () => {
       expect(res.body).toHaveProperty("success", true);
       expect(res.body).toHaveProperty("message");
       expect(res.body).toHaveProperty("data");
-      expect(res.body).toHaveProperty("pagination");
+      expect(res.body).toHaveProperty("meta");
     });
 
     test("error responses should have { success: false, message }", async () => {

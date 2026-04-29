@@ -20,6 +20,7 @@ module.exports = {
   resetMocks: true,
   restoreMocks: true,
   testTimeout: 10000,
+  forceExit: true,
   globalSetup: "<rootDir>/tests/setup.js",
   globalTeardown: "<rootDir>/tests/teardown.js",
   // Display test names in tree structure by module
