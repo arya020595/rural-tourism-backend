@@ -1,33 +1,75 @@
 "use strict";
 
+async function tableExists(queryInterface, tableName) {
+  const tables = await queryInterface.showAllTables();
+
+  return tables.some((table) => {
+    if (typeof table === "string") {
+      return table === tableName;
+    }
+
+    if (table && typeof table === "object") {
+      return table.tableName === tableName || table.table_name === tableName;
+    }
+
+    return false;
+  });
+}
+
+async function renameTableIfExists(queryInterface, fromTable, toTable) {
+  if (await tableExists(queryInterface, fromTable)) {
+    await queryInterface.renameTable(fromTable, toTable);
+  }
+}
+
 module.exports = {
   async up(queryInterface) {
-    await queryInterface.renameTable("company", "companies");
-    await queryInterface.renameTable("activity_booking", "activity_bookings");
-    await queryInterface.renameTable(
+    await renameTableIfExists(queryInterface, "company", "companies");
+    await renameTableIfExists(
+      queryInterface,
+      "activity_booking",
+      "activity_bookings",
+    );
+    await renameTableIfExists(
+      queryInterface,
       "accommodation_booking",
       "accommodation_bookings",
     );
-    await queryInterface.renameTable(
+    await renameTableIfExists(
+      queryInterface,
       "activity_master_table",
       "activity_master_data",
     );
-    await queryInterface.renameTable("accommodation_list", "accommodations");
-    await queryInterface.renameTable("conversation", "conversations");
+    await renameTableIfExists(
+      queryInterface,
+      "accommodation_list",
+      "accommodations",
+    );
+    await renameTableIfExists(queryInterface, "conversation", "conversations");
   },
 
   async down(queryInterface) {
-    await queryInterface.renameTable("companies", "company");
-    await queryInterface.renameTable("activity_bookings", "activity_booking");
-    await queryInterface.renameTable(
+    await renameTableIfExists(queryInterface, "companies", "company");
+    await renameTableIfExists(
+      queryInterface,
+      "activity_bookings",
+      "activity_booking",
+    );
+    await renameTableIfExists(
+      queryInterface,
       "accommodation_bookings",
       "accommodation_booking",
     );
-    await queryInterface.renameTable(
+    await renameTableIfExists(
+      queryInterface,
       "activity_master_data",
       "activity_master_table",
     );
-    await queryInterface.renameTable("accommodations", "accommodation_list");
-    await queryInterface.renameTable("conversations", "conversation");
+    await renameTableIfExists(
+      queryInterface,
+      "accommodations",
+      "accommodation_list",
+    );
+    await renameTableIfExists(queryInterface, "conversations", "conversation");
   },
 };
