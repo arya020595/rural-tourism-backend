@@ -32,7 +32,7 @@ exports.createBooking = async (req, res) => {
 
 exports.getBookings = async (req, res) => {
   try {
-    const result = await bookingsService.getBookings(req.query);
+    const result = await bookingsService.getBookings(req.query, req.user);
     return res.status(200).json({
       success: true,
       message: "Bookings fetched successfully",
@@ -41,6 +41,23 @@ exports.getBookings = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching bookings:", error);
+    return res.status(error.statusCode || 500).json({
+      error: error.message || "Database query error.",
+    });
+  }
+};
+
+exports.getPackageBookings = async (req, res) => {
+  try {
+    const result = await bookingsService.getPackageBookings(req.query, req.user);
+    return res.status(200).json({
+      success: true,
+      message: "Package bookings fetched successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  } catch (error) {
+    console.error("Error fetching package bookings:", error);
     return res.status(error.statusCode || 500).json({
       error: error.message || "Database query error.",
     });
@@ -70,7 +87,11 @@ exports.updateBooking = async (req, res) => {
       return res.status(400).json(validationResult.toResponse());
     }
 
-    const booking = await bookingsService.updateBooking(req.params.id, req.body);
+    const booking = await bookingsService.updateBooking(
+      req.params.id,
+      req.body,
+      req.user,
+    );
     return res.status(200).json({
       success: true,
       message: "Booking updated successfully",
