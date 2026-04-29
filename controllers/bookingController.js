@@ -115,6 +115,12 @@ exports.updateBookingStatus = async (req, res) => {
 
 exports.deleteBooking = async (req, res) => {
   try {
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).destroy()) {
+      throw new ForbiddenError(
+        "You do not have permission to delete this booking",
+      );
+    }
     await bookingsService.deleteBooking(req.params.id);
     return successResponse(res, null, "Booking deleted successfully");
   } catch (error) {
