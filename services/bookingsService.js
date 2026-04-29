@@ -109,12 +109,6 @@ class BookingsService {
       throw error;
     }
 
-    if (authUser.user_type && authUser.user_type !== "operator") {
-      const error = new Error("Only operator accounts can create bookings.");
-      error.statusCode = 403;
-      throw error;
-    }
-
     const operatorUserId = normalizeInt(
       authUser.unified_user_id ?? authUser.id ?? authUser.legacy_user_id,
       null,
@@ -244,19 +238,53 @@ class BookingsService {
 
   async normalizePackageCompanies(rawItems = [], transaction = null) {
     const items = Array.isArray(rawItems) ? rawItems : [];
+    if (items.length === 0) return [];
+
+    // Collect unique company IDs for both referrers and referees to avoid N+1 queries
+    const companyIds = new Set();
+    for (const item of items) {
+      const referrerId = normalizeInt(item?.referrer_id, null);
+      const refereeId = normalizeInt(item?.referee_id, null);
+      if (referrerId !== null) companyIds.add(referrerId);
+      if (refereeId !== null) companyIds.add(refereeId);
+    }
+
+    // Batch-fetch all needed companies in one query
+    const companies = await Company.findAll({
+      where: { id: [...companyIds] },
+      attributes: ["id", "company_name"],
+      transaction,
+    });
+    const companyMap = new Map(companies.map((c) => [c.id, c]));
 
     return Promise.all(
       items.map(async (item) => {
-        const referrer = await this.resolveCompanySnapshot(
-          item?.referrer_id,
-          item?.referral_company,
-          transaction,
-        );
-        const referee = await this.resolveCompanySnapshot(
-          item?.referee_id,
-          item?.referee_company,
-          transaction,
-        );
+        const referrerId = normalizeInt(item?.referrer_id, null);
+        const refereeId = normalizeInt(item?.referee_id, null);
+
+        if (referrerId === null) {
+          const error = new Error("referrer_id must be an integer.");
+          error.statusCode = 400;
+          throw error;
+        }
+        if (refereeId === null) {
+          const error = new Error("referee_id must be an integer.");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const referrerCompany = companyMap.get(referrerId);
+        if (!referrerCompany) {
+          const error = new Error(`Company with id ${referrerId} not found.`);
+          error.statusCode = 400;
+          throw error;
+        }
+        const refereeCompany = companyMap.get(refereeId);
+        if (!refereeCompany) {
+          const error = new Error(`Company with id ${refereeId} not found.`);
+          error.statusCode = 400;
+          throw error;
+        }
 
         const perPrice = normalizeNumber(item?.per_price, null);
         if (perPrice === null || perPrice < 0) {
@@ -266,10 +294,14 @@ class BookingsService {
         }
 
         return {
-          referrerId: referrer.id,
-          referralCompany: referrer.name,
-          refereeId: referee.id,
-          refereeCompany: referee.name,
+          referrerId,
+          referralCompany:
+            normalizeString(item?.referral_company) ||
+            normalizeString(referrerCompany.company_name),
+          refereeId,
+          refereeCompany:
+            normalizeString(item?.referee_company) ||
+            normalizeString(refereeCompany.company_name),
           description: normalizeString(item?.description) || null,
           perPrice,
         };
@@ -640,19 +672,19 @@ class BookingsService {
     }
   }
 
-  async getBookings(query = {}) {
+  async getBookings(query = {}, scope = {}) {
     const page = Math.max(1, normalizeInt(query.page, 1));
     const perPage = Math.max(1, Math.min(100, normalizeInt(query.per_page, 20)));
     const offset = (page - 1) * perPage;
 
-    const where = {};
+    const queryWhere = {};
 
     if (query.booking_type) {
-      where.bookingType = this.ensureBookingTypeAllowed(query.booking_type);
+      queryWhere.bookingType = this.ensureBookingTypeAllowed(query.booking_type);
     }
 
     if (query.status) {
-      where.status = this.ensureStatusAllowed(query.status);
+      queryWhere.status = this.ensureStatusAllowed(query.status);
     }
 
     if (query.user_id !== undefined) {
@@ -662,7 +694,7 @@ class BookingsService {
         error.statusCode = 400;
         throw error;
       }
-      where.userId = userId;
+      queryWhere.userId = userId;
     }
 
     if (query.company_id !== undefined) {
@@ -672,13 +704,13 @@ class BookingsService {
         error.statusCode = 400;
         throw error;
       }
-      where.companyId = companyId;
+      queryWhere.companyId = companyId;
     }
 
     if (query.search) {
       const search = String(query.search).trim();
       if (search) {
-        where[Op.or] = [
+        queryWhere[Op.or] = [
           { touristFullName: { [Op.like]: `%${search}%` } },
           { productName: { [Op.like]: `%${search}%` } },
           { userFullname: { [Op.like]: `%${search}%` } },
@@ -687,6 +719,9 @@ class BookingsService {
         ];
       }
     }
+
+    // Policy scope always wins over query filters (prevents cross-tenant access)
+    const where = { ...queryWhere, ...scope };
 
     const { count, rows } = await Booking.findAndCountAll({
       where,
@@ -706,15 +741,11 @@ class BookingsService {
     const totalPages = Math.ceil(count / perPage);
 
     return {
-      data: rows.map((row) => this.serialize(row)),
-      meta: {
-        totalCount: count,
-        page,
-        per_page: perPage,
-        total_pages: totalPages,
-        has_next: page < totalPages,
-        has_prev: page > 1,
-      },
+      docs: rows.map((row) => this.serialize(row)),
+      total: count,
+      pages: totalPages,
+      page,
+      perPage,
     };
   }
 

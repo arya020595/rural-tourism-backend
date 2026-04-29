@@ -4,7 +4,6 @@ const Company = require("../models/companyModel");
 const {
   NotFoundError,
   BadRequestError,
-  ForbiddenError,
 } = require("./errors/AppError");
 require("../models/associations");
 

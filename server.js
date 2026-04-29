@@ -118,7 +118,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/booking-activities", bookingRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/accom", accomRoutes);

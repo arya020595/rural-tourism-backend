@@ -1,5 +1,5 @@
 const productService = require("../services/productService");
-const { policy, policyScope } = require("../policies");
+const { policy } = require("../policies");
 const { serialize, serializeMany } = require("../serializers/productSerializer");
 const {
   successResponse,

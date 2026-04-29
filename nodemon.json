@@ -11,9 +11,7 @@
     "config/",
     "utils/",
     "policies/",
-    "services/",
-    "serializers/",
-    "validators/"
+    "serializers/"
   ],
   "ignore": [
     "node_modules/",
