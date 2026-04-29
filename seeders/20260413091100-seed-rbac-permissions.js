@@ -163,6 +163,30 @@ const DEFAULT_PERMISSIONS = [
     resource: "permission",
     section: "Role & Permission Management",
   },
+  {
+    name: "Create Product",
+    code: "product:create",
+    resource: "product",
+    section: "Product Management",
+  },
+  {
+    name: "View Products",
+    code: "product:read",
+    resource: "product",
+    section: "Product Management",
+  },
+  {
+    name: "Update Product",
+    code: "product:update",
+    resource: "product",
+    section: "Product Management",
+  },
+  {
+    name: "Delete Product",
+    code: "product:delete",
+    resource: "product",
+    section: "Product Management",
+  },
 ];
 
 /** @type {import('sequelize-cli').Migration} */

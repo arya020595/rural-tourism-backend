@@ -11,6 +11,7 @@ const Association = sequelize.define(
     },
     name: DataTypes.STRING,
     image: DataTypes.STRING,
+    power_bi_url: DataTypes.TEXT,
   },
   {
     tableName: "associations",

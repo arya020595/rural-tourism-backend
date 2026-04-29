@@ -123,7 +123,7 @@ describe("Booking Status Update Integration Test", () => {
   });
 
   afterAll(async () => {
-    await sequelize.close();
+    // DB teardown is handled globally by tests/teardown.js
   });
 
   test("Should update booking status from 'booked' to 'paid' after form creation", async () => {

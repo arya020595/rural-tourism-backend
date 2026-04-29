@@ -87,7 +87,7 @@ const Accom = sequelize.define(
     },
   },
   {
-    tableName: "accommodation_list",
+    tableName: "accommodations",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",

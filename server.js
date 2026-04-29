@@ -34,6 +34,8 @@ const authRoutes = require("./routes/authRoutes");
 const roleRoutes = require("./routes/roleRoutes");
 const permissionRoutes = require("./routes/permissionRoutes");
 const companyRoutes = require("./routes/companyRoutes");
+const productRoutes = require("./routes/productRoutes");
+const bookingRoutes = require("./routes/bookingRoutes");
 
 const app = express();
 
@@ -97,9 +99,11 @@ app.get("/api", (req, res) => {
       tourists: "/api/tourists",
       accommodations: "/api/accom",
       activities: "/api/activity",
+      products: "/api/products",
       bookings: {
         activity: "/api/activity-booking",
         accommodation: "/api/accommodation-booking",
+        unified: "/api/bookings",
       },
       receipts: "/api/receipts",
       notifications: "/api/notifications",
@@ -113,11 +117,13 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
+app.use("/api/bookings", bookingRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/accom", accomRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/tourists", touristUserRoutes);
+app.use("/api/products", productRoutes);
 app.use("/api/activity-master-data", activityMasterDataRoutes);
 app.use("/api/activity-booking", bookingActivityRoutes);
 app.use("/api/accommodation-booking", bookingAccommodationRoutes);

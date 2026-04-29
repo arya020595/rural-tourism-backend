@@ -17,10 +17,15 @@ const ROLE_PERMISSION_MAP = {
     "activity:read",
     "activity:update",
     "activity:delete",
+    "booking:create",
     "booking:read",
     "booking:update",
     "receipt:create",
     "receipt:read",
+    "product:create",
+    "product:read",
+    "product:update",
+    "product:delete",
   ],
   operator_staff: [
     "profile:read",
@@ -29,6 +34,7 @@ const ROLE_PERMISSION_MAP = {
     "activity:read",
     "booking:read",
     "receipt:read",
+    "product:read",
   ],
   tourist: [
     "profile:read",
