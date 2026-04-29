@@ -59,7 +59,7 @@ const Company = sequelize.define(
     },
   },
   {
-    tableName: "company",
+    tableName: "companies",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",

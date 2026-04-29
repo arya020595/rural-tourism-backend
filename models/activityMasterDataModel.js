@@ -37,11 +37,11 @@ const ActivityMasterData = sequelize.define(
     },
   },
   {
-    tableName: "activity_master_table",
+    tableName: "activity_master_data",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",
-  }
+  },
 );
 
 // Add pagination plugin
