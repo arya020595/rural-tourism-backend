@@ -110,19 +110,15 @@ class BookingsService {
       throw error;
     }
 
-    if (authUser.user_type && authUser.user_type !== "operator") {
-      const error = new Error("Only operator accounts can create bookings.");
-      error.statusCode = 403;
-      throw error;
-    }
-
     const operatorUserId = normalizeInt(
       authUser.unified_user_id ?? authUser.id ?? authUser.legacy_user_id,
       null,
     );
 
     if (operatorUserId === null) {
-      const error = new Error("Invalid token payload: missing operator user id.");
+      const error = new Error(
+        "Invalid token payload: missing operator user id.",
+      );
       error.statusCode = 401;
       throw error;
     }
@@ -227,7 +223,11 @@ class BookingsService {
     return product;
   }
 
-  async resolveCompanySnapshot(companyId, fallbackName = "", transaction = null) {
+  async resolveCompanySnapshot(
+    companyId,
+    fallbackName = "",
+    transaction = null,
+  ) {
     const normalizedCompanyId = normalizeInt(companyId, null);
     if (normalizedCompanyId === null) {
       const error = new Error("Company id must be an integer.");
@@ -241,14 +241,17 @@ class BookingsService {
     });
 
     if (!company) {
-      const error = new Error(`Company with id ${normalizedCompanyId} not found.`);
+      const error = new Error(
+        `Company with id ${normalizedCompanyId} not found.`,
+      );
       error.statusCode = 400;
       throw error;
     }
 
     return {
       id: normalizedCompanyId,
-      name: normalizeString(fallbackName) || normalizeString(company.company_name),
+      name:
+        normalizeString(fallbackName) || normalizeString(company.company_name),
     };
   }
 
@@ -336,19 +339,53 @@ class BookingsService {
 
   async normalizePackageCompanies(rawItems = [], transaction = null) {
     const items = Array.isArray(rawItems) ? rawItems : [];
+    if (items.length === 0) return [];
+
+    // Collect unique company IDs for both referrers and referees to avoid N+1 queries
+    const companyIds = new Set();
+    for (const item of items) {
+      const referrerId = normalizeInt(item?.referrer_id, null);
+      const refereeId = normalizeInt(item?.referee_id, null);
+      if (referrerId !== null) companyIds.add(referrerId);
+      if (refereeId !== null) companyIds.add(refereeId);
+    }
+
+    // Batch-fetch all needed companies in one query
+    const companies = await Company.findAll({
+      where: { id: [...companyIds] },
+      attributes: ["id", "company_name"],
+      transaction,
+    });
+    const companyMap = new Map(companies.map((c) => [c.id, c]));
 
     return Promise.all(
       items.map(async (item) => {
-        const referrer = await this.resolveCompanySnapshot(
-          item?.referrer_id,
-          item?.referral_company,
-          transaction,
-        );
-        const referee = await this.resolveCompanySnapshot(
-          item?.referee_id,
-          item?.referee_company,
-          transaction,
-        );
+        const referrerId = normalizeInt(item?.referrer_id, null);
+        const refereeId = normalizeInt(item?.referee_id, null);
+
+        if (referrerId === null) {
+          const error = new Error("referrer_id must be an integer.");
+          error.statusCode = 400;
+          throw error;
+        }
+        if (refereeId === null) {
+          const error = new Error("referee_id must be an integer.");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const referrerCompany = companyMap.get(referrerId);
+        if (!referrerCompany) {
+          const error = new Error(`Company with id ${referrerId} not found.`);
+          error.statusCode = 400;
+          throw error;
+        }
+        const refereeCompany = companyMap.get(refereeId);
+        if (!refereeCompany) {
+          const error = new Error(`Company with id ${refereeId} not found.`);
+          error.statusCode = 400;
+          throw error;
+        }
 
         const perPrice = normalizeNumber(item?.per_price, null);
         if (perPrice === null || perPrice < 0) {
@@ -358,10 +395,14 @@ class BookingsService {
         }
 
         return {
-          referrerId: referrer.id,
-          referralCompany: referrer.name,
-          refereeId: referee.id,
-          refereeCompany: referee.name,
+          referrerId,
+          referralCompany:
+            normalizeString(item?.referral_company) ||
+            normalizeString(referrerCompany.company_name),
+          refereeId,
+          refereeCompany:
+            normalizeString(item?.referee_company) ||
+            normalizeString(refereeCompany.company_name),
           description: normalizeString(item?.description) || null,
           perPrice,
         };
@@ -407,12 +448,19 @@ class BookingsService {
     }
 
     if (bookingType === "activity") {
-      if (productId === null) errors.push("product_id is required for activity booking");
-      if (!productName) errors.push("product_name is required for activity booking");
-      if (!activityDate) errors.push("activity_date is required for activity booking");
+      if (productId === null)
+        errors.push("product_id is required for activity booking");
+      if (!productName)
+        errors.push("product_name is required for activity booking");
+      if (!activityDate)
+        errors.push("activity_date is required for activity booking");
     }
 
-    let normalizedStay = { checkInDate: null, checkOutDate: null, totalOfNight: null };
+    let normalizedStay = {
+      checkInDate: null,
+      checkOutDate: null,
+      totalOfNight: null,
+    };
     if (bookingType === "accommodation") {
       normalizedStay = this.validateStayFields(
         checkInDate,
@@ -439,7 +487,11 @@ class BookingsService {
     }
 
     if (bookingType === "package") {
-      normalizedStay = { checkInDate: null, checkOutDate: null, totalOfNight: null };
+      normalizedStay = {
+        checkInDate: null,
+        checkOutDate: null,
+        totalOfNight: null,
+      };
     }
 
     if (errors.length > 0) {
@@ -502,7 +554,9 @@ class BookingsService {
     if (data.no_of_pax_antarbangsa !== undefined) {
       const value = normalizeInt(data.no_of_pax_antarbangsa, null);
       if (value === null || value < 0) {
-        const error = new Error("no_of_pax_antarbangsa must be an integer >= 0");
+        const error = new Error(
+          "no_of_pax_antarbangsa must be an integer >= 0",
+        );
         error.statusCode = 400;
         throw error;
       }
@@ -521,7 +575,11 @@ class BookingsService {
 
     if (data.product_id !== undefined) {
       const value = normalizeInt(data.product_id, null);
-      if (data.product_id !== null && data.product_id !== "" && value === null) {
+      if (
+        data.product_id !== null &&
+        data.product_id !== "" &&
+        value === null
+      ) {
         const error = new Error("product_id must be an integer");
         error.statusCode = 400;
         throw error;
@@ -545,7 +603,11 @@ class BookingsService {
 
     if (data.total_price !== undefined) {
       const value = normalizeNumber(data.total_price, null);
-      if (data.total_price !== null && data.total_price !== "" && (value === null || value < 0)) {
+      if (
+        data.total_price !== null &&
+        data.total_price !== "" &&
+        (value === null || value < 0)
+      ) {
         const error = new Error("total_price must be numeric and >= 0");
         error.statusCode = 400;
         throw error;
@@ -565,7 +627,11 @@ class BookingsService {
 
     if (data.check_out_date !== undefined) {
       const value = normalizeDateOnly(data.check_out_date);
-      if (data.check_out_date !== null && data.check_out_date !== "" && !value) {
+      if (
+        data.check_out_date !== null &&
+        data.check_out_date !== "" &&
+        !value
+      ) {
         const error = new Error("check_out_date must be a valid date");
         error.statusCode = 400;
         throw error;
@@ -575,7 +641,11 @@ class BookingsService {
 
     if (data.total_of_night !== undefined) {
       const value = normalizeInt(data.total_of_night, null);
-      if (data.total_of_night !== null && data.total_of_night !== "" && (value === null || value < 0)) {
+      if (
+        data.total_of_night !== null &&
+        data.total_of_night !== "" &&
+        (value === null || value < 0)
+      ) {
         const error = new Error("total_of_night must be an integer >= 0");
         error.statusCode = 400;
         throw error;
@@ -589,7 +659,11 @@ class BookingsService {
 
     if (data.receipt_created_at !== undefined) {
       const value = normalizeNullableDate(data.receipt_created_at);
-      if (data.receipt_created_at !== null && data.receipt_created_at !== "" && !value) {
+      if (
+        data.receipt_created_at !== null &&
+        data.receipt_created_at !== "" &&
+        !value
+      ) {
         const error = new Error("receipt_created_at must be a valid timestamp");
         error.statusCode = 400;
         throw error;
@@ -686,8 +760,13 @@ class BookingsService {
       );
       const payload = this.buildCreatePayload(data, actorContext);
 
-      if (payload.bookingType === "package" && packageCompaniesRaw.length === 0) {
-        const error = new Error("package_companies is required for package booking");
+      if (
+        payload.bookingType === "package" &&
+        packageCompaniesRaw.length === 0
+      ) {
+        const error = new Error(
+          "package_companies is required for package booking",
+        );
         error.statusCode = 400;
         throw error;
       }
@@ -705,7 +784,10 @@ class BookingsService {
 
       const packageCompanies =
         payload.bookingType === "package"
-          ? await this.normalizePackageCompanies(packageCompaniesRaw, transaction)
+          ? await this.normalizePackageCompanies(
+              packageCompaniesRaw,
+              transaction,
+            )
           : [];
 
       const created = await Booking.create(payload, { transaction });
@@ -745,17 +827,22 @@ class BookingsService {
 
   async getBookings(query = {}, authUser = null) {
     const page = Math.max(1, normalizeInt(query.page, 1));
-    const perPage = Math.max(1, Math.min(100, normalizeInt(query.per_page, 20)));
+    const perPage = Math.max(
+      1,
+      Math.min(100, normalizeInt(query.per_page, 20)),
+    );
     const offset = (page - 1) * perPage;
 
-    const where = {};
+    const queryWhere = {};
 
     if (query.booking_type) {
-      where.bookingType = this.ensureBookingTypeAllowed(query.booking_type);
+      queryWhere.bookingType = this.ensureBookingTypeAllowed(
+        query.booking_type,
+      );
     }
 
     if (query.status) {
-      where.status = this.ensureStatusAllowed(query.status);
+      queryWhere.status = this.ensureStatusAllowed(query.status);
     }
 
     if (query.user_id !== undefined) {
@@ -765,7 +852,7 @@ class BookingsService {
         error.statusCode = 400;
         throw error;
       }
-      where.userId = userId;
+      queryWhere.userId = userId;
     }
 
     const actorContext = authUser
@@ -785,7 +872,7 @@ class BookingsService {
     if (query.search) {
       const search = String(query.search).trim();
       if (search) {
-        where[Op.or] = [
+        queryWhere[Op.or] = [
           { touristFullName: { [Op.like]: `%${search}%` } },
           { productName: { [Op.like]: `%${search}%` } },
           { userFullname: { [Op.like]: `%${search}%` } },
@@ -794,6 +881,9 @@ class BookingsService {
         ];
       }
     }
+
+    // Policy scope always wins over query filters (prevents cross-tenant access)
+    const where = { ...queryWhere, ...scope };
 
     const { count, rows } = await Booking.findAndCountAll({
       where,
@@ -813,15 +903,11 @@ class BookingsService {
     const totalPages = Math.ceil(count / perPage);
 
     return {
-      data: rows.map((row) => this.serialize(row)),
-      meta: {
-        totalCount: count,
-        page,
-        per_page: perPage,
-        total_pages: totalPages,
-        has_next: page < totalPages,
-        has_prev: page > 1,
-      },
+      docs: rows.map((row) => this.serialize(row)),
+      total: count,
+      pages: totalPages,
+      page,
+      perPage,
     };
   }
 
@@ -964,7 +1050,8 @@ class BookingsService {
 
       const nextBookingType = payload.bookingType ?? record.bookingType;
       const isBookingTypeChanged =
-        payload.bookingType !== undefined && payload.bookingType !== record.bookingType;
+        payload.bookingType !== undefined &&
+        payload.bookingType !== record.bookingType;
 
       const draft = {
         bookingType: nextBookingType,
@@ -985,9 +1072,13 @@ class BookingsService {
             ? payload.noOfPaxDomestik
             : record.noOfPaxDomestik,
         totalPrice:
-          payload.totalPrice !== undefined ? payload.totalPrice : record.totalPrice,
+          payload.totalPrice !== undefined
+            ? payload.totalPrice
+            : record.totalPrice,
         productId:
-          payload.productId !== undefined ? payload.productId : record.productId,
+          payload.productId !== undefined
+            ? payload.productId
+            : record.productId,
         productName:
           payload.productName !== undefined
             ? payload.productName
@@ -1059,13 +1150,17 @@ class BookingsService {
       }
 
       if (draft.bookingType === "package") {
-        const incomingArray = hasPackageCompaniesInput ? packageCompaniesRaw : null;
+        const incomingArray = hasPackageCompaniesInput
+          ? packageCompaniesRaw
+          : null;
         const nextCount = hasPackageCompaniesInput
           ? incomingArray.length
           : (record.package_companies || []).length;
 
         if (nextCount === 0) {
-          errors.push("package booking must have at least 1 package_companies item");
+          errors.push(
+            "package booking must have at least 1 package_companies item",
+          );
         }
       }
 

@@ -3,10 +3,7 @@ const router = express.Router();
 const bookingController = require("../controllers/bookingController");
 const { authenticate } = require("../middleware/auth");
 const { authorize } = require("../middleware/authorize");
-
-const asyncHandler = (fn) => (req, res, next) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+const { asyncHandler } = require("../utils/helpers");
 
 router.post(
   "/",

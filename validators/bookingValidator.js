@@ -11,6 +11,7 @@ class ValidationResult {
   constructor(isValid = true, errors = []) {
     this.isValid = isValid;
     this.errors = errors;
+    this.message = isValid ? null : "Validation failed";
   }
 
   toResponse() {
@@ -91,7 +92,10 @@ class BookingValidator {
     }
 
     if (bookingType === "package") {
-      if (!Array.isArray(data.package_companies) || data.package_companies.length === 0) {
+      if (
+        !Array.isArray(data.package_companies) ||
+        data.package_companies.length === 0
+      ) {
         errors.push("package_companies is required for package booking");
       }
     }
@@ -113,7 +117,9 @@ class BookingValidator {
 
     if (
       data.booking_type !== undefined &&
-      !ALLOWED_BOOKING_TYPES.includes(normalizeString(data.booking_type).toLowerCase())
+      !ALLOWED_BOOKING_TYPES.includes(
+        normalizeString(data.booking_type).toLowerCase(),
+      )
     ) {
       errors.push(
         `booking_type must be one of: ${ALLOWED_BOOKING_TYPES.join(", ")}`,
@@ -134,18 +140,31 @@ class BookingValidator {
       }
     }
 
-    if (data.total_price !== undefined && data.total_price !== null && data.total_price !== "") {
+    if (
+      data.total_price !== undefined &&
+      data.total_price !== null &&
+      data.total_price !== ""
+    ) {
       const value = normalizeNumber(data.total_price);
       if (value === null || value < 0) {
         errors.push("total_price must be numeric and >= 0");
       }
     }
 
-    if (data.product_id !== undefined && data.product_id !== null && data.product_id !== "" && normalizeInt(data.product_id) === null) {
+    if (
+      data.product_id !== undefined &&
+      data.product_id !== null &&
+      data.product_id !== "" &&
+      normalizeInt(data.product_id) === null
+    ) {
       errors.push("product_id must be integer");
     }
 
-    if (data.total_of_night !== undefined && data.total_of_night !== null && data.total_of_night !== "") {
+    if (
+      data.total_of_night !== undefined &&
+      data.total_of_night !== null &&
+      data.total_of_night !== ""
+    ) {
       const totalOfNight = normalizeInt(data.total_of_night);
       if (totalOfNight === null || totalOfNight < 0) {
         errors.push("total_of_night must be integer >= 0");
@@ -188,7 +207,10 @@ class BookingValidator {
       errors.push("receipt_created_at must be a valid timestamp");
     }
 
-    if (data.package_companies !== undefined && !Array.isArray(data.package_companies)) {
+    if (
+      data.package_companies !== undefined &&
+      !Array.isArray(data.package_companies)
+    ) {
       errors.push("package_companies must be an array");
     }
 

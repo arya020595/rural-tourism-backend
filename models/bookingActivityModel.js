@@ -131,7 +131,7 @@ const ActivityBooking = sequelize.define(
     },
   },
   {
-    tableName: "activity_booking",
+    tableName: "activity_bookings",
     timestamps: true,
     createdAt: "created_at",
     updatedAt: "updated_at",

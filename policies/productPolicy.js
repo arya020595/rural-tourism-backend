@@ -25,7 +25,13 @@ class ProductPolicy extends ApplicationPolicy {
 
   /**
    * show() – View a single product
-   * Allowed: superadmin, or user with product:read + same company
+   * Allowed: superadmin, or user with product:read for a product in their
+   * own company.
+   *
+   * Record-level access is restricted to same-company to prevent ID-guessing
+   * cross-tenant reads on GET /api/products/:id. The /shared-by-location list
+   * endpoint is a bulk query that does not call show() per-record, so this
+   * does not affect location-based sharing.
    */
   show() {
     if (this.isAdmin()) return true;
