@@ -22,7 +22,9 @@ class BookingPolicy extends ApplicationPolicy {
   }
 
   destroy() {
-    return this.isAdmin() || this.hasPermission("booking:delete");
+    if (this.isAdmin()) return true;
+    if (!this.hasPermission("booking:delete")) return false;
+    return this._sameCompany();
   }
 
   /**
