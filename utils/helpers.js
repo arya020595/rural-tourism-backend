@@ -44,10 +44,14 @@ const successResponse = (res, data, message = "Success", statusCode = 200) => {
 const errorResponse = (res, messageOrError, statusCode, errors) => {
   if (messageOrError instanceof Error) {
     const err = messageOrError;
-    return res.status(err.statusCode || 500).json({
+    const body = {
       success: false,
       message: err.message || "Internal server error",
-    });
+    };
+    if (err.details) {
+      body.errors = err.details;
+    }
+    return res.status(err.statusCode || 500).json(body);
   }
 
   const response = {

@@ -71,6 +71,11 @@ class ProductService {
     }
 
     const userLocation = userCompany.location;
+    if (!userLocation) {
+      throw new BadRequestError(
+        "Your company does not have a location set. Cannot filter products by location.",
+      );
+    }
 
     // Apply search filter if provided
     if (search) {
