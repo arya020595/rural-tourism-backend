@@ -35,7 +35,12 @@ exports.getBookings = async (req, res) => {
       res,
       result.docs,
       "Bookings fetched successfully",
-      { total: result.total, page: result.page, perPage: result.perPage, pages: result.pages },
+      {
+        total: result.total,
+        page: result.page,
+        perPage: result.perPage,
+        pages: result.pages,
+      },
     );
   } catch (error) {
     return errorResponse(res, error);
@@ -46,7 +51,9 @@ exports.getBookingById = async (req, res) => {
   try {
     const booking = await bookingsService.getBookingById(req.params.id);
     if (!policy("booking", req.user, booking).show()) {
-      throw new ForbiddenError("You do not have permission to view this booking");
+      throw new ForbiddenError(
+        "You do not have permission to view this booking",
+      );
     }
     return successResponse(res, booking, "Booking fetched successfully");
   } catch (error) {
@@ -68,7 +75,9 @@ exports.updateBooking = async (req, res) => {
 
     const existing = await bookingsService.getBookingById(req.params.id);
     if (!policy("booking", req.user, existing).update()) {
-      throw new ForbiddenError("You do not have permission to update this booking");
+      throw new ForbiddenError(
+        "You do not have permission to update this booking",
+      );
     }
 
     const booking = await bookingsService.updateBooking(
@@ -89,7 +98,9 @@ exports.updateBookingStatus = async (req, res) => {
 
     const existing = await bookingsService.getBookingById(req.params.id);
     if (!policy("booking", req.user, existing).update()) {
-      throw new ForbiddenError("You do not have permission to update this booking");
+      throw new ForbiddenError(
+        "You do not have permission to update this booking",
+      );
     }
 
     const booking = await bookingsService.updateBookingStatus(

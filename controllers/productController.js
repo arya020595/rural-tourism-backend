@@ -1,6 +1,9 @@
 const productService = require("../services/productService");
 const { policy } = require("../policies");
-const { serialize, serializeMany } = require("../serializers/productSerializer");
+const {
+  serialize,
+  serializeMany,
+} = require("../serializers/productSerializer");
 const {
   successResponse,
   paginatedResponse,
@@ -97,7 +100,11 @@ exports.getProductById = async (req, res) => {
       );
     }
 
-    return successResponse(res, serialize(product), "Product fetched successfully");
+    return successResponse(
+      res,
+      serialize(product),
+      "Product fetched successfully",
+    );
   } catch (err) {
     return errorResponse(res, err);
   }
@@ -114,9 +121,7 @@ exports.createProduct = async (req, res) => {
 
     // Verify policy allows creating products
     if (!policy("product", req.user, {}).create()) {
-      throw new ForbiddenError(
-        "You do not have permission to create products",
-      );
+      throw new ForbiddenError("You do not have permission to create products");
     }
 
     // Enforce company_id from authenticated user
