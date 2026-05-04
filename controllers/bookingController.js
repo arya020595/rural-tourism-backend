@@ -29,19 +29,27 @@ exports.createBooking = async (req, res) => {
 
 exports.getBookings = async (req, res) => {
   try {
-    const scope = policyScope("booking", req.user);
-    const result = await bookingsService.getBookings(req.query, scope);
-    return paginatedResponse(
-      res,
-      result.docs,
-      "Bookings fetched successfully",
-      {
-        total: result.total,
-        page: result.page,
-        perPage: result.perPage,
-        pages: result.pages,
-      },
-    );
+    const result = await bookingsService.getBookings(req.query, req.user);
+    return paginatedResponse(res, result.data, "Bookings fetched successfully", {
+      total: result.meta.total,
+      page: result.meta.page,
+      perPage: result.meta.per_page,
+      pages: result.meta.total_pages,
+    });
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+exports.getPackageBookings = async (req, res) => {
+  try {
+    const result = await bookingsService.getPackageBookings(req.query, req.user);
+    return paginatedResponse(res, result.data, "Package bookings fetched successfully", {
+      total: result.meta.total,
+      page: result.meta.page,
+      perPage: result.meta.per_page,
+      pages: result.meta.total_pages,
+    });
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -83,6 +91,7 @@ exports.updateBooking = async (req, res) => {
     const booking = await bookingsService.updateBooking(
       req.params.id,
       req.body,
+      req.user,
     );
     return successResponse(res, booking, "Booking updated successfully");
   } catch (error) {
