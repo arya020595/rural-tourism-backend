@@ -13,7 +13,7 @@ function escapeHtml(str) {
 let _browser = null;
 
 async function getBrowser() {
-  if (!_browser || !_browser.connected) {
+  if (!_browser || !_browser.isConnected()) {
     const args =
       process.env.DISABLE_PUPPETEER_SANDBOX === "true"
         ? ["--no-sandbox", "--disable-setuid-sandbox"]
@@ -339,7 +339,6 @@ async function generateBookingConfirmationPdf(data) {
   const page = await browser.newPage();
 
   try {
-    await page.setJavaScriptEnabled(false);
     await page.setContent(buildHtml(data), { waitUntil: "domcontentloaded" });
 
     const pdfBuffer = await page.pdf({
