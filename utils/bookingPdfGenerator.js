@@ -1,5 +1,28 @@
 const puppeteer = require("puppeteer");
 
+function escapeHtml(str) {
+  if (str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+let _browser = null;
+
+async function getBrowser() {
+  if (!_browser || !_browser.connected) {
+    const args =
+      process.env.DISABLE_PUPPETEER_SANDBOX === "true"
+        ? ["--no-sandbox", "--disable-setuid-sandbox"]
+        : [];
+    _browser = await puppeteer.launch({ args });
+  }
+  return _browser;
+}
+
 const MONTHS_MY = [
   "JAN",
   "FEB",
@@ -57,11 +80,18 @@ function buildHtml(data) {
     createdAt,
   } = data;
 
-  const bookingId = formatBookingId(id);
-  const headerDate = formatHeaderDate(createdAt);
-  const activityDateFormatted = formatActivityDate(activityDate);
-  const totalPaxDisplay = `${totalPax || 0} ORANG`;
-  const totalPriceFormatted = Number(totalPrice || 0).toFixed(2);
+  const bookingId = escapeHtml(formatBookingId(id));
+  const headerDate = escapeHtml(formatHeaderDate(createdAt));
+  const activityDateFormatted = escapeHtml(formatActivityDate(activityDate));
+  const totalPaxDisplay = escapeHtml(`${totalPax || 0} ORANG`);
+  const totalPriceFormatted = escapeHtml(Number(totalPrice || 0).toFixed(2));
+  const safeTouristFullName = escapeHtml(touristFullName) || "-";
+  const safeCompanyName = escapeHtml(companyName) || "-";
+  const safeProductName = escapeHtml(productName) || "-";
+  const safeLocation = escapeHtml(location) || "-";
+  const safeStatus = escapeHtml((status || "").toUpperCase()) || "-";
+  const safeOperatorName = escapeHtml(operatorName) || "-";
+  const safeOperatorEmail = escapeHtml(operatorEmail);
 
   return `<!DOCTYPE html>
 <html>
@@ -255,15 +285,15 @@ function buildHtml(data) {
   <div class="grid">
     <div>
       <div class="field-label">DITEMPAH OLEH/<em>BOOKED BY</em></div>
-      <div class="field-value">${touristFullName || "-"}</div>
+      <div class="field-value">${safeTouristFullName}</div>
     </div>
     <div>
       <div class="field-label">NAMA PERNIAGAAN/<em>BUSINESS NAME</em></div>
-      <div class="field-value">${companyName || "-"}</div>
+      <div class="field-value">${safeCompanyName}</div>
     </div>
     <div>
       <div class="field-label">AKTIVITI/<em>ACTIVITY</em></div>
-      <div class="field-value">${productName || "-"}</div>
+      <div class="field-value">${safeProductName}</div>
     </div>
     <div>
       <div class="field-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
@@ -271,15 +301,15 @@ function buildHtml(data) {
     </div>
     <div>
       <div class="field-label">LOKASI/<em>LOCATION</em></div>
-      <div class="field-value">${location || "-"}</div>
+      <div class="field-value">${safeLocation}</div>
     </div>
     <div>
-      <div class="field-label">TARIKH/<em>BOOKED DATE</em></div>
+      <div class="field-label">TARIKH/<em>ACTIVITY DATE</em></div>
       <div class="field-value">${activityDateFormatted}</div>
     </div>
     <div class="full-width">
       <div class="field-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>
-      <div class="field-value">${(status || "").toUpperCase()}</div>
+      <div class="field-value">${safeStatus}</div>
     </div>
   </div>
 
@@ -288,8 +318,8 @@ function buildHtml(data) {
   <!-- Issued by -->
   <div class="issued-by">
     <div class="label">DIKELUARKAN OLEH/ISSUED BY:</div>
-    <div class="name">${operatorName || "-"}</div>
-    <div class="email">${operatorEmail || ""}</div>
+    <div class="name">${safeOperatorName}</div>
+    <div class="email">${safeOperatorEmail}</div>
   </div>
 
   <hr>
@@ -305,13 +335,12 @@ function buildHtml(data) {
 }
 
 async function generateBookingConfirmationPdf(data) {
-  const browser = await puppeteer.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  const browser = await getBrowser();
+  const page = await browser.newPage();
 
   try {
-    const page = await browser.newPage();
-    await page.setContent(buildHtml(data), { waitUntil: "networkidle0" });
+    await page.setJavaScriptEnabled(false);
+    await page.setContent(buildHtml(data), { waitUntil: "domcontentloaded" });
 
     const pdfBuffer = await page.pdf({
       format: "A4",
@@ -321,7 +350,7 @@ async function generateBookingConfirmationPdf(data) {
 
     return pdfBuffer;
   } finally {
-    await browser.close();
+    await page.close();
   }
 }
 
