@@ -11,6 +11,7 @@ const {
   normalizeNullableDate,
   normalizeDateOnly,
 } = require("../utils/normalizers");
+const { buildMeta } = require("../utils/helpers");
 
 const ALLOWED_STATUSES = [
   "pending",
@@ -903,11 +904,8 @@ class BookingsService {
     const totalPages = Math.ceil(count / perPage);
 
     return {
-      docs: rows.map((row) => this.serialize(row)),
-      total: count,
-      pages: totalPages,
-      page,
-      perPage,
+      data: rows.map((row) => this.serialize(row)),
+      meta: buildMeta(count, page, perPage, totalPages),
     };
   }
 
@@ -976,14 +974,7 @@ class BookingsService {
         ...this.serializePackageCompany(row),
         booking: this.serializeBookingSummary(row.booking_package),
       })),
-      meta: {
-        totalCount: count,
-        page,
-        per_page: perPage,
-        total_pages: totalPages,
-        has_next: page < totalPages,
-        has_prev: page > 1,
-      },
+      meta: buildMeta(count, page, perPage, totalPages),
     };
   }
 

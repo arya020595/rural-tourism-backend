@@ -30,11 +30,11 @@ exports.createBooking = async (req, res) => {
 exports.getBookings = async (req, res) => {
   try {
     const result = await bookingsService.getBookings(req.query, req.user);
-    return res.status(200).json({
-      success: true,
-      message: "Bookings fetched successfully",
-      data: result.data,
-      meta: result.meta,
+    return paginatedResponse(res, result.data, "Bookings fetched successfully", {
+      total: result.meta.total,
+      page: result.meta.page,
+      perPage: result.meta.per_page,
+      pages: result.meta.total_pages,
     });
   } catch (error) {
     return errorResponse(res, error);
@@ -44,17 +44,14 @@ exports.getBookings = async (req, res) => {
 exports.getPackageBookings = async (req, res) => {
   try {
     const result = await bookingsService.getPackageBookings(req.query, req.user);
-    return res.status(200).json({
-      success: true,
-      message: "Package bookings fetched successfully",
-      data: result.data,
-      meta: result.meta,
+    return paginatedResponse(res, result.data, "Package bookings fetched successfully", {
+      total: result.meta.total,
+      page: result.meta.page,
+      perPage: result.meta.per_page,
+      pages: result.meta.total_pages,
     });
   } catch (error) {
-    console.error("Error fetching package bookings:", error);
-    return res.status(error.statusCode || 500).json({
-      error: error.message || "Database query error.",
-    });
+    return errorResponse(res, error);
   }
 };
 
@@ -84,16 +81,19 @@ exports.updateBooking = async (req, res) => {
       );
     }
 
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).update()) {
+      throw new ForbiddenError(
+        "You do not have permission to update this booking",
+      );
+    }
+
     const booking = await bookingsService.updateBooking(
       req.params.id,
       req.body,
       req.user,
     );
-    return res.status(200).json({
-      success: true,
-      message: "Booking updated successfully",
-      data: booking,
-    });
+    return successResponse(res, booking, "Booking updated successfully");
   } catch (error) {
     return errorResponse(res, error);
   }

@@ -1,4 +1,4 @@
-const { isValidDate } = require("../utils/normalizers");
+const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
 
 class ValidationResult {
   constructor(isValid = true, errors = []) {
@@ -22,14 +22,14 @@ class DashboardValidator {
 
     if (!start) {
       errors.push("start is required");
-    } else if (!isValidDate(start)) {
-      errors.push("start must be a valid date");
+    } else if (!YYYY_MM_DD.test(start)) {
+      errors.push("start must be a valid date in YYYY-MM-DD format");
     }
 
     if (!end) {
       errors.push("end is required");
-    } else if (!isValidDate(end)) {
-      errors.push("end must be a valid date");
+    } else if (!YYYY_MM_DD.test(end)) {
+      errors.push("end must be a valid date in YYYY-MM-DD format");
     }
 
     return new ValidationResult(errors.length === 0, errors);
