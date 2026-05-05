@@ -20,6 +20,13 @@ router.get(
 );
 
 router.get(
+  "/packages",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.getPackageBookings),
+);
+
+router.get(
   "/:id/pdf",
   authenticate,
   authorize("booking:read"),
