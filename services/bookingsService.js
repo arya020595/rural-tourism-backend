@@ -3,6 +3,7 @@ const Booking = require("../models/bookingModel");
 const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
 const UnifiedUser = require("../models/unifiedUserModel");
 const Company = require("../models/companyModel");
+const Product = require("../models/productModel");
 const {
   normalizeString,
   normalizeInt,
@@ -10,6 +11,7 @@ const {
   normalizeNullableDate,
   normalizeDateOnly,
 } = require("../utils/normalizers");
+const { buildMeta } = require("../utils/helpers");
 
 const ALLOWED_STATUSES = [
   "pending",
@@ -161,6 +163,67 @@ class BookingsService {
     };
   }
 
+  isSuperadmin(authUser) {
+    return (
+      authUser?.role === "superadmin" ||
+      (Array.isArray(authUser?.permissions) &&
+        authUser.permissions.includes("*:*"))
+    );
+  }
+
+  async resolveActorContext(authUser, transaction = null) {
+    const operatorContext = await this.resolveOperatorContext(
+      authUser,
+      transaction,
+    );
+
+    return {
+      ...operatorContext,
+      isSuperadmin: this.isSuperadmin(authUser),
+    };
+  }
+
+  async validateProductAccess(productId, actorContext, transaction = null) {
+    const normalizedProductId = normalizeInt(productId, null);
+    if (normalizedProductId === null) {
+      const error = new Error("product_id must be an integer");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const product = await Product.findByPk(normalizedProductId, {
+      attributes: ["id", "company_id", "name"],
+      transaction,
+    });
+
+    if (!product) {
+      const error = new Error("Invalid product_id");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (actorContext.isSuperadmin) {
+      return product;
+    }
+
+    const operatorCompanyId = normalizeInt(actorContext.companyId, null);
+    const productCompanyId = normalizeInt(product.company_id, null);
+
+    if (
+      operatorCompanyId === null ||
+      productCompanyId === null ||
+      operatorCompanyId !== productCompanyId
+    ) {
+      const error = new Error(
+        "Forbidden. You can only process bookings for products in your own company.",
+      );
+      error.statusCode = 403;
+      throw error;
+    }
+
+    return product;
+  }
+
   async resolveCompanySnapshot(
     companyId,
     fallbackName = "",
@@ -240,6 +303,36 @@ class BookingsService {
       package_companies: packageCompanies.map((item) =>
         this.serializePackageCompany(item),
       ),
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+    };
+  }
+
+  serializeBookingSummary(record) {
+    return {
+      id: record.id,
+      booking_type: record.bookingType,
+      tourist_full_name: record.touristFullName,
+      citizenship: record.citizenship,
+      no_of_pax_antarbangsa: record.noOfPaxAntarbangsa,
+      no_of_pax_domestik: record.noOfPaxDomestik,
+      total_pax:
+        Number(record.noOfPaxAntarbangsa || 0) +
+        Number(record.noOfPaxDomestik || 0),
+      product_id: record.productId,
+      product_name: record.productName,
+      activity_date: record.activityDate,
+      total_price: record.totalPrice,
+      user_id: record.userId,
+      user_fullname: record.userFullname,
+      check_in_date: record.checkInDate,
+      check_out_date: record.checkOutDate,
+      total_of_night: record.totalOfNight,
+      status: record.status,
+      receipt_created_at: record.receiptCreatedAt,
+      operator_name: record.operatorName,
+      company_id: record.companyId,
+      company_name: record.companyName,
       created_at: record.created_at,
       updated_at: record.updated_at,
     };
@@ -662,11 +755,11 @@ class BookingsService {
 
     const transaction = await Booking.sequelize.transaction();
     try {
-      const operatorContext = await this.resolveOperatorContext(
+      const actorContext = await this.resolveActorContext(
         authUser,
         transaction,
       );
-      const payload = this.buildCreatePayload(data, operatorContext);
+      const payload = this.buildCreatePayload(data, actorContext);
 
       if (
         payload.bookingType === "package" &&
@@ -677,6 +770,17 @@ class BookingsService {
         );
         error.statusCode = 400;
         throw error;
+      }
+
+      if (
+        payload.bookingType === "activity" ||
+        payload.bookingType === "accommodation"
+      ) {
+        await this.validateProductAccess(
+          payload.productId,
+          actorContext,
+          transaction,
+        );
       }
 
       const packageCompanies =
@@ -722,7 +826,7 @@ class BookingsService {
     }
   }
 
-  async getBookings(query = {}, scope = {}) {
+  async getBookings(query = {}, authUser = null) {
     const page = Math.max(1, normalizeInt(query.page, 1));
     const perPage = Math.max(
       1,
@@ -752,14 +856,18 @@ class BookingsService {
       queryWhere.userId = userId;
     }
 
-    if (query.company_id !== undefined) {
-      const companyId = normalizeInt(query.company_id, null);
-      if (companyId === null) {
-        const error = new Error("company_id filter must be an integer");
-        error.statusCode = 400;
+    const actorContext = authUser
+      ? await this.resolveActorContext(authUser)
+      : null;
+
+    if (actorContext && !actorContext.isSuperadmin) {
+      const actorCompanyId = normalizeInt(actorContext.companyId, null);
+      if (actorCompanyId === null) {
+        const error = new Error("Operator company context is missing.");
+        error.statusCode = 403;
         throw error;
       }
-      queryWhere.companyId = companyId;
+      where.companyId = actorCompanyId;
     }
 
     if (query.search) {
@@ -796,11 +904,77 @@ class BookingsService {
     const totalPages = Math.ceil(count / perPage);
 
     return {
-      docs: rows.map((row) => this.serialize(row)),
-      total: count,
-      pages: totalPages,
-      page,
-      perPage,
+      data: rows.map((row) => this.serialize(row)),
+      meta: buildMeta(count, page, perPage, totalPages),
+    };
+  }
+
+  async getPackageBookings(query = {}, authUser = null) {
+    const page = Math.max(1, normalizeInt(query.page, 1));
+    const perPage = Math.max(1, Math.min(100, normalizeInt(query.per_page, 20)));
+    const offset = (page - 1) * perPage;
+
+    const where = {};
+    const bookingWhere = { bookingType: "package" };
+    if (query.status) {
+      bookingWhere.status = this.ensureStatusAllowed(query.status);
+    }
+
+    const actorContext = authUser
+      ? await this.resolveActorContext(authUser)
+      : null;
+
+    if (actorContext && !actorContext.isSuperadmin) {
+      const actorCompanyId = normalizeInt(actorContext.companyId, null);
+      if (actorCompanyId === null) {
+        const error = new Error("Operator company context is missing.");
+        error.statusCode = 403;
+        throw error;
+      }
+
+      where[Op.or] = [
+        { referrerId: actorCompanyId },
+        { refereeId: actorCompanyId },
+      ];
+    }
+
+    if (query.search) {
+      const search = String(query.search).trim();
+      if (search) {
+        where[Op.and] = (where[Op.and] || []).concat({
+          [Op.or]: [
+            { referralCompany: { [Op.like]: `%${search}%` } },
+            { refereeCompany: { [Op.like]: `%${search}%` } },
+            { description: { [Op.like]: `%${search}%` } },
+          ],
+        });
+      }
+    }
+
+    const { count, rows } = await BookingPackageCompany.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Booking,
+          as: "booking_package",
+          required: true,
+          where: bookingWhere,
+        },
+      ],
+      order: [["id", "DESC"]],
+      limit: perPage,
+      offset,
+      distinct: true,
+    });
+
+    const totalPages = Math.ceil(count / perPage);
+
+    return {
+      data: rows.map((row) => ({
+        ...this.serializePackageCompany(row),
+        booking: this.serializeBookingSummary(row.booking_package),
+      })),
+      meta: buildMeta(count, page, perPage, totalPages),
     };
   }
 
@@ -831,7 +1005,55 @@ class BookingsService {
     return this.serialize(record);
   }
 
-  async updateBooking(id, data) {
+  async getBookingPdfData(id) {
+    const bookingId = normalizeInt(id, null);
+    if (bookingId === null) {
+      const error = new Error("Invalid booking id");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const record = await Booking.findByPk(bookingId);
+    if (!record) {
+      const error = new Error("Booking not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    let operatorEmail = null;
+    let location = null;
+    if (record.companyId) {
+      const company = await Company.findByPk(record.companyId, {
+        attributes: ["email", "location"],
+      });
+      if (company) {
+        operatorEmail = company.email;
+        location = company.location;
+      }
+    }
+
+    const totalPax =
+      Number(record.noOfPaxAntarbangsa || 0) +
+      Number(record.noOfPaxDomestik || 0);
+
+    return {
+      id: record.id,
+      company_id: record.companyId,
+      touristFullName: record.touristFullName,
+      companyName: record.companyName,
+      productName: record.productName,
+      totalPax,
+      location,
+      activityDate: record.activityDate,
+      status: record.status,
+      operatorName: record.operatorName,
+      operatorEmail,
+      totalPrice: record.totalPrice,
+      createdAt: record.created_at,
+    };
+  }
+
+  async updateBooking(id, data, authUser) {
     const bookingId = normalizeInt(id, null);
     if (bookingId === null) {
       const error = new Error("Invalid booking id");
@@ -841,6 +1063,11 @@ class BookingsService {
 
     const transaction = await Booking.sequelize.transaction();
     try {
+      const actorContext = await this.resolveActorContext(
+        authUser,
+        transaction,
+      );
+
       const record = await Booking.findByPk(bookingId, {
         transaction,
         include: [
@@ -917,6 +1144,17 @@ class BookingsService {
       this.validateTypeSpecificRules(draft.bookingType, draft, errors);
       if (isBookingTypeChanged) {
         this.validateCreateRequiredFieldsForDraft(draft, errors);
+      }
+
+      if (
+        draft.bookingType === "activity" ||
+        draft.bookingType === "accommodation"
+      ) {
+        await this.validateProductAccess(
+          draft.productId,
+          actorContext,
+          transaction,
+        );
       }
 
       if (draft.bookingType === "activity") {

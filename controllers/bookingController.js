@@ -7,6 +7,9 @@ const {
   errorResponse,
 } = require("../utils/helpers");
 const { ForbiddenError } = require("../services/errors/AppError");
+const {
+  generateBookingConfirmationPdf,
+} = require("../utils/bookingPdfGenerator");
 
 exports.createBooking = async (req, res) => {
   try {
@@ -29,19 +32,27 @@ exports.createBooking = async (req, res) => {
 
 exports.getBookings = async (req, res) => {
   try {
-    const scope = policyScope("booking", req.user);
-    const result = await bookingsService.getBookings(req.query, scope);
-    return paginatedResponse(
-      res,
-      result.docs,
-      "Bookings fetched successfully",
-      {
-        total: result.total,
-        page: result.page,
-        perPage: result.perPage,
-        pages: result.pages,
-      },
-    );
+    const result = await bookingsService.getBookings(req.query, req.user);
+    return paginatedResponse(res, result.data, "Bookings fetched successfully", {
+      total: result.meta.total,
+      page: result.meta.page,
+      perPage: result.meta.per_page,
+      pages: result.meta.total_pages,
+    });
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+exports.getPackageBookings = async (req, res) => {
+  try {
+    const result = await bookingsService.getPackageBookings(req.query, req.user);
+    return paginatedResponse(res, result.data, "Package bookings fetched successfully", {
+      total: result.meta.total,
+      page: result.meta.page,
+      perPage: result.meta.per_page,
+      pages: result.meta.total_pages,
+    });
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -83,6 +94,7 @@ exports.updateBooking = async (req, res) => {
     const booking = await bookingsService.updateBooking(
       req.params.id,
       req.body,
+      req.user,
     );
     return successResponse(res, booking, "Booking updated successfully");
   } catch (error) {
@@ -123,6 +135,28 @@ exports.deleteBooking = async (req, res) => {
     }
     await bookingsService.deleteBooking(req.params.id);
     return successResponse(res, null, "Booking deleted successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+exports.generateBookingPdf = async (req, res) => {
+  try {
+    const data = await bookingsService.getBookingPdfData(req.params.id);
+    if (!policy("booking", req.user, data).show()) {
+      throw new ForbiddenError(
+        "You do not have permission to view this booking",
+      );
+    }
+
+    const pdfBuffer = await generateBookingConfirmationPdf(data);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="booking-${data.id}.pdf"`,
+      "Content-Length": pdfBuffer.length,
+    });
+    return res.end(pdfBuffer);
   } catch (error) {
     return errorResponse(res, error);
   }
