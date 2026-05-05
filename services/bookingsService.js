@@ -1005,6 +1005,54 @@ class BookingsService {
     return this.serialize(record);
   }
 
+  async getBookingPdfData(id) {
+    const bookingId = normalizeInt(id, null);
+    if (bookingId === null) {
+      const error = new Error("Invalid booking id");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const record = await Booking.findByPk(bookingId);
+    if (!record) {
+      const error = new Error("Booking not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    let operatorEmail = null;
+    let location = null;
+    if (record.companyId) {
+      const company = await Company.findByPk(record.companyId, {
+        attributes: ["email", "location"],
+      });
+      if (company) {
+        operatorEmail = company.email;
+        location = company.location;
+      }
+    }
+
+    const totalPax =
+      Number(record.noOfPaxAntarbangsa || 0) +
+      Number(record.noOfPaxDomestik || 0);
+
+    return {
+      id: record.id,
+      company_id: record.companyId,
+      touristFullName: record.touristFullName,
+      companyName: record.companyName,
+      productName: record.productName,
+      totalPax,
+      location,
+      activityDate: record.activityDate,
+      status: record.status,
+      operatorName: record.operatorName,
+      operatorEmail,
+      totalPrice: record.totalPrice,
+      createdAt: record.created_at,
+    };
+  }
+
   async updateBooking(id, data, authUser) {
     const bookingId = normalizeInt(id, null);
     if (bookingId === null) {
