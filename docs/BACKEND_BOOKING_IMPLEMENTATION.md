@@ -203,11 +203,11 @@ exports.cancelBooking = async (req, res) => {
 
 ### Migration Files
 
-| File                                                                   | Purpose                          | Status       |
-| ---------------------------------------------------------------------- | -------------------------------- | ------------ |
-| `20260430000000-add-booking-create-permission-to-operator-admin.js`    | Adds `booking:create` permission | ✅ Keep      |
-| `20260430003000-ensure-product-crud-permissions-for-operator-admin.js` | Comprehensive CRUD setup         | ✅ Keep      |
-| `20260430004000-sync-company-data-into-companies.js`                   | Data migration/sync              | ✅ Keep      |
+| File                                                                   | Purpose                          | Status  |
+| ---------------------------------------------------------------------- | -------------------------------- | ------- |
+| `20260430000000-add-booking-create-permission-to-operator-admin.js`    | Adds `booking:create` permission | ✅ Keep |
+| `20260430003000-ensure-product-crud-permissions-for-operator-admin.js` | Comprehensive CRUD setup         | ✅ Keep |
+| `20260430004000-sync-company-data-into-companies.js`                   | Data migration/sync              | ✅ Keep |
 
 ---
 
@@ -333,12 +333,12 @@ class BookingPolicy extends ApplicationPolicy {
 ```javascript
 // BEFORE (BROKEN):
 if (normalizedStatus === "paid") {
-  updateData.receipt_created_at = new Date();  // ❌ Sequelize doesn't recognize this
+  updateData.receipt_created_at = new Date(); // ❌ Sequelize doesn't recognize this
 }
 
 // AFTER (FIXED):
 if (normalizedStatus === "paid" && record.status !== "paid") {
-  updateData.receiptCreatedAt = new Date();  // ✅ Correct model attribute name
+  updateData.receiptCreatedAt = new Date(); // ✅ Correct model attribute name
 }
 ```
 
@@ -376,15 +376,15 @@ When calling `.update()`, must use the **model attribute name**, not the DB colu
 ```javascript
 const pageWidth = doc.page.width;
 const pageHeight = doc.page.height;
-const fitWidth = Math.min(pageWidth * 0.87, 520);    // 87% of page or 520px max
+const fitWidth = Math.min(pageWidth * 0.87, 520); // 87% of page or 520px max
 const fitHeight = Math.min(pageHeight * 0.95, 1100); // 95% of page or 1100px max
-const x = (pageWidth - fitWidth) / 2;                 // Center horizontally
-const y = (pageHeight - fitHeight) / 2;               // Center vertically
+const x = (pageWidth - fitWidth) / 2; // Center horizontally
+const y = (pageHeight - fitHeight) / 2; // Center vertically
 
 doc.image(imageBuffer, x, y, {
   fit: [fitWidth, fitHeight],
   align: "center",
-  valign: "center"
+  valign: "center",
 });
 ```
 
@@ -460,7 +460,9 @@ if (referrerAssoc !== refereeAssoc) {
 | ------------------- | ---- | --------------------------------- |
 | `BadRequestError`   | 400  | Invalid input, validation failure |
 | `UnauthorizedError` | 401  | Not authenticated                 |
+
 | `x] Run migrations in order (especially #4000 data sync)
+
 - [x] Verify JWT payload includes `company_id` and `unified_user_id`
 - [x] Test booking creation with all three types
 - [x] Validate package company association check
@@ -471,25 +473,26 @@ if (referrerAssoc !== refereeAssoc) {
 - [x] Load test with pagination (1000+ bookings)
 - [x] Test PDF generation with portrait sizing
 - [x] Add receipt PDFs to .gitignore
-  "success": false,
-  "message": "Product type mismatch: cannot book activity as accommodation",
-  "statusCode": 400
-}
+      "success": false,
+      "message": "Product type mismatch: cannot book activity as accommodation",
+      "statusCode": 400
+      }
 
 // 403 Forbidden
 {
-  "success": false,
-  "message": "You don't have permission to cancel this booking",
-  "statusCode": 403
+"success": false,
+"message": "You don't have permission to cancel this booking",
+"statusCode": 403
 }
 
 // 404 Not Found
 {
-  "success": false,
-  "message": "Booking not found",
-  "statusCode": 404
+"success": false,
+"message": "Booking not found",
+"statusCode": 404
 }
-```
+
+````
 
 ---
 
@@ -559,7 +562,7 @@ const bookings = await Booking.findAll({
   ],
   raw: true,
 });
-```
+````
 
 ### Caching Strategy
 
@@ -585,6 +588,7 @@ const getProducts = async (companyId) => {
 - RBAC System: [RBAC Implementation](./RBAC_IMPLEMENTATION.md)
 
 ---
+
 8, 2026 (Final Update)  
 **Version**: 1.1 (Receipt Persistence Fix + PDF Generation Improvements)  
 **Status**: Production Ready ✅
@@ -617,6 +621,6 @@ const getProducts = async (companyId) => {
    - `GET /api/products/company/:companyId`: List products for specific company
 2. ✅ **Enhanced `POST /api/bookings`**: Phone and email fields now supported
 3. ✅ **Status Action Endpoints**: `/api/bookings/:id/cancel` and `/api/bookings/:id/payment`
-**Last Updated**: May 5, 2026  
-**Version**: 1.0 (Initial Release)  
-**Status**: Production Ready ✅
+   **Last Updated**: May 5, 2026  
+   **Version**: 1.0 (Initial Release)  
+   **Status**: Production Ready ✅
