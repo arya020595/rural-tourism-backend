@@ -41,20 +41,22 @@ class BookingValidator {
       errors.push("tourist_full_name is required");
     }
 
+    const incomingPhone = data.phone_number ?? data.phoneNumber;
     if (
-      data.phone_number !== undefined &&
-      data.phone_number !== null &&
-      data.phone_number !== "" &&
-      !normalizeString(data.phone_number)
+      incomingPhone !== undefined &&
+      incomingPhone !== null &&
+      incomingPhone !== "" &&
+      !normalizeString(incomingPhone)
     ) {
       errors.push("phone_number must be a valid string");
     }
 
+    const incomingEmail = data.email ?? data.emailAddress ?? data.emailAddress;
     if (
-      data.email !== undefined &&
-      data.email !== null &&
-      data.email !== "" &&
-      !normalizeString(data.email)
+      incomingEmail !== undefined &&
+      incomingEmail !== null &&
+      incomingEmail !== "" &&
+      !normalizeString(incomingEmail)
     ) {
       errors.push("email must be a valid string");
     }
@@ -145,20 +147,23 @@ class BookingValidator {
       );
     }
 
+    const incomingPhoneUpdate = data.phone_number ?? data.phoneNumber;
     if (
-      data.phone_number !== undefined &&
-      data.phone_number !== null &&
-      data.phone_number !== "" &&
-      !normalizeString(data.phone_number)
+      incomingPhoneUpdate !== undefined &&
+      incomingPhoneUpdate !== null &&
+      incomingPhoneUpdate !== "" &&
+      !normalizeString(incomingPhoneUpdate)
     ) {
       errors.push("phone_number must be a valid string");
     }
 
+    const incomingEmailUpdate =
+      data.email ?? data.emailAddress ?? data.emailAddress;
     if (
-      data.email !== undefined &&
-      data.email !== null &&
-      data.email !== "" &&
-      !normalizeString(data.email)
+      incomingEmailUpdate !== undefined &&
+      incomingEmailUpdate !== null &&
+      incomingEmailUpdate !== "" &&
+      !normalizeString(incomingEmailUpdate)
     ) {
       errors.push("email must be a valid string");
     }

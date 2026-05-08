@@ -562,8 +562,13 @@ class BookingsService {
   buildCreatePayload(data, operatorContext) {
     const bookingType = this.ensureBookingTypeAllowed(data.booking_type);
     const touristFullName = normalizeString(data.tourist_full_name) || null;
-    const phoneNumber = normalizeString(data.phone_number) || null;
-    const email = normalizeString(data.email) || null;
+    // Accept both snake_case (API clients) and camelCase (some frontends)
+    const phoneNumber =
+      normalizeString(data.phone_number ?? data.phoneNumber) || null;
+    const email =
+      normalizeString(
+        data.email ?? data.emailAddress ?? data.email_address ?? data.email,
+      ) || null;
     const citizenship = normalizeString(data.citizenship) || null;
     const noOfPaxAntarbangsa = normalizeInt(data.no_of_pax_antarbangsa, null);
     const noOfPaxDomestik = normalizeInt(data.no_of_pax_domestik, null);
@@ -697,12 +702,19 @@ class BookingsService {
       payload.touristFullName = value;
     }
 
-    if (data.phone_number !== undefined) {
-      payload.phoneNumber = normalizeString(data.phone_number) || null;
+    if (data.phone_number !== undefined || data.phoneNumber !== undefined) {
+      payload.phoneNumber =
+        normalizeString(data.phone_number ?? data.phoneNumber) || null;
     }
 
-    if (data.email !== undefined) {
-      payload.email = normalizeString(data.email) || null;
+    if (
+      data.email !== undefined ||
+      data.emailAddress !== undefined ||
+      data.emailAddress !== undefined ||
+      data.email !== undefined
+    ) {
+      payload.email =
+        normalizeString(data.email ?? data.emailAddress ?? data.email) || null;
     }
 
     if (data.citizenship !== undefined) {
