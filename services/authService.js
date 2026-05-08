@@ -158,6 +158,7 @@ class AuthService {
           email: user.user_email,
           name: user.full_name,
           roleId: user.role_id,
+          company_id: user.company_id,
           association_id: user.association_id,
         }),
       },
@@ -186,12 +187,18 @@ class AuthService {
 
       const tokenPayload = {
         sub: `${resolver.userType}:${identity.id}`,
+        id: identity.id,
+        unified_user_id: identity.id,
         user_type: resolver.userType,
         legacy_user_id: identity.id,
         username: identity.username,
         role: role.name,
         permissions,
       };
+
+      if (identity.company_id) {
+        tokenPayload.company_id = identity.company_id;
+      }
 
       if (identity.association_id) {
         tokenPayload.association_id = identity.association_id;
@@ -218,11 +225,13 @@ class AuthService {
         token,
         user: {
           id: identity.id,
+          unified_user_id: identity.id,
           user_type: resolver.userType,
           legacy_user_id: identity.id,
           name: identity.name || null,
           username: identity.username,
           email: identity.email,
+          company_id: identity.company_id || null,
           association_id: identity.association_id || null,
           power_bi_url: powerBiUrl,
           role: {

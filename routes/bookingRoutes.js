@@ -47,6 +47,20 @@ router.patch(
   asyncHandler(bookingController.updateBookingStatus),
 );
 
+router.patch(
+  "/:id/cancel",
+  authenticate,
+  authorize("booking:update"),
+  asyncHandler(bookingController.cancelBooking),
+);
+
+router.patch(
+  "/:id/payment",
+  authenticate,
+  authorize("booking:update"),
+  asyncHandler(bookingController.markBookingAsPaid),
+);
+
 router.delete(
   "/:id",
   authenticate,

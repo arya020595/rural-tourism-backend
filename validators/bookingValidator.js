@@ -3,6 +3,7 @@ const {
   normalizeInt,
   normalizeNumber,
   isValidDate,
+  isValidTime,
 } = require("../utils/normalizers");
 
 const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
@@ -38,6 +39,24 @@ class BookingValidator {
 
     if (!normalizeString(data.tourist_full_name)) {
       errors.push("tourist_full_name is required");
+    }
+
+    if (
+      data.phone_number !== undefined &&
+      data.phone_number !== null &&
+      data.phone_number !== "" &&
+      !normalizeString(data.phone_number)
+    ) {
+      errors.push("phone_number must be a valid string");
+    }
+
+    if (
+      data.email !== undefined &&
+      data.email !== null &&
+      data.email !== "" &&
+      !normalizeString(data.email)
+    ) {
+      errors.push("email must be a valid string");
     }
 
     if (!normalizeString(data.citizenship)) {
@@ -126,6 +145,24 @@ class BookingValidator {
       );
     }
 
+    if (
+      data.phone_number !== undefined &&
+      data.phone_number !== null &&
+      data.phone_number !== "" &&
+      !normalizeString(data.phone_number)
+    ) {
+      errors.push("phone_number must be a valid string");
+    }
+
+    if (
+      data.email !== undefined &&
+      data.email !== null &&
+      data.email !== "" &&
+      !normalizeString(data.email)
+    ) {
+      errors.push("email must be a valid string");
+    }
+
     if (data.no_of_pax_antarbangsa !== undefined) {
       const value = normalizeInt(data.no_of_pax_antarbangsa);
       if (value === null || value < 0) {
@@ -175,7 +212,9 @@ class BookingValidator {
       data.activity_date !== undefined &&
       data.activity_date !== null &&
       data.activity_date !== "" &&
-      !isValidDate(data.activity_date)
+      !isValidDate(data.activity_date) &&
+      !(isValidDate(data.bookingDate) && isValidTime(data.bookingTime)) &&
+      !(isValidDate(data.booking_date) && isValidTime(data.booking_time))
     ) {
       errors.push("activity_date must be a valid timestamp");
     }

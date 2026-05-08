@@ -136,3 +136,43 @@ exports.deleteBooking = async (req, res) => {
     return errorResponse(res, error);
   }
 };
+
+// PATCH /api/bookings/:id/cancel
+exports.cancelBooking = async (req, res) => {
+  try {
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).update()) {
+      throw new ForbiddenError(
+        "You do not have permission to cancel this booking",
+      );
+    }
+
+    const booking = await bookingsService.updateBookingStatus(
+      req.params.id,
+      "cancelled",
+    );
+    return successResponse(res, booking, "Booking cancelled successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+// PATCH /api/bookings/:id/payment
+exports.markBookingAsPaid = async (req, res) => {
+  try {
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).update()) {
+      throw new ForbiddenError(
+        "You do not have permission to mark this booking as paid",
+      );
+    }
+
+    const booking = await bookingsService.updateBookingStatus(
+      req.params.id,
+      "paid",
+    );
+    return successResponse(res, booking, "Booking marked as paid successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};

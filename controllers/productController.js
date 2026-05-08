@@ -1,5 +1,6 @@
 const productService = require("../services/productService");
 const { policy } = require("../policies");
+const UnifiedUser = require("../models/unifiedUserModel");
 const {
   serialize,
   serializeMany,
@@ -9,7 +10,10 @@ const {
   paginatedResponse,
   errorResponse,
 } = require("../utils/helpers");
-const { ForbiddenError } = require("../services/errors/AppError");
+const {
+  ForbiddenError,
+  BadRequestError,
+} = require("../services/errors/AppError");
 
 /* ── Controller actions ────────────────────────────────────────── */
 
@@ -67,6 +71,65 @@ exports.getProductsByLocation = async (req, res) => {
     const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
     const result = await productService.getAllProductsByLocation(companyId, {
+      where,
+      order,
+      search: req.query.search,
+      page,
+      perPage,
+    });
+
+    return paginatedResponse(
+      res,
+      serializeMany(result.docs),
+      "Products fetched successfully",
+      { total: result.total, page, perPage, pages: result.pages },
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+/**
+ * GET /api/products/company/:companyId
+ * List products for a specific company, scoped to the caller's association.
+ */
+exports.getProductsByCompany = async (req, res) => {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      throw new BadRequestError("Invalid company id");
+    }
+
+    const isAdmin =
+      req.user?.role === "superadmin" ||
+      (Array.isArray(req.user?.permissions) &&
+        req.user.permissions.includes("*:*"));
+
+    if (!isAdmin) {
+      if (!req.user?.association_id) {
+        throw new ForbiddenError("Association scope is required.");
+      }
+
+      const allowedCompany = await UnifiedUser.findOne({
+        attributes: ["id"],
+        where: {
+          company_id: companyId,
+          association_id: req.user.association_id,
+        },
+      });
+
+      if (!allowedCompany) {
+        throw new ForbiddenError(
+          "You do not have permission to view products for this company.",
+        );
+      }
+    }
+
+    const { where, order } = req.ransack;
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
+
+    const result = await productService.getAllProductsByCompany(companyId, {
       where,
       order,
       search: req.query.search,

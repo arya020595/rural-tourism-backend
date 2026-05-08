@@ -1,9 +1,9 @@
 const { Op } = require("sequelize");
 const Booking = require("../models/bookingModel");
 const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
+const Product = require("../models/productModel");
 const UnifiedUser = require("../models/unifiedUserModel");
 const Company = require("../models/companyModel");
-const Product = require("../models/productModel");
 const {
   normalizeString,
   normalizeInt,
@@ -52,6 +52,80 @@ class BookingsService {
     }
 
     return normalizedType;
+  }
+
+  async resolveProductSnapshot(productId, bookingType, transaction = null) {
+    const normalizedProductId = normalizeInt(productId, null);
+    if (normalizedProductId === null) {
+      const error = new Error("product_id must be an integer");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const normalizedBookingType = this.ensureBookingTypeAllowed(bookingType);
+
+    const product = await Product.findByPk(normalizedProductId, {
+      attributes: ["id", "name", "product_type"],
+      transaction,
+    });
+
+    if (!product) {
+      const error = new Error(
+        `Product with id ${normalizedProductId} not found.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (product.product_type !== normalizedBookingType) {
+      const error = new Error(
+        `Selected product must be an ${normalizedBookingType} product.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return {
+      id: product.id,
+      name: normalizeString(product.name),
+      productType: product.product_type,
+    };
+  }
+
+  normalizeActivityDateTime(activityDateValue, bookingTimeValue) {
+    const normalizedActivityDate = normalizeString(activityDateValue);
+    if (!normalizedActivityDate) {
+      return null;
+    }
+
+    if (/[T\s]\d{1,2}:\d{2}/.test(normalizedActivityDate)) {
+      return normalizeNullableDate(normalizedActivityDate);
+    }
+
+    const normalizedTime = normalizeString(bookingTimeValue);
+    if (!normalizedTime) {
+      return normalizeNullableDate(normalizedActivityDate);
+    }
+
+    const dateOnly = normalizeDateOnly(normalizedActivityDate);
+    if (!dateOnly) {
+      return null;
+    }
+
+    const timeMatch = normalizedTime.match(
+      /^([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/,
+    );
+    if (!timeMatch) {
+      return null;
+    }
+
+    const hours = String(Number(timeMatch[1])).padStart(2, "0");
+    const minutes = String(Number(timeMatch[2])).padStart(2, "0");
+    const seconds = timeMatch[3]
+      ? String(Number(timeMatch[3])).padStart(2, "0")
+      : "00";
+
+    return normalizeNullableDate(`${dateOnly}T${hours}:${minutes}:${seconds}`);
   }
 
   computeNightDiff(checkInDate, checkOutDate) {
@@ -256,6 +330,52 @@ class BookingsService {
     };
   }
 
+  async resolveCompanyAssociationId(companyId, transaction = null) {
+    const normalizedCompanyId = normalizeInt(companyId, null);
+    if (normalizedCompanyId === null) {
+      const error = new Error("Company id must be an integer.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Collect all non-null association_ids for users belonging to this company
+    const rows = await UnifiedUser.findAll({
+      attributes: ["association_id", "id", "name"],
+      where: {
+        company_id: normalizedCompanyId,
+        association_id: { [Op.not]: null },
+      },
+      transaction,
+      raw: true,
+    });
+
+    if (!rows || rows.length === 0) {
+      const error = new Error(
+        `Company with id ${normalizedCompanyId} is not linked to an association.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const assocSet = new Set(rows.map((r) => Number(r.association_id)));
+
+    if (assocSet.size > 1) {
+      // Ambiguous association mapping for this company — surface a clear error
+      const details = rows
+        .map(
+          (r) => `user_id=${r.id} name="${r.name}" assoc=${r.association_id}`,
+        )
+        .join("; ");
+      const error = new Error(
+        `Company with id ${normalizedCompanyId} has multiple association_id values: ${[...assocSet].join(", ")}. Users: ${details}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return Number([...assocSet][0]);
+  }
+
   serializePackageCompany(record) {
     return {
       id: record.id,
@@ -280,6 +400,8 @@ class BookingsService {
       id: record.id,
       booking_type: record.bookingType,
       tourist_full_name: record.touristFullName,
+      phone_number: record.phoneNumber,
+      email: record.email,
       citizenship: record.citizenship,
       no_of_pax_antarbangsa: record.noOfPaxAntarbangsa,
       no_of_pax_domestik: record.noOfPaxDomestik,
@@ -313,6 +435,8 @@ class BookingsService {
       id: record.id,
       booking_type: record.bookingType,
       tourist_full_name: record.touristFullName,
+      phone_number: record.phoneNumber,
+      email: record.email,
       citizenship: record.citizenship,
       no_of_pax_antarbangsa: record.noOfPaxAntarbangsa,
       no_of_pax_domestik: record.noOfPaxDomestik,
@@ -388,9 +512,33 @@ class BookingsService {
           throw error;
         }
 
+        const referrerAssociationId = await this.resolveCompanyAssociationId(
+          referrerId,
+          transaction,
+        );
+        const refereeAssociationId = await this.resolveCompanyAssociationId(
+          refereeId,
+          transaction,
+        );
+
+        if (referrerAssociationId !== refereeAssociationId) {
+          const error = new Error(
+            `Package companies must belong to the same association. Referrer (company ${referrerId}) is in association ${referrerAssociationId}, but referee (company ${refereeId}) is in association ${refereeAssociationId}.`,
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+
         const perPrice = normalizeNumber(item?.per_price, null);
         if (perPrice === null || perPrice < 0) {
           const error = new Error("per_price must be numeric and >= 0");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const serviceName = normalizeString(item?.description);
+        if (!serviceName) {
+          const error = new Error("description is required for package item.");
           error.statusCode = 400;
           throw error;
         }
@@ -404,7 +552,7 @@ class BookingsService {
           refereeCompany:
             normalizeString(item?.referee_company) ||
             normalizeString(refereeCompany.company_name),
-          description: normalizeString(item?.description) || null,
+          description: serviceName,
           perPrice,
         };
       }),
@@ -414,12 +562,17 @@ class BookingsService {
   buildCreatePayload(data, operatorContext) {
     const bookingType = this.ensureBookingTypeAllowed(data.booking_type);
     const touristFullName = normalizeString(data.tourist_full_name) || null;
+    const phoneNumber = normalizeString(data.phone_number) || null;
+    const email = normalizeString(data.email) || null;
     const citizenship = normalizeString(data.citizenship) || null;
     const noOfPaxAntarbangsa = normalizeInt(data.no_of_pax_antarbangsa, null);
     const noOfPaxDomestik = normalizeInt(data.no_of_pax_domestik, null);
     const productId = normalizeInt(data.product_id, null);
     const productName = normalizeString(data.product_name) || null;
-    const activityDate = normalizeNullableDate(data.activity_date);
+    const activityDate = this.normalizeActivityDateTime(
+      data.activity_date,
+      data.bookingTime ?? data.booking_time,
+    );
     const totalPrice = normalizeNumber(data.total_price, null);
     const status = data.status
       ? this.ensureStatusAllowed(data.status)
@@ -505,6 +658,8 @@ class BookingsService {
     return {
       bookingType,
       touristFullName,
+      phoneNumber,
+      email,
       citizenship,
       noOfPaxAntarbangsa,
       noOfPaxDomestik,
@@ -540,6 +695,14 @@ class BookingsService {
         throw error;
       }
       payload.touristFullName = value;
+    }
+
+    if (data.phone_number !== undefined) {
+      payload.phoneNumber = normalizeString(data.phone_number) || null;
+    }
+
+    if (data.email !== undefined) {
+      payload.email = normalizeString(data.email) || null;
     }
 
     if (data.citizenship !== undefined) {
@@ -593,13 +756,28 @@ class BookingsService {
     }
 
     if (data.activity_date !== undefined) {
-      const value = normalizeNullableDate(data.activity_date);
+      const value = this.normalizeActivityDateTime(
+        data.activity_date,
+        data.bookingTime ?? data.booking_time ?? data.time,
+      );
       if (data.activity_date !== null && data.activity_date !== "" && !value) {
         const error = new Error("activity_date must be a valid timestamp");
         error.statusCode = 400;
         throw error;
       }
       payload.activityDate = value;
+    } else if (
+      data.bookingDate !== undefined ||
+      data.booking_date !== undefined
+    ) {
+      const value = this.normalizeActivityDateTime(
+        data.bookingDate ?? data.booking_date,
+        data.bookingTime ?? data.booking_time ?? data.time,
+      );
+
+      if (value) {
+        payload.activityDate = value;
+      }
     }
 
     if (data.total_price !== undefined) {
@@ -762,6 +940,20 @@ class BookingsService {
       const payload = this.buildCreatePayload(data, actorContext);
 
       if (
+        payload.bookingType === "activity" ||
+        payload.bookingType === "accommodation"
+      ) {
+        const product = await this.resolveProductSnapshot(
+          payload.productId,
+          payload.bookingType,
+          transaction,
+        );
+
+        payload.productId = product.id;
+        payload.productName = product.name;
+      }
+
+      if (
         payload.bookingType === "package" &&
         packageCompaniesRaw.length === 0
       ) {
@@ -867,7 +1059,7 @@ class BookingsService {
         error.statusCode = 403;
         throw error;
       }
-      where.companyId = actorCompanyId;
+      queryWhere.companyId = actorCompanyId;
     }
 
     if (query.search) {
@@ -883,8 +1075,8 @@ class BookingsService {
       }
     }
 
-    // Policy scope always wins over query filters (prevents cross-tenant access)
-    const where = { ...queryWhere, ...scope };
+    // Apply the accumulated query filters
+    const where = { ...queryWhere };
 
     const { count, rows } = await Booking.findAndCountAll({
       where,
@@ -911,7 +1103,10 @@ class BookingsService {
 
   async getPackageBookings(query = {}, authUser = null) {
     const page = Math.max(1, normalizeInt(query.page, 1));
-    const perPage = Math.max(1, Math.min(100, normalizeInt(query.per_page, 20)));
+    const perPage = Math.max(
+      1,
+      Math.min(100, normalizeInt(query.per_page, 20)),
+    );
     const offset = (page - 1) * perPage;
 
     const where = {};
@@ -1092,6 +1287,22 @@ class BookingsService {
             : record.totalOfNight,
       };
 
+      if (
+        draft.bookingType === "activity" ||
+        draft.bookingType === "accommodation"
+      ) {
+        if (draft.productId !== null && draft.productId !== undefined) {
+          const product = await this.resolveProductSnapshot(
+            draft.productId,
+            draft.bookingType,
+            transaction,
+          );
+
+          draft.productId = product.id;
+          draft.productName = product.name;
+        }
+      }
+
       const errors = [];
       this.validateTypeSpecificRules(draft.bookingType, draft, errors);
       if (isBookingTypeChanged) {
@@ -1238,7 +1449,15 @@ class BookingsService {
       }
 
       const normalizedStatus = this.ensureStatusAllowed(status);
-      await record.update({ status: normalizedStatus }, { transaction });
+
+      // If status is changing to "paid", set receipt_created_at to current date
+      const updateData = { status: normalizedStatus };
+      if (normalizedStatus === "paid" && record.status !== "paid") {
+        // Use the model attribute name (camelCase) so Sequelize recognizes it on the instance
+        updateData.receiptCreatedAt = new Date();
+      }
+
+      await record.update(updateData, { transaction });
       await transaction.commit();
 
       return this.serialize(record);
