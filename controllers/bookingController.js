@@ -7,6 +7,9 @@ const {
   errorResponse,
 } = require("../utils/helpers");
 const { ForbiddenError } = require("../services/errors/AppError");
+const {
+  generateBookingConfirmationPdf,
+} = require("../utils/bookingPdfGenerator");
 
 exports.createBooking = async (req, res) => {
   try {
@@ -172,6 +175,23 @@ exports.markBookingAsPaid = async (req, res) => {
       "paid",
     );
     return successResponse(res, booking, "Booking marked as paid successfully");
+exports.generateBookingPdf = async (req, res) => {
+  try {
+    const data = await bookingsService.getBookingPdfData(req.params.id);
+    if (!policy("booking", req.user, data).show()) {
+      throw new ForbiddenError(
+        "You do not have permission to view this booking",
+      );
+    }
+
+    const pdfBuffer = await generateBookingConfirmationPdf(data);
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="booking-${data.id}.pdf"`,
+      "Content-Length": pdfBuffer.length,
+    });
+    return res.end(pdfBuffer);
   } catch (error) {
     return errorResponse(res, error);
   }
