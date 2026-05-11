@@ -26,6 +26,10 @@ exports.createBooking = async (req, res) => {
     const booking = await bookingsService.createBooking(req.body, req.user);
     return successResponse(res, booking, "Booking created successfully", 201);
   } catch (error) {
+    console.error("Booking PDF generation failed:", {
+      message: error?.message || String(error),
+      stack: error?.stack,
+    });
     return errorResponse(res, error);
   }
 };
@@ -45,6 +49,10 @@ exports.getBookings = async (req, res) => {
       },
     );
   } catch (error) {
+    console.error("Booking PDF generation failed:", {
+      message: error?.message || String(error),
+      stack: error?.stack,
+    });
     return errorResponse(res, error);
   }
 };
@@ -67,6 +75,10 @@ exports.getPackageBookings = async (req, res) => {
       },
     );
   } catch (error) {
+    console.error("Booking PDF generation failed:", {
+      message: error?.message || String(error),
+      stack: error?.stack,
+    });
     return errorResponse(res, error);
   }
 };
@@ -194,6 +206,10 @@ exports.markBookingAsPaid = async (req, res) => {
 };
 
 exports.generateBookingPdf = async (req, res) => {
+  console.log("Booking PDF handler invoked", {
+    bookingId: req.params.id,
+    userId: req.user?.id,
+  });
   try {
     const data = await bookingsService.getBookingPdfData(req.params.id);
     if (!policy("booking", req.user, data).show()) {

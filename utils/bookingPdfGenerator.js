@@ -348,6 +348,12 @@ async function generateBookingConfirmationPdf(data) {
     });
 
     return pdfBuffer;
+  } catch (error) {
+    console.error("Puppeteer PDF generation failed:", {
+      message: error?.message || String(error),
+      stack: error?.stack,
+    });
+    throw error;
   } finally {
     await page.close();
   }
