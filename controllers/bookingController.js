@@ -33,12 +33,17 @@ exports.createBooking = async (req, res) => {
 exports.getBookings = async (req, res) => {
   try {
     const result = await bookingsService.getBookings(req.query, req.user);
-    return paginatedResponse(res, result.data, "Bookings fetched successfully", {
-      total: result.meta.total,
-      page: result.meta.page,
-      perPage: result.meta.per_page,
-      pages: result.meta.total_pages,
-    });
+    return paginatedResponse(
+      res,
+      result.data,
+      "Bookings fetched successfully",
+      {
+        total: result.meta.total,
+        page: result.meta.page,
+        perPage: result.meta.per_page,
+        pages: result.meta.total_pages,
+      },
+    );
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -46,13 +51,21 @@ exports.getBookings = async (req, res) => {
 
 exports.getPackageBookings = async (req, res) => {
   try {
-    const result = await bookingsService.getPackageBookings(req.query, req.user);
-    return paginatedResponse(res, result.data, "Package bookings fetched successfully", {
-      total: result.meta.total,
-      page: result.meta.page,
-      perPage: result.meta.per_page,
-      pages: result.meta.total_pages,
-    });
+    const result = await bookingsService.getPackageBookings(
+      req.query,
+      req.user,
+    );
+    return paginatedResponse(
+      res,
+      result.data,
+      "Package bookings fetched successfully",
+      {
+        total: result.meta.total,
+        page: result.meta.page,
+        perPage: result.meta.per_page,
+        pages: result.meta.total_pages,
+      },
+    );
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -135,6 +148,46 @@ exports.deleteBooking = async (req, res) => {
     }
     await bookingsService.deleteBooking(req.params.id);
     return successResponse(res, null, "Booking deleted successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+// PATCH /api/bookings/:id/cancel
+exports.cancelBooking = async (req, res) => {
+  try {
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).update()) {
+      throw new ForbiddenError(
+        "You do not have permission to cancel this booking",
+      );
+    }
+
+    const booking = await bookingsService.updateBookingStatus(
+      req.params.id,
+      "cancelled",
+    );
+    return successResponse(res, booking, "Booking cancelled successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+// PATCH /api/bookings/:id/payment
+exports.markBookingAsPaid = async (req, res) => {
+  try {
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).update()) {
+      throw new ForbiddenError(
+        "You do not have permission to mark this booking as paid",
+      );
+    }
+
+    const booking = await bookingsService.updateBookingStatus(
+      req.params.id,
+      "paid",
+    );
+    return successResponse(res, booking, "Booking marked as paid successfully");
   } catch (error) {
     return errorResponse(res, error);
   }

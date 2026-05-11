@@ -92,7 +92,7 @@ const Booking = sequelize.define(
     status: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: "pending",
+      defaultValue: "booked",
     },
     receiptCreatedAt: {
       type: DataTypes.DATE,
@@ -113,6 +113,16 @@ const Booking = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
       field: "company_name",
+    },
+    phoneNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      field: "phone_number",
+    },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "email",
     },
   },
   {
