@@ -27,9 +27,9 @@ module.exports = {
       }
 
       const hasUsers = await tableExists("users");
-      const hasCompany = await tableExists("company");
-      if (!hasUsers || !hasCompany) {
-        throw new Error("Required target tables users/company are missing.");
+      const hasCompanies = await tableExists("companies");
+      if (!hasUsers || !hasCompanies) {
+        throw new Error("Required target tables users/companies are missing.");
       }
 
       const rtUsers = await queryInterface.sequelize.query(
@@ -70,10 +70,13 @@ module.exports = {
 
       const validRoleIds = new Set();
       if (await tableExists("roles")) {
-        const roles = await queryInterface.sequelize.query("SELECT id FROM roles", {
-          type: SELECT,
-          transaction,
-        });
+        const roles = await queryInterface.sequelize.query(
+          "SELECT id FROM roles",
+          {
+            type: SELECT,
+            transaction,
+          },
+        );
         roles.forEach((row) => validRoleIds.add(Number(row.id)));
       }
 
@@ -115,7 +118,8 @@ module.exports = {
           source.username;
 
         const associationId =
-          source.association_id && validAssociationIds.has(Number(source.association_id))
+          source.association_id &&
+          validAssociationIds.has(Number(source.association_id))
             ? Number(source.association_id)
             : null;
 
@@ -125,7 +129,7 @@ module.exports = {
             : null;
 
         await queryInterface.sequelize.query(
-          `INSERT INTO company (
+          `INSERT INTO companies (
             company_name,
             address,
             email,
@@ -179,7 +183,7 @@ module.exports = {
 
         const insertedCompany = await queryInterface.sequelize.query(
           `SELECT id
-           FROM company
+           FROM companies
            WHERE email = :email
              AND company_name = :company_name
            ORDER BY id DESC
@@ -275,7 +279,9 @@ module.exports = {
       }
 
       const userIds = rows.map((row) => Number(row.id));
-      const companyIds = [...new Set(rows.map((row) => Number(row.company_id)).filter(Boolean))];
+      const companyIds = [
+        ...new Set(rows.map((row) => Number(row.company_id)).filter(Boolean)),
+      ];
 
       await queryInterface.sequelize.query(
         "DELETE FROM users WHERE id IN (:userIds)",
@@ -288,7 +294,7 @@ module.exports = {
       if (companyIds.length > 0) {
         await queryInterface.sequelize.query(
           `DELETE c
-           FROM company c
+           FROM companies c
            LEFT JOIN users u ON u.company_id = c.id
            WHERE c.id IN (:companyIds)
              AND u.id IS NULL`,
