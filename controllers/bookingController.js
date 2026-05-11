@@ -30,12 +30,17 @@ exports.createBooking = async (req, res) => {
 exports.getBookings = async (req, res) => {
   try {
     const result = await bookingsService.getBookings(req.query, req.user);
-    return paginatedResponse(res, result.data, "Bookings fetched successfully", {
-      total: result.meta.total,
-      page: result.meta.page,
-      perPage: result.meta.per_page,
-      pages: result.meta.total_pages,
-    });
+    return paginatedResponse(
+      res,
+      result.data,
+      "Bookings fetched successfully",
+      {
+        total: result.meta.total,
+        page: result.meta.page,
+        perPage: result.meta.per_page,
+        pages: result.meta.total_pages,
+      },
+    );
   } catch (error) {
     return errorResponse(res, error);
   }
@@ -43,13 +48,21 @@ exports.getBookings = async (req, res) => {
 
 exports.getPackageBookings = async (req, res) => {
   try {
-    const result = await bookingsService.getPackageBookings(req.query, req.user);
-    return paginatedResponse(res, result.data, "Package bookings fetched successfully", {
-      total: result.meta.total,
-      page: result.meta.page,
-      perPage: result.meta.per_page,
-      pages: result.meta.total_pages,
-    });
+    const result = await bookingsService.getPackageBookings(
+      req.query,
+      req.user,
+    );
+    return paginatedResponse(
+      res,
+      result.data,
+      "Package bookings fetched successfully",
+      {
+        total: result.meta.total,
+        page: result.meta.page,
+        perPage: result.meta.per_page,
+        pages: result.meta.total_pages,
+      },
+    );
   } catch (error) {
     return errorResponse(res, error);
   }
