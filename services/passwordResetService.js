@@ -41,7 +41,9 @@ class PasswordResetService {
   }
 
   async requestPasswordReset(email) {
-    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedEmail = String(email || "")
+      .trim()
+      .toLowerCase();
     if (!normalizedEmail) {
       throw new ValidationError("Valid email address is required");
     }
@@ -59,7 +61,7 @@ class PasswordResetService {
     user.reset_token_expires = expiresAt;
     await user.save();
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:8100";
+    const frontendUrl = process.env.CORS_ORIGIN || "http://localhost:8100";
     const resetUrl = `${frontendUrl}/forgot-password?step=reset&token=${rawToken}`;
 
     const targetEmail = user.email;
