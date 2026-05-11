@@ -188,6 +188,11 @@ exports.markBookingAsPaid = async (req, res) => {
       "paid",
     );
     return successResponse(res, booking, "Booking marked as paid successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
 exports.generateBookingPdf = async (req, res) => {
   try {
     const data = await bookingsService.getBookingPdfData(req.params.id);
