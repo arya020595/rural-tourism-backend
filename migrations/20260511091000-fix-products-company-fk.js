@@ -6,26 +6,31 @@ module.exports = {
     const transaction = await queryInterface.sequelize.transaction();
 
     try {
-      try {
-        await queryInterface.removeConstraint(
-          "users",
-          "users_company_id_foreign_idx",
-          { transaction },
-        );
-      } catch (error) {
-        // Ignore if constraint does not exist.
+      const constraintNames = [
+        "products_ibfk_1",
+        "products_company_id_foreign_idx",
+      ];
+
+      for (const name of constraintNames) {
+        try {
+          await queryInterface.removeConstraint("products", name, {
+            transaction,
+          });
+        } catch (error) {
+          // Ignore if constraint does not exist.
+        }
       }
 
-      await queryInterface.addConstraint("users", {
+      await queryInterface.addConstraint("products", {
         fields: ["company_id"],
         type: "foreign key",
-        name: "users_company_id_foreign_idx",
+        name: "products_company_id_foreign_idx",
         references: {
           table: "companies",
           field: "id",
         },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL",
+        onDelete: "CASCADE",
         transaction,
       });
 
@@ -41,21 +46,21 @@ module.exports = {
 
     try {
       await queryInterface.removeConstraint(
-        "users",
-        "users_company_id_foreign_idx",
+        "products",
+        "products_company_id_foreign_idx",
         { transaction },
       );
 
-      await queryInterface.addConstraint("users", {
+      await queryInterface.addConstraint("products", {
         fields: ["company_id"],
         type: "foreign key",
-        name: "users_company_id_foreign_idx",
+        name: "products_company_id_foreign_idx",
         references: {
           table: "companies",
           field: "id",
         },
         onUpdate: "CASCADE",
-        onDelete: "SET NULL",
+        onDelete: "CASCADE",
         transaction,
       });
 

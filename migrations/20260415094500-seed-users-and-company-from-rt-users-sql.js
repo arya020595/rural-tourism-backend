@@ -46,9 +46,9 @@ module.exports = {
       }
 
       const hasUsers = await tableExists("users");
-      const hasCompany = await tableExists("company");
-      if (!hasUsers || !hasCompany) {
-        throw new Error("Required target tables users/company are missing.");
+      const hasCompanies = await tableExists("companies");
+      if (!hasUsers || !hasCompanies) {
+        throw new Error("Required target tables users/companies are missing.");
       }
 
       const sourceRows = await queryInterface.sequelize.query(
@@ -150,7 +150,7 @@ module.exports = {
         const updatedAt = normalizeText(source.updated_at) || new Date();
 
         await queryInterface.sequelize.query(
-          `INSERT INTO company (
+          `INSERT INTO companies (
             company_name,
             address,
             email,
@@ -207,7 +207,7 @@ module.exports = {
 
         const insertedCompany = await queryInterface.sequelize.query(
           `SELECT id
-           FROM company
+           FROM companies
            WHERE email = :email AND company_name = :company_name
            ORDER BY id DESC
            LIMIT 1`,
@@ -363,7 +363,7 @@ module.exports = {
       if (companyIds.length > 0) {
         const deleteCompanyResult = await queryInterface.sequelize.query(
           `DELETE c
-           FROM company c
+           FROM companies c
            LEFT JOIN users u ON u.company_id = c.id
            WHERE c.id IN (:companyIds)
              AND u.id IS NULL`,

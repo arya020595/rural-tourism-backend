@@ -24,7 +24,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "company",
+          model: "companies",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -38,7 +38,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "company",
+          model: "companies",
           key: "id",
         },
         onUpdate: "CASCADE",
@@ -70,13 +70,21 @@ module.exports = {
       },
     });
 
-    await queryInterface.addIndex("booking_package_companies", ["booking_package_id"], {
-      name: "booking_package_companies_booking_package_id_idx",
-    });
+    await queryInterface.addIndex(
+      "booking_package_companies",
+      ["booking_package_id"],
+      {
+        name: "booking_package_companies_booking_package_id_idx",
+      },
+    );
 
-    await queryInterface.addIndex("booking_package_companies", ["referrer_id"], {
-      name: "booking_package_companies_referrer_id_idx",
-    });
+    await queryInterface.addIndex(
+      "booking_package_companies",
+      ["referrer_id"],
+      {
+        name: "booking_package_companies_referrer_id_idx",
+      },
+    );
 
     await queryInterface.addIndex("booking_package_companies", ["referee_id"], {
       name: "booking_package_companies_referee_id_idx",

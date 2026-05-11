@@ -51,7 +51,6 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await renameTableIfExists(queryInterface, "companies", "company");
     await renameTableIfExists(
       queryInterface,
       "activity_bookings",
