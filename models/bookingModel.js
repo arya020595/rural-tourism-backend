@@ -14,6 +14,12 @@ const Booking = sequelize.define(
       allowNull: false,
       field: "booking_type",
     },
+    customerType: {
+      type: DataTypes.ENUM("tourist", "company"),
+      allowNull: false,
+      defaultValue: "tourist",
+      field: "customer_type",
+    },
     touristFullName: {
       type: DataTypes.STRING(255),
       allowNull: true,

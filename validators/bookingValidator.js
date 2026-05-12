@@ -7,6 +7,7 @@ const {
 } = require("../utils/normalizers");
 
 const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
+const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 
 class ValidationResult {
   constructor(isValid = true, errors = []) {
@@ -35,6 +36,15 @@ class BookingValidator {
       errors.push(
         `booking_type must be one of: ${ALLOWED_BOOKING_TYPES.join(", ")}`,
       );
+    }
+
+    if (data.customer_type !== undefined) {
+      const customerType = normalizeString(data.customer_type).toLowerCase();
+      if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+        errors.push(
+          `customer_type must be one of: ${ALLOWED_CUSTOMER_TYPES.join(", ")}`,
+        );
+      }
     }
 
     if (!normalizeString(data.tourist_full_name)) {
@@ -145,6 +155,15 @@ class BookingValidator {
       errors.push(
         `booking_type must be one of: ${ALLOWED_BOOKING_TYPES.join(", ")}`,
       );
+    }
+
+    if (data.customer_type !== undefined) {
+      const customerType = normalizeString(data.customer_type).toLowerCase();
+      if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+        errors.push(
+          `customer_type must be one of: ${ALLOWED_CUSTOMER_TYPES.join(", ")}`,
+        );
+      }
     }
 
     const incomingPhoneUpdate = data.phone_number ?? data.phoneNumber;
