@@ -24,6 +24,7 @@ const ALLOWED_STATUSES = [
 ];
 
 const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
+const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 
 class BookingsService {
   ensureStatusAllowed(status) {
@@ -46,6 +47,20 @@ class BookingsService {
     if (!ALLOWED_BOOKING_TYPES.includes(normalizedType)) {
       const error = new Error(
         `Invalid booking_type. Allowed values: ${ALLOWED_BOOKING_TYPES.join(", ")}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return normalizedType;
+  }
+
+  ensureCustomerTypeAllowed(type) {
+    const normalizedType = normalizeString(type).toLowerCase();
+
+    if (!ALLOWED_CUSTOMER_TYPES.includes(normalizedType)) {
+      const error = new Error(
+        `Invalid customer_type. Allowed values: ${ALLOWED_CUSTOMER_TYPES.join(", ")}`,
       );
       error.statusCode = 400;
       throw error;
@@ -399,6 +414,7 @@ class BookingsService {
     return {
       id: record.id,
       booking_type: record.bookingType,
+      customer_type: record.customerType,
       tourist_full_name: record.touristFullName,
       phone_number: record.phoneNumber,
       email: record.email,
@@ -434,6 +450,7 @@ class BookingsService {
     return {
       id: record.id,
       booking_type: record.bookingType,
+      customer_type: record.customerType,
       tourist_full_name: record.touristFullName,
       phone_number: record.phoneNumber,
       email: record.email,
@@ -561,6 +578,10 @@ class BookingsService {
 
   buildCreatePayload(data, operatorContext) {
     const bookingType = this.ensureBookingTypeAllowed(data.booking_type);
+    const rawCustomerType = normalizeString(data.customer_type);
+    const customerType = rawCustomerType
+      ? this.ensureCustomerTypeAllowed(rawCustomerType)
+      : "tourist";
     const touristFullName = normalizeString(data.tourist_full_name) || null;
     // Accept both snake_case (API clients) and camelCase (some frontends)
     const phoneNumber =
@@ -662,6 +683,7 @@ class BookingsService {
 
     return {
       bookingType,
+      customerType: bookingType === "package" ? customerType : "tourist",
       touristFullName,
       phoneNumber,
       email,
@@ -690,6 +712,10 @@ class BookingsService {
 
     if (data.booking_type !== undefined) {
       payload.bookingType = this.ensureBookingTypeAllowed(data.booking_type);
+    }
+
+    if (data.customer_type !== undefined) {
+      payload.customerType = this.ensureCustomerTypeAllowed(data.customer_type);
     }
 
     if (data.tourist_full_name !== undefined) {
@@ -1400,6 +1426,8 @@ class BookingsService {
         payload.totalOfNight = null;
         payload.productId = null;
         payload.productName = null;
+      } else {
+        payload.customerType = "tourist";
       }
 
       const packageCompaniesRaw = data.package_companies;
