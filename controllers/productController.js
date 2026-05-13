@@ -15,6 +15,10 @@ const {
   BadRequestError,
 } = require("../services/errors/AppError");
 
+const isSuperadmin = (user = {}) =>
+  user.role === "superadmin" ||
+  (Array.isArray(user.permissions) && user.permissions.includes("*:*"));
+
 /* ── Controller actions ────────────────────────────────────────── */
 
 /**
@@ -24,6 +28,7 @@ const {
 exports.getAllProducts = async (req, res) => {
   try {
     const companyId = req.user.company_id;
+    const superadmin = isSuperadmin(req.user);
 
     // Verify policy allows listing products
     if (!policy("product", req.user, {}).index()) {
@@ -34,13 +39,29 @@ exports.getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
-    const result = await productService.getAllProductsByCompany(companyId, {
-      where,
-      order,
-      search: req.query.search,
-      page,
-      perPage,
-    });
+    const queryCompanyId = req.query.company_id
+      ? Number(req.query.company_id)
+      : null;
+
+    const result = superadmin
+      ? await productService.getAllProducts({
+          where,
+          order,
+          search: req.query.search,
+          page,
+          perPage,
+          companyId:
+            Number.isInteger(queryCompanyId) && queryCompanyId > 0
+              ? queryCompanyId
+              : null,
+        })
+      : await productService.getAllProductsByCompany(companyId, {
+          where,
+          order,
+          search: req.query.search,
+          page,
+          perPage,
+        });
 
     return paginatedResponse(
       res,
@@ -181,17 +202,26 @@ exports.createProduct = async (req, res) => {
   try {
     const { name, product_type } = req.body;
     const companyId = req.user.company_id;
+    const superadmin = isSuperadmin(req.user);
 
     // Verify policy allows creating products
     if (!policy("product", req.user, {}).create()) {
       throw new ForbiddenError("You do not have permission to create products");
     }
 
-    // Enforce company_id from authenticated user
+    const requestCompanyId = req.body.company_id
+      ? Number(req.body.company_id)
+      : null;
+
+    const targetCompanyId = superadmin
+      ? requestCompanyId
+      : companyId;
+
+    // Superadmin may assign any company_id; non-superadmin always use own company.
     const product = await productService.createProduct({
       name,
       product_type,
-      company_id: companyId,
+      company_id: targetCompanyId,
     });
 
     return successResponse(
