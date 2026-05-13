@@ -95,27 +95,28 @@ FRONTEND_URL=http://localhost:8100
 CORS_ORIGIN=http://localhost:8100
 CORS_ORIGIN2=http://ruraltourismsabah.com
 CORS_ORIGIN_EXTERNAL=http://192.168.1.8:8100
+CORS_ORIGIN3=capacitor://localhost
 ```
 
 ### Configuration Variables
 
-| Variable      | Description               | Default/Example       |
-| ------------- | ------------------------- | --------------------- |
-| `DB_HOST`     | Database host             | `localhost`           |
-| `DB_PORT`     | Database port             | `3306`                |
-| `DB_NAME`     | Database name             | `rural_tourism`       |
-| `DB_USER`     | Database username         | `root`                |
-| `DB_PASSWORD` | Database password         | -                     |
-| `PORT`        | Server port               | `3000`                |
-| `NODE_ENV`    | Environment mode          | `development`         |
-| `JWT_SECRET`  | Secret key for JWT tokens | Change in production! |
-| `CORS_ORIGIN` | Allowed origins for CORS  | Frontend URL          |
-| `SMTP_HOST`   | SMTP host                 | `smtp.gmail.com`      |
-| `SMTP_PORT`   | SMTP port                 | `587`                 |
-| `SMTP_USER`   | SMTP username             | Gmail address         |
-| `SMTP_PASS`   | SMTP password             | Gmail App Password    |
-| `SMTP_FROM`   | Sender email              | Gmail address         |
-| `FRONTEND_URL`| Frontend base URL         | `http://localhost:8100` |
+| Variable       | Description               | Default/Example         |
+| -------------- | ------------------------- | ----------------------- |
+| `DB_HOST`      | Database host             | `localhost`             |
+| `DB_PORT`      | Database port             | `3306`                  |
+| `DB_NAME`      | Database name             | `rural_tourism`         |
+| `DB_USER`      | Database username         | `root`                  |
+| `DB_PASSWORD`  | Database password         | -                       |
+| `PORT`         | Server port               | `3000`                  |
+| `NODE_ENV`     | Environment mode          | `development`           |
+| `JWT_SECRET`   | Secret key for JWT tokens | Change in production!   |
+| `CORS_ORIGIN`  | Allowed origins for CORS  | Frontend URL            |
+| `SMTP_HOST`    | SMTP host                 | `smtp.gmail.com`        |
+| `SMTP_PORT`    | SMTP port                 | `587`                   |
+| `SMTP_USER`    | SMTP username             | Gmail address           |
+| `SMTP_PASS`    | SMTP password             | Gmail App Password      |
+| `SMTP_FROM`    | Sender email              | Gmail address           |
+| `FRONTEND_URL` | Frontend base URL         | `http://localhost:8100` |
 
 ### Gmail SMTP Notes
 
@@ -253,51 +254,51 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 
 **Base URL**: `/api`
 
-| Resource                  | Endpoints                                         |
-| ------------------------- | ------------------------------------------------- |
-| **Test / Health**         | GET `/test`, GET `/health`, GET `/`               |
-| **Auth (RBAC)**           | POST `/auth/login`, POST `/auth/register`, GET `/auth/me` |
-| **Roles (RBAC)**          | GET `/roles`, GET `/roles/:id`, PUT `/roles/:id/permissions` |
-| **Permissions (RBAC)**    | GET `/permissions`                                |
-| **Users**                 | GET/POST/PUT/DELETE `/users`, POST `/users/login` |
-| **Tourists**              | GET/POST/PUT `/tourists`, POST `/tourists/login`  |
+| Resource                  | Endpoints                                                                 |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Test / Health**         | GET `/test`, GET `/health`, GET `/`                                       |
+| **Auth (RBAC)**           | POST `/auth/login`, POST `/auth/register`, GET `/auth/me`                 |
+| **Roles (RBAC)**          | GET `/roles`, GET `/roles/:id`, PUT `/roles/:id/permissions`              |
+| **Permissions (RBAC)**    | GET `/permissions`                                                        |
+| **Users**                 | GET/POST/PUT/DELETE `/users`, POST `/users/login`                         |
+| **Tourists**              | GET/POST/PUT `/tourists`, POST `/tourists/login`                          |
 | **Association Users**     | GET/POST/PUT/DELETE `/association-users`, POST `/association-users/login` |
-| **Associations**          | GET `/associations/public`, GET `/associations`   |
-| **Accommodations**        | GET/POST/PUT/DELETE `/accom`                      |
-| **Activities**            | GET/POST/PUT/DELETE `/activity`                   |
-| **Activity Master Data**  | GET/POST `/activity-master-data`                  |
-| **Operator Activities**   | GET/POST `/operator-activities`                   |
-| **Activity Bookings**     | GET/POST/PUT `/activity-booking`                  |
-| **Accommodation Booking** | GET/POST/PUT `/accommodation-booking`             |
-| **Tourist Bookings**      | GET `/tourist-bookings`                           |
-| **Operator Bookings**     | GET `/operator-bookings`                          |
-| **Receipts**              | GET/POST `/receipts`                              |
-| **Forms**                 | GET/POST `/form`                                  |
-| **Notifications**         | GET/POST `/notifications`                         |
-| **Uploads**               | Static files at `/uploads/*`                      |
+| **Associations**          | GET `/associations/public`, GET `/associations`                           |
+| **Accommodations**        | GET/POST/PUT/DELETE `/accom`                                              |
+| **Activities**            | GET/POST/PUT/DELETE `/activity`                                           |
+| **Activity Master Data**  | GET/POST `/activity-master-data`                                          |
+| **Operator Activities**   | GET/POST `/operator-activities`                                           |
+| **Activity Bookings**     | GET/POST/PUT `/activity-booking`                                          |
+| **Accommodation Booking** | GET/POST/PUT `/accommodation-booking`                                     |
+| **Tourist Bookings**      | GET `/tourist-bookings`                                                   |
+| **Operator Bookings**     | GET `/operator-bookings`                                                  |
+| **Receipts**              | GET/POST `/receipts`                                                      |
+| **Forms**                 | GET/POST `/form`                                                          |
+| **Notifications**         | GET/POST `/notifications`                                                 |
+| **Uploads**               | Static files at `/uploads/*`                                              |
 
 ---
 
 ## 🔧 Available Scripts
 
-| Command                     | Description                                      |
-| --------------------------- | ------------------------------------------------ |
-| `npm run dev`               | Start dev server with **nodemon** (auto-restart) |
-| `npm start`                 | Start production server                          |
-| `npm run server`            | Start server directly with `node server.js`      |
-| `npm run console`           | Open interactive REPL with models loaded         |
-| `npm run rbac:bootstrap-admin -- --user-type operator --user-id 1` | Assign admin role to an existing account |
-| `npm run db:sync`           | Sync database schema from models                 |
-| `npm run db:migrate`        | Run all pending migrations                       |
-| `npm run db:migrate:undo`   | Rollback last migration                          |
-| `npm run db:migrate:status` | Check migration status                           |
-| `npm run db:seed`           | Run all seeders (populate with sample data)      |
-| `npm run db:seed:undo`      | Undo all seeders (remove sample data)            |
-| `npm test`                  | Run all tests with coverage                      |
-| `npm run test:watch`        | Run tests in watch mode                          |
-| `npm run test:unit`         | Run unit tests only                              |
-| `npm run test:integration`  | Run integration tests only                       |
-| `npm run lint`              | Lint the codebase                                |
+| Command                                                            | Description                                      |
+| ------------------------------------------------------------------ | ------------------------------------------------ |
+| `npm run dev`                                                      | Start dev server with **nodemon** (auto-restart) |
+| `npm start`                                                        | Start production server                          |
+| `npm run server`                                                   | Start server directly with `node server.js`      |
+| `npm run console`                                                  | Open interactive REPL with models loaded         |
+| `npm run rbac:bootstrap-admin -- --user-type operator --user-id 1` | Assign admin role to an existing account         |
+| `npm run db:sync`                                                  | Sync database schema from models                 |
+| `npm run db:migrate`                                               | Run all pending migrations                       |
+| `npm run db:migrate:undo`                                          | Rollback last migration                          |
+| `npm run db:migrate:status`                                        | Check migration status                           |
+| `npm run db:seed`                                                  | Run all seeders (populate with sample data)      |
+| `npm run db:seed:undo`                                             | Undo all seeders (remove sample data)            |
+| `npm test`                                                         | Run all tests with coverage                      |
+| `npm run test:watch`                                               | Run tests in watch mode                          |
+| `npm run test:unit`                                                | Run unit tests only                              |
+| `npm run test:integration`                                         | Run integration tests only                       |
+| `npm run lint`                                                     | Lint the codebase                                |
 
 ---
 
