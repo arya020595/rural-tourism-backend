@@ -48,6 +48,9 @@ const corsOptions = {
           process.env.CORS_ORIGIN,
           process.env.CORS_ORIGIN2,
           process.env.CORS_ORIGIN_EXTERNAL,
+          process.env.CORS_ORIGIN3,
+          "capacitor://localhost", // Capacitor Android APK
+          "http://localhost", // Capacitor fallback
         ].filter(Boolean)
       : "*",
   methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
