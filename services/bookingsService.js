@@ -478,6 +478,11 @@ class BookingsService {
       operator_name: record.operatorName,
       company_id: record.companyId,
       company_name: record.companyName,
+      package_companies: Array.isArray(record.package_companies)
+        ? record.package_companies.map((item) =>
+            this.serializePackageCompany(item),
+          )
+        : [],
       created_at: record.created_at,
       updated_at: record.updated_at,
     };
@@ -1218,6 +1223,13 @@ class BookingsService {
           as: "booking_package",
           required: true,
           where: bookingWhere,
+          include: [
+            {
+              model: BookingPackageCompany,
+              as: "package_companies",
+              required: false,
+            },
+          ],
         },
       ],
       order: [["id", "DESC"]],
