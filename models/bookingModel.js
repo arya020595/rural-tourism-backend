@@ -9,6 +9,17 @@ const Booking = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
+    idempotencyKey: {
+      type: DataTypes.STRING(36),
+      allowNull: true,
+      defaultValue: null,
+      field: "idempotency_key",
+    },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     bookingType: {
       type: DataTypes.ENUM("activity", "accommodation", "package"),
       allowNull: false,

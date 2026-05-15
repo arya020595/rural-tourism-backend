@@ -413,6 +413,8 @@ class BookingsService {
 
     return {
       id: record.id,
+      idempotency_key: record.idempotencyKey,
+      version: record.version,
       booking_type: record.bookingType,
       customer_type: record.customerType,
       tourist_full_name: record.touristFullName,
@@ -449,6 +451,8 @@ class BookingsService {
   serializeBookingSummary(record) {
     return {
       id: record.id,
+      idempotency_key: record.idempotencyKey,
+      version: record.version,
       booking_type: record.bookingType,
       customer_type: record.customerType,
       tourist_full_name: record.touristFullName,
@@ -977,6 +981,28 @@ class BookingsService {
       );
       const payload = this.buildCreatePayload(data, actorContext);
 
+      const idempotencyKey = normalizeString(data.idempotency_key) || null;
+      if (idempotencyKey) {
+        const existing = await Booking.findOne({
+          where: { idempotencyKey },
+          include: [
+            {
+              model: BookingPackageCompany,
+              as: "package_companies",
+              required: false,
+            },
+          ],
+          transaction,
+        });
+        if (existing) {
+          await transaction.commit();
+          return this.serialize(existing);
+        }
+      }
+
+      payload.idempotencyKey = idempotencyKey;
+      payload.version = 0;
+
       if (
         payload.bookingType === "activity" ||
         payload.bookingType === "accommodation"
@@ -1318,6 +1344,25 @@ class BookingsService {
         throw error;
       }
 
+      const idempotencyKey = normalizeString(data.idempotency_key) || null;
+      const baseVersion =
+        data.base_version !== undefined
+          ? normalizeInt(data.base_version, null)
+          : null;
+
+      if (idempotencyKey && record.idempotencyKey === idempotencyKey) {
+        await transaction.commit();
+        return this.serialize(record);
+      }
+
+      if (baseVersion !== null && record.version !== baseVersion) {
+        const { ConflictError } = require("./errors/AppError");
+        throw new ConflictError(
+          "Booking was modified by another user while you were offline",
+          { serverVersion: record.version, serverData: this.serialize(record) },
+        );
+      }
+
       const payload = this.buildUpdatePayload(data);
 
       const nextBookingType = payload.bookingType ?? record.bookingType;
@@ -1466,6 +1511,9 @@ class BookingsService {
         error.details = errors;
         throw error;
       }
+
+      payload.version = record.version + 1;
+      if (idempotencyKey) payload.idempotencyKey = idempotencyKey;
 
       await record.update(payload, { transaction });
 
