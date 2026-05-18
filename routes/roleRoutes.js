@@ -11,18 +11,28 @@ router.get(
   authorize("role:read"),
   roleController.getAllRoles,
 );
+
 router.get(
   "/:id",
   authenticate,
   authorize("role:read"),
   roleController.getRoleById,
 );
+
+router.get(
+  "/:id/permissions-by-section",
+  authenticate,
+  authorize("role:read"),
+  roleController.getRoleWithPermissionsBySection,
+);
+
 router.post(
   "/",
   authenticate,
-  authorize("role:update"),
+  authorize("role:create"),
   roleController.createRole,
 );
+
 router.put(
   "/:id/permissions",
   authenticate,

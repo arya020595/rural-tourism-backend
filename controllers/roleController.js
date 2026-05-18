@@ -87,3 +87,22 @@ exports.updateRolePermissions = async (req, res) => {
     });
   }
 };
+
+  exports.getRoleWithPermissionsBySection = async (req, res) => {
+    try {
+      const roleData = await roleService.getRolePermissionsBySection(req.params.id);
+
+      return res.status(200).json({
+        success: true,
+        message: "Role with permissions grouped by section fetched successfully",
+        data: roleData,
+      });
+    } catch (error) {
+      const statusCode = error.message === "Role not found" ? 404 : 500;
+
+      return res.status(statusCode).json({
+        success: false,
+        message: error.message || "Failed to fetch role",
+      });
+    }
+  };
