@@ -13,6 +13,9 @@ require("dotenv").config();
 require("./config/db");
 require("./models/associations");
 
+// Scheduler
+const bookingReminderScheduler = require("./scripts/bookingReminderScheduler");
+
 // Route imports
 const userRoutes = require("./routes/userRoutes");
 const formRoutes = require("./routes/formRoutes");
@@ -162,7 +165,14 @@ const HOST = "0.0.0.0";
 if (require.main === module) {
   app.listen(PORT, HOST, () => {
     console.log(`Server is running on http://${HOST}:${PORT}`);
+
+    if (process.env.NODE_ENV !== "test") {
+      bookingReminderScheduler.start();
+    }
   });
+
+  process.on("SIGTERM", () => bookingReminderScheduler.stop());
+  process.on("SIGINT", () => bookingReminderScheduler.stop());
 }
 
 module.exports = app;
