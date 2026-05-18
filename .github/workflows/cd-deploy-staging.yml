@@ -1,22 +1,22 @@
 # ============================================
-# Rural Tourism Backend - CD Deploy
+# Rural Tourism Backend - CD Deploy Staging
 # ============================================
-# Deploy to production server via SSH
-# Triggered after CD Build succeeds on main branch
+# Deploy to staging server via SSH
+# Triggered after CD Build succeeds on develop branch
 
-name: CD Deploy
+name: CD Deploy Staging
 
 on:
   workflow_run:
     workflows: ["CD Build"]
     types: [completed]
-    branches: [main]
+    branches: [develop]
 
 jobs:
-  deploy:
+  deploy-staging:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
-    environment: production
+    environment: staging
     permissions:
       packages: read
     env:
@@ -27,7 +27,7 @@ jobs:
         run: |
           echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
 
-      - name: Notify Slack - Deployment Starting
+      - name: Notify Slack - Staging Deployment Starting
         run: |
           set -e
 
@@ -47,9 +47,9 @@ jobs:
             --arg msg "$COMMIT_MSG" \
             --arg runurl "$RUN_URL" \
             '{
-              text: ":rocket: Backend deployment started",
+              text: ":building_construction: Backend staging deployment started",
               blocks: [
-                { type: "header", text: { type: "plain_text", text: "🚀 Backend Deployment Started" } },
+                { type: "header", text: { type: "plain_text", text: "🏗️ [Staging] Backend Deployment Started" } },
                 { type: "section", fields: [
                     { type: "mrkdwn", text: ("*Repository:*\n" + $repo) },
                     { type: "mrkdwn", text: ("*Branch:*\n" + $branch) },
@@ -66,7 +66,8 @@ jobs:
             }')
           echo "$payload" | curl -s -X POST -H 'Content-type: application/json' -d @- "$SLACK_WEBHOOK_URL" || echo "Warning: Failed to send Slack notification"
           echo "Sent Slack start notification"
-      - name: Deploy to server via SSH
+
+      - name: Deploy to staging via SSH
         uses: appleboy/ssh-action@v1
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -81,20 +82,20 @@ jobs:
           envs: GHCR_TOKEN,GITHUB_ACTOR
           script: |
             set -e
-            cd ~/st_rural_tourism
+            cd ~/st_rural_tourism_staging
 
             # Login to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
-            # Pull latest backend image
-            docker compose pull backend
+            # Pull develop-tagged backend image
+            docker compose pull backend_staging
 
             # Run database migrations
-            echo "Running database migrations..."
-            docker compose run --rm backend npx sequelize-cli db:migrate
+            echo "Running staging database migrations..."
+            docker compose run --rm backend_staging npx sequelize-cli db:migrate
 
-            # Restart backend with new changes
-            docker compose up -d backend
+            # Restart backend staging
+            docker compose up -d backend_staging
 
             # Clean up old images
             docker image prune -f
@@ -105,9 +106,9 @@ jobs:
 
             # Show migration status
             echo "Current migration status:"
-            docker compose exec -T backend npx sequelize-cli db:migrate:status
+            docker compose exec -T backend_staging npx sequelize-cli db:migrate:status
 
-      - name: Notify Slack - Deployment Result
+      - name: Notify Slack - Staging Deployment Result
         if: always()
         run: |
           set -e
@@ -124,11 +125,11 @@ jobs:
           COMMIT_MSG=$(echo ${{ toJson(github.event.workflow_run.head_commit.message || 'Manual dispatch') }} | sed 's/\\n/\n/g')
 
           if [ "$STATUS" = "success" ]; then
-            TITLE="✅ Backend Deployment Succeeded"
+            TITLE="✅ [Staging] Backend Deployment Succeeded"
             RESULT_LINE="*Result:* Success"
             COLOR="#2eb886"
           else
-            TITLE="❌ Backend Deployment Failed"
+            TITLE="❌ [Staging] Backend Deployment Failed"
             RESULT_LINE="*Result:* Failure"
             COLOR="#e01e5a"
           fi
