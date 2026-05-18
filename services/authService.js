@@ -368,6 +368,20 @@ class AuthService {
       powerBiUrl = assoc ? assoc.power_bi_url || null : null;
     }
 
+    let companyLogo = null;
+    let companyName = null;
+    let companyEmail = null;
+    let companyLocation = null;
+    if (user.company_id) {
+      const company = await Company.findByPk(user.company_id, {
+        attributes: ["operator_logo_image", "company_name", "email", "location", "address"],
+      });
+      companyLogo = company ? company.operator_logo_image || null : null;
+      companyName = company ? company.company_name || null : null;
+      companyEmail = company ? company.email || null : null;
+      companyLocation = company ? company.location || company.address || null : null;
+    }
+
     return {
       token,
       user: {
@@ -383,6 +397,10 @@ class AuthService {
         association_id: user.association_id || null,
         power_bi_url: powerBiUrl,
         company_id: user.company_id || null,
+        company_logo: companyLogo,
+        company_name: companyName,
+        company_email: companyEmail,
+        company_location: companyLocation,
         role: {
           id: role.id,
           name: role.name,

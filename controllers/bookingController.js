@@ -24,12 +24,16 @@ exports.createBooking = async (req, res) => {
     }
 
     const booking = await bookingsService.createBooking(req.body, req.user);
-    return successResponse(res, booking, "Booking created successfully", 201);
+
+    const clientKey = req.body.idempotency_key;
+    const isIdempotent = clientKey && booking.idempotency_key === clientKey;
+    const statusCode = isIdempotent ? 200 : 201;
+    const message = isIdempotent
+      ? "Booking already exists (idempotent)"
+      : "Booking created successfully";
+
+    return successResponse(res, booking, message, statusCode);
   } catch (error) {
-    console.error("Booking PDF generation failed:", {
-      message: error?.message || String(error),
-      stack: error?.stack,
-    });
     return errorResponse(res, error);
   }
 };
@@ -49,10 +53,6 @@ exports.getBookings = async (req, res) => {
       },
     );
   } catch (error) {
-    console.error("Booking PDF generation failed:", {
-      message: error?.message || String(error),
-      stack: error?.stack,
-    });
     return errorResponse(res, error);
   }
 };
@@ -75,10 +75,6 @@ exports.getPackageBookings = async (req, res) => {
       },
     );
   } catch (error) {
-    console.error("Booking PDF generation failed:", {
-      message: error?.message || String(error),
-      stack: error?.stack,
-    });
     return errorResponse(res, error);
   }
 };
