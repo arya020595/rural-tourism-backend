@@ -1,4 +1,5 @@
 const YYYY_MM_DD = /^\d{4}-\d{2}-\d{2}$/;
+const YYYY_MM = /^\d{4}-\d{2}$/;
 
 class ValidationResult {
   constructor(isValid = true, errors = []) {
@@ -16,20 +17,33 @@ class ValidationResult {
 }
 
 class DashboardValidator {
-  validateTrendQuery(query = {}) {
+  validateTodayQuery(query = {}) {
     const errors = [];
-    const { start, end } = query;
+    const { date } = query;
 
-    if (!start) {
-      errors.push("start is required");
-    } else if (!YYYY_MM_DD.test(start)) {
-      errors.push("start must be a valid date in YYYY-MM-DD format");
+    if (date !== undefined && date !== null && date !== "") {
+      if (!YYYY_MM_DD.test(String(date))) {
+        errors.push("date must be a valid date in YYYY-MM-DD format");
+      }
     }
 
-    if (!end) {
-      errors.push("end is required");
-    } else if (!YYYY_MM_DD.test(end)) {
-      errors.push("end must be a valid date in YYYY-MM-DD format");
+    return new ValidationResult(errors.length === 0, errors);
+  }
+
+  validateTrendQuery(query = {}) {
+    const errors = [];
+    const { from, to } = query;
+
+    if (!from) {
+      errors.push("from is required");
+    } else if (!YYYY_MM.test(String(from))) {
+      errors.push("from must be in YYYY-MM format");
+    }
+
+    if (!to) {
+      errors.push("to is required");
+    } else if (!YYYY_MM.test(String(to))) {
+      errors.push("to must be in YYYY-MM format");
     }
 
     return new ValidationResult(errors.length === 0, errors);

@@ -3,22 +3,15 @@ const Booking = require("../models/bookingModel");
 const bookingsService = require("./bookingsService");
 
 const FINAL_STATUSES = ["paid", "completed"];
-const BOOKING_TYPE_KEYS = ["activity", "accommodation", "package"];
-
+const TYPE_KEYS = ["activity", "accommodation", "package"];
 const TYPE_LABELS = {
-  activity: "Activity Booking",
-  accommodation: "Accommodation Booking",
-  package: "Booking Package",
-};
-
-const TYPE_RESPONSE_KEYS = {
-  activity: "activityBooking",
-  accommodation: "accommodationBooking",
-  package: "bookingPackage",
+  activity: "Activity",
+  accommodation: "Accommodation",
+  package: "Package",
 };
 
 class DashboardService {
-  parseDateParts(value) {
+  parseYyyyMmDd(value) {
     const str = String(value || "").trim();
     const match = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (!match) return null;
@@ -28,8 +21,19 @@ class DashboardService {
     const day = Number(match[3]);
 
     if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-
     return { year, month, day };
+  }
+
+  parseYyyyMm(value) {
+    const str = String(value || "").trim();
+    const match = str.match(/^(\d{4})-(\d{2})$/);
+    if (!match) return null;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]);
+
+    if (month < 1 || month > 12) return null;
+    return { year, month };
   }
 
   buildUtcDate(year, month, day, endOfDay = false) {
@@ -39,18 +43,25 @@ class DashboardService {
     return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
   }
 
-  getMonthStart(date) {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  getMonthEnd(date) {
+    return new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0, 23, 59, 59, 999),
+    );
   }
 
-  getMonthEnd(date) {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+  formatAsYyyyMmDd(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }
 
   buildMonthKeys(startDate, endDate) {
     const keys = [];
-    let current = this.getMonthStart(startDate);
-    const last = this.getMonthStart(endDate);
+    let current = new Date(
+      Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), 1),
+    );
+    const last = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), 1));
 
     while (current <= last) {
       const year = current.getUTCFullYear();
@@ -60,28 +71,6 @@ class DashboardService {
     }
 
     return keys;
-  }
-
-  normalizeMetricRows(rows) {
-    const base = {
-      activityBooking: { totalRevenue: 0, totalReceipt: 0, totalTourist: 0 },
-      accommodationBooking: { totalRevenue: 0, totalReceipt: 0, totalTourist: 0 },
-      bookingPackage: { totalRevenue: 0, totalReceipt: 0, totalTourist: 0 },
-    };
-
-    rows.forEach((row) => {
-      const type = row.bookingType;
-      if (!TYPE_RESPONSE_KEYS[type]) return;
-
-      const key = TYPE_RESPONSE_KEYS[type];
-      base[key] = {
-        totalRevenue: Number(row.totalRevenue || 0),
-        totalReceipt: Number(row.totalReceipt || 0),
-        totalTourist: Number(row.totalTourist || 0),
-      };
-    });
-
-    return base;
   }
 
   getEffectiveDateExpr() {
@@ -94,17 +83,29 @@ class DashboardService {
     });
   }
 
-  async resolveOperatorId(authUser) {
-    const actor = await bookingsService.resolveActorContext(authUser);
-    return actor.userId;
+  async resolveActorContext(authUser) {
+    return bookingsService.resolveActorContext(authUser);
   }
 
-  async aggregateByType({ userId, startDate, endDate }) {
+  baseWhere({ userId, isSuperadmin, startDate, endDate }) {
+    const whereClause = {
+      status: { [Op.in]: FINAL_STATUSES },
+      [Op.and]: [this.buildEffectiveDateWhere(startDate, endDate)],
+    };
+
+    if (!isSuperadmin) {
+      whereClause.userId = userId;
+    }
+
+    return whereClause;
+  }
+
+  async aggregateByType({ userId, isSuperadmin, startDate, endDate }) {
     return Booking.findAll({
       attributes: [
         "bookingType",
         [fn("COALESCE", fn("SUM", col("total_price")), 0), "totalRevenue"],
-        [fn("COUNT", col("id")), "totalReceipt"],
+        [fn("COUNT", col("id")), "totalReceipts"],
         [
           fn(
             "COALESCE",
@@ -114,26 +115,22 @@ class DashboardService {
             ),
             0,
           ),
-          "totalTourist",
+          "totalTourists",
         ],
       ],
-      where: {
-        userId,
-        status: { [Op.in]: FINAL_STATUSES },
-        [Op.and]: [this.buildEffectiveDateWhere(startDate, endDate)],
-      },
+      where: this.baseWhere({ userId, isSuperadmin, startDate, endDate }),
       group: ["bookingType"],
       raw: true,
     });
   }
 
-  async aggregateMonthlyByType({ userId, startDate, endDate }) {
+  async aggregateMonthlyByType({ userId, isSuperadmin, startDate, endDate }) {
     return Booking.findAll({
       attributes: [
         [fn("DATE_FORMAT", this.getEffectiveDateExpr(), "%Y-%m"), "month"],
         "bookingType",
         [fn("COALESCE", fn("SUM", col("total_price")), 0), "totalRevenue"],
-        [fn("COUNT", col("id")), "totalReceipt"],
+        [fn("COUNT", col("id")), "totalReceipts"],
         [
           fn(
             "COALESCE",
@@ -143,147 +140,225 @@ class DashboardService {
             ),
             0,
           ),
-          "totalTourist",
+          "totalTourists",
         ],
       ],
-      where: {
-        userId,
-        status: { [Op.in]: FINAL_STATUSES },
-        [Op.and]: [this.buildEffectiveDateWhere(startDate, endDate)],
-      },
-      group: [fn("DATE_FORMAT", this.getEffectiveDateExpr(), "%Y-%m"), "bookingType"],
+      where: this.baseWhere({ userId, isSuperadmin, startDate, endDate }),
+      group: [
+        fn("DATE_FORMAT", this.getEffectiveDateExpr(), "%Y-%m"),
+        "bookingType",
+      ],
       order: [[literal("month"), "ASC"]],
       raw: true,
     });
   }
 
-  buildTodayMetadata(summary) {
-    const bookingTypes = BOOKING_TYPE_KEYS.map((type) => ({
-      type: TYPE_LABELS[type],
-      key: TYPE_RESPONSE_KEYS[type],
-    }));
+  normalizeTypeSummary(rows) {
+    const output = {
+      activity: { totalRevenue: 0, totalReceipts: 0, totalTourists: 0 },
+      accommodation: { totalRevenue: 0, totalReceipts: 0, totalTourists: 0 },
+      package: { totalRevenue: 0, totalReceipts: 0, totalTourists: 0 },
+    };
 
+    rows.forEach((row) => {
+      const type = row.bookingType;
+      if (!TYPE_KEYS.includes(type)) return;
+
+      output[type] = {
+        totalRevenue: Number(row.totalRevenue || 0),
+        totalReceipts: Number(row.totalReceipts || 0),
+        totalTourists: Number(row.totalTourists || 0),
+      };
+    });
+
+    return output;
+  }
+
+  toCombinedSummary(typeSummary) {
     return {
-      revenueByBookingType: bookingTypes.map((item) => ({
-        type: item.type,
-        value: summary[item.key].totalRevenue,
-      })),
-      receiptByBookingType: bookingTypes.map((item) => ({
-        type: item.type,
-        value: summary[item.key].totalReceipt,
-      })),
-      touristByBookingType: bookingTypes.map((item) => ({
-        type: item.type,
-        value: summary[item.key].totalTourist,
-      })),
+      totalRevenue:
+        typeSummary.activity.totalRevenue +
+        typeSummary.accommodation.totalRevenue +
+        typeSummary.package.totalRevenue,
+      totalReceipts:
+        typeSummary.activity.totalReceipts +
+        typeSummary.accommodation.totalReceipts +
+        typeSummary.package.totalReceipts,
+      totalTourists:
+        typeSummary.activity.totalTourists +
+        typeSummary.accommodation.totalTourists +
+        typeSummary.package.totalTourists,
     };
   }
 
-  buildTrendMetadata(monthKeys, rows) {
+  toTodayCharts(typeSummary) {
+    return {
+      revenue: {
+        activity: typeSummary.activity.totalRevenue,
+        accommodation: typeSummary.accommodation.totalRevenue,
+        package: typeSummary.package.totalRevenue,
+      },
+      receipts: {
+        activity: typeSummary.activity.totalReceipts,
+        accommodation: typeSummary.accommodation.totalReceipts,
+        package: typeSummary.package.totalReceipts,
+      },
+      tourists: {
+        activity: typeSummary.activity.totalTourists,
+        accommodation: typeSummary.accommodation.totalTourists,
+        package: typeSummary.package.totalTourists,
+      },
+    };
+  }
+
+  normalizeMonthlyMaps(monthKeys, rows) {
+    const makeRow = (monthLabel) => ({
+      month: monthLabel,
+      activity: 0,
+      accommodation: 0,
+      package: 0,
+    });
+
     const monthFormatter = new Intl.DateTimeFormat("en-US", {
-      month: "long",
-      year: "numeric",
+      month: "short",
       timeZone: "UTC",
     });
 
-    const zeroRow = (month) => ({
-      month,
-      name: monthFormatter.format(new Date(`${month}-01T00:00:00.000Z`)),
-      activityBooking: 0,
-      accommodationBooking: 0,
-      bookingPackage: 0,
-    });
-
+    const monthNameMap = new Map();
     const revenueMap = new Map();
-    const receiptMap = new Map();
-    const touristMap = new Map();
+    const receiptsMap = new Map();
+    const touristsMap = new Map();
 
-    monthKeys.forEach((month) => {
-      revenueMap.set(month, zeroRow(month));
-      receiptMap.set(month, zeroRow(month));
-      touristMap.set(month, zeroRow(month));
+    monthKeys.forEach((key) => {
+      const monthName = monthFormatter.format(new Date(`${key}-01T00:00:00.000Z`));
+      monthNameMap.set(key, monthName);
+      revenueMap.set(key, makeRow(monthName));
+      receiptsMap.set(key, makeRow(monthName));
+      touristsMap.set(key, makeRow(monthName));
     });
 
     rows.forEach((row) => {
-      const month = row.month;
-      const key = TYPE_RESPONSE_KEYS[row.bookingType];
-      if (!month || !key || !revenueMap.has(month)) return;
+      const key = row.month;
+      const type = row.bookingType;
+      if (!monthNameMap.has(key) || !TYPE_KEYS.includes(type)) return;
 
-      revenueMap.get(month)[key] = Number(row.totalRevenue || 0);
-      receiptMap.get(month)[key] = Number(row.totalReceipt || 0);
-      touristMap.get(month)[key] = Number(row.totalTourist || 0);
+      revenueMap.get(key)[type] = Number(row.totalRevenue || 0);
+      receiptsMap.get(key)[type] = Number(row.totalReceipts || 0);
+      touristsMap.get(key)[type] = Number(row.totalTourists || 0);
     });
 
     return {
-      revenueTrend: monthKeys.map((month) => revenueMap.get(month)),
-      receiptTrend: monthKeys.map((month) => receiptMap.get(month)),
-      touristTrend: monthKeys.map((month) => touristMap.get(month)),
+      revenueTrend: monthKeys.map((key) => revenueMap.get(key)),
+      receiptsTrend: monthKeys.map((key) => receiptsMap.get(key)),
+      touristsTrend: monthKeys.map((key) => touristsMap.get(key)),
     };
   }
 
-  async getTodayDashboard(authUser, now = new Date()) {
-    const userId = await this.resolveOperatorId(authUser);
+  resolveTodayRange(dateRaw) {
+    if (dateRaw) {
+      const dateParts = this.parseYyyyMmDd(dateRaw);
+      if (!dateParts) {
+        const error = new Error("Invalid date");
+        error.statusCode = 400;
+        throw error;
+      }
 
+      const start = this.buildUtcDate(dateParts.year, dateParts.month, dateParts.day);
+      const end = this.buildUtcDate(dateParts.year, dateParts.month, dateParts.day, true);
+      return { startDate: start, endDate: end, asOfDate: this.formatAsYyyyMmDd(start) };
+    }
+
+    const now = new Date();
     const startDate = new Date(now);
     startDate.setHours(0, 0, 0, 0);
 
     const endDate = new Date(now);
     endDate.setHours(23, 59, 59, 999);
 
-    const rows = await this.aggregateByType({ userId, startDate, endDate });
-    const summary = this.normalizeMetricRows(rows);
-
     return {
-      summary,
-      metadata: this.buildTodayMetadata(summary),
-      range: {
-        start: startDate.toISOString(),
-        end: endDate.toISOString(),
-      },
+      startDate,
+      endDate,
+      asOfDate: this.formatAsYyyyMmDd(
+        new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())),
+      ),
     };
   }
 
-  async getTrendDashboard(authUser, startRaw, endRaw) {
-    const startParts = this.parseDateParts(startRaw);
-    const endParts = this.parseDateParts(endRaw);
+  async getTodayDashboard(authUser, dateRaw) {
+    const actor = await this.resolveActorContext(authUser);
+    const userId = actor.userId;
+    const isSuperadmin = actor.isSuperadmin;
+    const { startDate, endDate, asOfDate } = this.resolveTodayRange(dateRaw);
 
-    if (!startParts || !endParts) {
-      const error = new Error("Invalid start/end date");
-      error.statusCode = 400;
-      throw error;
-    }
+    const summaryRows = await this.aggregateByType({
+      userId,
+      isSuperadmin,
+      startDate,
+      endDate,
+    });
 
-    const startDate = this.buildUtcDate(
-      startParts.year,
-      startParts.month,
-      startParts.day,
-    );
-    const endDate = this.getMonthEnd(
-      this.buildUtcDate(endParts.year, endParts.month, endParts.day),
-    );
-
-    if (endDate < startDate) {
-      const error = new Error("end month must be on or after start date");
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const userId = await this.resolveOperatorId(authUser);
-    const [summaryRows, monthlyRows] = await Promise.all([
-      this.aggregateByType({ userId, startDate, endDate }),
-      this.aggregateMonthlyByType({ userId, startDate, endDate }),
-    ]);
-
-    const summary = this.normalizeMetricRows(summaryRows);
-    const monthKeys = this.buildMonthKeys(startDate, endDate);
+    const typeSummary = this.normalizeTypeSummary(summaryRows);
 
     return {
-      summary,
-      metadata: this.buildTrendMetadata(monthKeys, monthlyRows),
+      asOfDate,
+      summary: this.toCombinedSummary(typeSummary),
+      charts: this.toTodayCharts(typeSummary),
+    };
+  }
+
+  resolveTrendRange(fromRaw, toRaw) {
+    const fromParts = this.parseYyyyMm(fromRaw);
+    const toParts = this.parseYyyyMm(toRaw);
+
+    if (!fromParts || !toParts) {
+      const error = new Error("Invalid from/to format");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const startDate = this.buildUtcDate(fromParts.year, fromParts.month, 1);
+    const endDate = this.getMonthEnd(this.buildUtcDate(toParts.year, toParts.month, 1));
+
+    if (endDate < startDate) {
+      const error = new Error("from must be less than or equal to to");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return {
+      startDate,
+      endDate,
+      from: `${fromParts.year}-${String(fromParts.month).padStart(2, "0")}`,
+      to: `${toParts.year}-${String(toParts.month).padStart(2, "0")}`,
+    };
+  }
+
+  async getTrendDashboard(authUser, fromRaw, toRaw) {
+    const actor = await this.resolveActorContext(authUser);
+    const userId = actor.userId;
+    const isSuperadmin = actor.isSuperadmin;
+    const { startDate, endDate, from, to } = this.resolveTrendRange(fromRaw, toRaw);
+
+    const [summaryRows, monthlyRows] = await Promise.all([
+      this.aggregateByType({ userId, isSuperadmin, startDate, endDate }),
+      this.aggregateMonthlyByType({ userId, isSuperadmin, startDate, endDate }),
+    ]);
+
+    const typeSummary = this.normalizeTypeSummary(summaryRows);
+    const monthKeys = this.buildMonthKeys(startDate, endDate);
+    const trends = this.normalizeMonthlyMaps(monthKeys, monthlyRows);
+
+    return {
       range: {
+        from,
+        to,
         start: startDate.toISOString(),
         end: endDate.toISOString(),
       },
+      summary: this.toCombinedSummary(typeSummary),
+      revenueTrend: trends.revenueTrend,
+      receiptsTrend: trends.receiptsTrend,
+      touristsTrend: trends.touristsTrend,
     };
   }
 }

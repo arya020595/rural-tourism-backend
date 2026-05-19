@@ -27,6 +27,69 @@ const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
 const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 
 class BookingsService {
+  parseStatusFilter(statusValue) {
+    const raw = normalizeString(statusValue);
+    if (!raw) return null;
+
+    const statuses = raw
+      .split(",")
+      .map((item) => this.ensureStatusAllowed(item))
+      .filter(Boolean);
+
+    return Array.from(new Set(statuses));
+  }
+
+  parseDateRangeFilter(startDateRaw, endDateRaw) {
+    if (
+      (startDateRaw === undefined || startDateRaw === null || startDateRaw === "") &&
+      (endDateRaw === undefined || endDateRaw === null || endDateRaw === "")
+    ) {
+      return null;
+    }
+
+    const startDateOnly =
+      startDateRaw !== undefined && startDateRaw !== null && startDateRaw !== ""
+        ? normalizeDateOnly(startDateRaw)
+        : null;
+    const endDateOnly =
+      endDateRaw !== undefined && endDateRaw !== null && endDateRaw !== ""
+        ? normalizeDateOnly(endDateRaw)
+        : null;
+
+    if (!startDateOnly && startDateRaw) {
+      const error = new Error(
+        "start_date must be a valid date in YYYY-MM-DD format",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!endDateOnly && endDateRaw) {
+      const error = new Error(
+        "end_date must be a valid date in YYYY-MM-DD format",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!startDateOnly || !endDateOnly) {
+      const error = new Error("start_date and end_date must be provided together");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const start = new Date(`${startDateOnly}T00:00:00.000Z`);
+    const end = new Date(`${endDateOnly}T23:59:59.999Z`);
+
+    if (end < start) {
+      const error = new Error("end_date must be on or after start_date");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return { start, end };
+  }
+
   ensureStatusAllowed(status) {
     const normalizedStatus = normalizeString(status).toLowerCase();
 
@@ -1104,7 +1167,11 @@ class BookingsService {
     }
 
     if (query.status) {
-      queryWhere.status = this.ensureStatusAllowed(query.status);
+      const statuses = this.parseStatusFilter(query.status);
+      if (statuses && statuses.length > 0) {
+        queryWhere.status =
+          statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
+      }
     }
 
     if (query.user_id !== undefined) {
@@ -1146,6 +1213,12 @@ class BookingsService {
 
     // Apply the accumulated query filters
     const where = { ...queryWhere };
+    const dateRange = this.parseDateRangeFilter(query.start_date, query.end_date);
+    if (dateRange) {
+      where.created_at = {
+        [Op.between]: [dateRange.start, dateRange.end],
+      };
+    }
 
     const { count, rows } = await Booking.findAndCountAll({
       where,
@@ -1181,7 +1254,18 @@ class BookingsService {
     const where = {};
     const bookingWhere = { bookingType: "package" };
     if (query.status) {
-      bookingWhere.status = this.ensureStatusAllowed(query.status);
+      const statuses = this.parseStatusFilter(query.status);
+      if (statuses && statuses.length > 0) {
+        bookingWhere.status =
+          statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
+      }
+    }
+
+    const dateRange = this.parseDateRangeFilter(query.start_date, query.end_date);
+    if (dateRange) {
+      bookingWhere.created_at = {
+        [Op.between]: [dateRange.start, dateRange.end],
+      };
     }
 
     const actorContext = authUser
