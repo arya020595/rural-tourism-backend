@@ -187,6 +187,12 @@ const DEFAULT_PERMISSIONS = [
     resource: "product",
     section: "Product Management",
   },
+  {
+    name: "View Dashboard",
+    code: "dashboard:read",
+    resource: "dashboard",
+    section: "Dashboard",
+  },
 ];
 
 /** @type {import('sequelize-cli').Migration} */

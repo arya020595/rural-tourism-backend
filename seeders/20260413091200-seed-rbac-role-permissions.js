@@ -3,6 +3,7 @@
 const ROLE_PERMISSION_MAP = {
   superadmin: ["*:*"],
   operator_admin: [
+    "dashboard:read",
     "profile:read",
     "profile:update",
     "user:create",
