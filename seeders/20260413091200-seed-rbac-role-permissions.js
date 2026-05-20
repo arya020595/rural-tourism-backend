@@ -58,6 +58,46 @@ const ROLE_PERMISSION_MAP = {
   ],
 };
 
+  // Permissions that all non-superadmin admin roles should have (for now they have all permissions)
+  const ALL_ADMIN_PERMISSIONS = [
+    "profile:read",
+    "profile:update",
+    "user:create",
+    "user:read",
+    "user:update",
+    "user:delete",
+    "accommodation:create",
+    "accommodation:read",
+    "accommodation:update",
+    "accommodation:delete",
+    "activity:create",
+    "activity:read",
+    "activity:update",
+    "activity:delete",
+    "booking:create",
+    "booking:read",
+    "booking:update",
+    "booking:delete",
+    "receipt:create",
+    "receipt:read",
+    "association:read",
+    "association:update",
+    "association:manage_users",
+    "product:create",
+    "product:read",
+    "product:update",
+    "product:delete",
+    "role:read",
+    "role:create",
+    "role:update",
+    "permission:read",
+  ];
+
+  // Update operator_admin and operator_staff to have all admin permissions
+  ROLE_PERMISSION_MAP.operator_admin = ALL_ADMIN_PERMISSIONS;
+  ROLE_PERMISSION_MAP.operator_staff = ALL_ADMIN_PERMISSIONS;
+  ROLE_PERMISSION_MAP.association = ALL_ADMIN_PERMISSIONS;
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface) {

@@ -177,3 +177,29 @@ class RoleService {
 }
 
 module.exports = new RoleService();
+
+  // Add method to get role permissions grouped by section
+  RoleService.prototype.getRolePermissionsBySection = async function(roleId) {
+    const role = await this.getRoleWithPermissions(roleId);
+    if (!role) {
+      throw new Error("Role not found");
+    }
+
+    const grouped = {};
+    role.permissions.forEach((permission) => {
+      if (!grouped[permission.section]) {
+        grouped[permission.section] = [];
+      }
+      grouped[permission.section].push({
+        id: permission.id,
+        name: permission.name,
+        code: permission.code,
+        resource: permission.resource,
+      });
+    });
+
+    return {
+      role,
+      permissionsBySection: grouped,
+    };
+  };

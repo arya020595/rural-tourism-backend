@@ -163,6 +163,12 @@ const DEFAULT_PERMISSIONS = [
     resource: "permission",
     section: "Role & Permission Management",
   },
+    {
+      name: "Create Roles",
+      code: "role:create",
+      resource: "role",
+      section: "Role & Permission Management",
+    },
   {
     name: "Create Product",
     code: "product:create",
