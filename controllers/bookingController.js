@@ -223,6 +223,7 @@ exports.generateBookingPdf = async (req, res) => {
     });
     return res.end(pdfBuffer);
   } catch (error) {
+    console.error("[generateBookingPdf] error:", error);
     return errorResponse(res, error);
   }
 };
