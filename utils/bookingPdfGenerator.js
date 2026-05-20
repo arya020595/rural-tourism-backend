@@ -23,6 +23,9 @@ async function getBrowser() {
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
             "--disable-gpu",
+            "--no-zygote",
+            "--disable-crash-reporter",
+            "--no-first-run",
           ]
         : [];
     const launchOptions = { args };
