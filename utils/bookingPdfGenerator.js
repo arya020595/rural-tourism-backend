@@ -1,4 +1,5 @@
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core");
+const chromium = require("@sparticuz/chromium");
 
 function escapeHtml(str) {
   if (str == null) return "";
@@ -14,25 +15,12 @@ let _browser = null;
 
 async function getBrowser() {
   if (!_browser || !_browser.isConnected()) {
-    const isLinux = process.platform === "linux";
-    const sandboxDisabled = process.env.DISABLE_PUPPETEER_SANDBOX === "true";
-    const args =
-      isLinux || sandboxDisabled
-        ? [
-            "--no-sandbox",
-            "--disable-setuid-sandbox",
-            "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--no-zygote",
-            "--disable-crash-reporter",
-            "--no-first-run",
-          ]
-        : [];
-    const launchOptions = { args };
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    }
-    _browser = await puppeteer.launch(launchOptions);
+    _browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
   }
   return _browser;
 }

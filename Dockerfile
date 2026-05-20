@@ -16,7 +16,7 @@ RUN apt-get update -qq && \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Skip Puppeteer bundled Chromium download (system chromium used in runtime)
+# Skip Puppeteer bundled Chromium download (@sparticuz/chromium used instead)
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Copy package files and install all dependencies
@@ -34,19 +34,16 @@ ENV NODE_ENV=production \
     PORT=3000
 
 # Install runtime dependencies
-# - Chromium for Puppeteer (PDF generation)
-# - Fonts for proper PDF rendering
+# - Fonts for proper PDF rendering (@sparticuz/chromium provides its own Chromium)
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-    chromium \
     fonts-liberation \
     fonts-noto-color-emoji \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Puppeteer configuration
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Puppeteer configuration (@sparticuz/chromium handles executable path at runtime)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Create non-root user for security
 RUN groupadd --system --gid 1001 nodejs && \

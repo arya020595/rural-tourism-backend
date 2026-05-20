@@ -31,6 +31,7 @@
     "test:routes": "jest tests/integration/routes"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^147.0.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
