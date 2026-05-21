@@ -121,6 +121,10 @@ class AuthService {
               ],
             },
           }),
+        identifierMatchesUser: (user) =>
+          user.username === normalizedIdentifier ||
+          (user.email != null &&
+            user.email.toLowerCase() === normalizedIdentifier.toLowerCase()),
         verifyPassword: async (user) =>
           bcrypt.compare(normalizedPassword, user.password),
         getIdentity: (user) => ({
@@ -143,6 +147,11 @@ class AuthService {
               ],
             },
           }),
+        identifierMatchesUser: (user) =>
+          user.username === normalizedIdentifier ||
+          (user.user_email != null &&
+            user.user_email.toLowerCase() ===
+              normalizedIdentifier.toLowerCase()),
         verifyPassword: async (user) => {
           if (
             user.default_password &&
@@ -171,6 +180,11 @@ class AuthService {
 
       const user = await resolver.findUser();
       if (!user) {
+        continue;
+      }
+
+      // Username is case-sensitive; email is case-insensitive
+      if (!resolver.identifierMatchesUser(user)) {
         continue;
       }
 
@@ -305,6 +319,15 @@ class AuthService {
       return null;
     }
 
+    // Username lookup is case-sensitive; email is case-insensitive (RFC 5321)
+    const matchesUsername = user.username === identifier;
+    const matchesEmail =
+      user.email != null &&
+      user.email.toLowerCase() === identifier.toLowerCase();
+    if (!matchesUsername && !matchesEmail) {
+      return null;
+    }
+
     const passwordOk = await bcrypt.compare(password, user.password);
     if (!passwordOk) {
       return null;
@@ -374,12 +397,20 @@ class AuthService {
     let companyLocation = null;
     if (user.company_id) {
       const company = await Company.findByPk(user.company_id, {
-        attributes: ["operator_logo_image", "company_name", "email", "location", "address"],
+        attributes: [
+          "operator_logo_image",
+          "company_name",
+          "email",
+          "location",
+          "address",
+        ],
       });
       companyLogo = company ? company.operator_logo_image || null : null;
       companyName = company ? company.company_name || null : null;
       companyEmail = company ? company.email || null : null;
-      companyLocation = company ? company.location || company.address || null : null;
+      companyLocation = company
+        ? company.location || company.address || null
+        : null;
     }
 
     return {
