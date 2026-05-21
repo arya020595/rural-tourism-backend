@@ -291,9 +291,13 @@ describe("Activity Master Data API - Integration Tests", () => {
         description: "Missing activity name",
       };
 
-      await withAdminAuth(request(app).post("/api/activity-master-data"))
+      const response = await withAdminAuth(
+        request(app).post("/api/activity-master-data"),
+      )
         .send(invalidActivity)
-        .expect(500);
+        .expect(400);
+
+      expect(response.body).toHaveProperty("error");
     });
   });
 
