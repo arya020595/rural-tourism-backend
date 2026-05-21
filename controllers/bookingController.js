@@ -10,6 +10,15 @@ const { ForbiddenError } = require("../services/errors/AppError");
 const {
   generateBookingConfirmationPdf,
 } = require("../utils/bookingPdfGenerator");
+const {
+  generateAccommodationReceiptPdf,
+} = require("../utils/receiptAccommodationPdfGenerator");
+const {
+  generateActivityReceiptPdf,
+} = require("../utils/receiptActivityPdfGenerator");
+const {
+  generatePackageReceiptPdf,
+} = require("../utils/receiptPackagePdfGenerator");
 
 exports.createBooking = async (req, res) => {
   try {
@@ -224,6 +233,40 @@ exports.generateBookingPdf = async (req, res) => {
     return res.end(pdfBuffer);
   } catch (error) {
     console.error("[generateBookingPdf] error:", error);
+    return errorResponse(res, error);
+  }
+};
+
+exports.generateReceiptPdf = async (req, res) => {
+  try {
+    const data = await bookingsService.getReceiptPdfData(req.params.id);
+
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol;
+    const host = req.headers["x-forwarded-host"] || req.get("host");
+    const pdfUrl = `${protocol}://${host}/api/bookings/${data.id}/receipt-pdf`;
+
+    let pdfBuffer;
+    let filename;
+
+    if (data.bookingType === "accommodation") {
+      pdfBuffer = await generateAccommodationReceiptPdf(data, pdfUrl);
+      filename = `receipt-accommodation-${data.id}.pdf`;
+    } else if (data.bookingType === "package") {
+      pdfBuffer = await generatePackageReceiptPdf(data, pdfUrl);
+      filename = `receipt-package-${data.id}.pdf`;
+    } else {
+      pdfBuffer = await generateActivityReceiptPdf(data, pdfUrl);
+      filename = `receipt-activity-${data.id}.pdf`;
+    }
+
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${filename}"`,
+      "Content-Length": pdfBuffer.length,
+    });
+    return res.end(pdfBuffer);
+  } catch (error) {
+    console.error("[generateReceiptPdf] error:", error);
     return errorResponse(res, error);
   }
 };
