@@ -1,5 +1,19 @@
 const puppeteer = require("puppeteer-core");
 const chromium = require("@sparticuz/chromium");
+const fs = require("fs");
+const path = require("path");
+
+const EXPLORE_SABAH_BASE64 = (() => {
+  try {
+    const imgPath = path.join(
+      __dirname,
+      "../../rural-tourism-frontend/src/assets/icon/explore_sabah-without_bg.png",
+    );
+    return fs.readFileSync(imgPath).toString("base64");
+  } catch {
+    return null;
+  }
+})();
 
 function escapeHtml(str) {
   if (str == null) return "";
@@ -80,10 +94,19 @@ function buildHtml(data) {
     operatorEmail,
     totalPrice,
     createdAt,
+    companyLogoBase64,
   } = data;
 
   const bookingId = escapeHtml(formatBookingId(id));
   const headerDate = escapeHtml(formatHeaderDate(createdAt));
+
+  const companyLogoHtml = companyLogoBase64
+    ? `<div class="logo-company"><img src="data:image/png;base64,${companyLogoBase64}" alt="Company Logo" /></div>`
+    : `<div class="logo-company-name">${escapeHtml(companyName) || "-"}</div>`;
+
+  const exploreSabahHtml = EXPLORE_SABAH_BASE64
+    ? `<div class="logo-explore"><img src="data:image/png;base64,${EXPLORE_SABAH_BASE64}" alt="Explore Sabah" /></div>`
+    : `<div class="logo-explore"><span class="explore-word">Explore</span><span class="sabah-word">SABAH</span><div class="sub">NORTH BORNEO, MALAYSIA</div></div>`;
   const activityDateFormatted = escapeHtml(formatActivityDate(activityDate));
   const totalPaxDisplay = escapeHtml(`${totalPax || 0} ORANG`);
   const totalPriceFormatted = escapeHtml(Number(totalPrice || 0).toFixed(2));
@@ -120,25 +143,27 @@ function buildHtml(data) {
     align-items: center;
     gap: 0;
   }
-  .logo-panda {
+  .logo-company {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 16px;
+    max-height: 64px;
+  }
+  .logo-company img {
+    max-height: 64px;
+    max-width: 100px;
+    object-fit: contain;
+  }
+  .logo-company-name {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     padding-right: 16px;
-  }
-  .logo-panda .icon {
-    font-size: 40px;
-    line-height: 1;
-  }
-  .logo-panda .name {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: bold;
     color: #333;
-    margin-top: 2px;
-  }
-  .logo-panda .est {
-    font-size: 9px;
-    color: #888;
   }
   .logo-divider {
     width: 1px;
@@ -146,24 +171,10 @@ function buildHtml(data) {
     background: #ccc;
     margin: 0 16px;
   }
-  .logo-explore .explore-word {
-    font-size: 13px;
-    font-weight: bold;
-    color: #1565c0;
-    font-style: italic;
-  }
-  .logo-explore .sabah-word {
-    font-size: 22px;
-    font-weight: 900;
-    color: #1565c0;
-    letter-spacing: 1px;
-    display: block;
-    line-height: 1;
-  }
-  .logo-explore .sub {
-    font-size: 9px;
-    color: #777;
-    margin-top: 2px;
+  .logo-explore img {
+    max-height: 64px;
+    max-width: 130px;
+    object-fit: contain;
   }
   .booking-id-area {
     text-align: right;
@@ -262,17 +273,9 @@ function buildHtml(data) {
   <!-- Header -->
   <div class="header">
     <div class="logo-area">
-      <div class="logo-panda">
-        <div class="icon">🐼</div>
-        <div class="name">Panda Co.</div>
-        <div class="est">Est. 2025</div>
-      </div>
+      ${companyLogoHtml}
       <div class="logo-divider"></div>
-      <div class="logo-explore">
-        <span class="explore-word">Explore</span>
-        <span class="sabah-word">SABAH</span>
-        <div class="sub">NORTH BORNEO, MALAYSIA</div>
-      </div>
+      ${exploreSabahHtml}
     </div>
     <div class="booking-id-area">
       <div class="id">BOOKING ID: ${bookingId}</div>

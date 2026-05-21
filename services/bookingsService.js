@@ -1377,13 +1377,15 @@ class BookingsService {
 
     let operatorEmail = null;
     let location = null;
+    let companyLogoBase64 = null;
     if (record.companyId) {
       const company = await Company.findByPk(record.companyId, {
-        attributes: ["email", "location"],
+        attributes: ["email", "location", "operator_logo_image"],
       });
       if (company) {
         operatorEmail = company.email;
         location = company.location;
+        companyLogoBase64 = company.operator_logo_image || null;
       }
     }
 
@@ -1405,6 +1407,7 @@ class BookingsService {
       operatorEmail,
       totalPrice: record.totalPrice,
       createdAt: record.created_at,
+      companyLogoBase64,
     };
   }
 
