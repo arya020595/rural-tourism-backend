@@ -7,11 +7,11 @@ const ApplicationPolicy = require("./applicationPolicy");
  */
 class RolePolicy extends ApplicationPolicy {
   index() {
-    return this.isAdmin();
+    return this.hasPermission("role:read");
   }
 
   show() {
-    return this.isAdmin();
+    return this.hasPermission("role:read");
   }
 
   create() {

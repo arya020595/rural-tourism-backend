@@ -5,6 +5,7 @@ const { generateToken } = require("../../../middleware/auth");
 const mockAuthLogin = jest.fn();
 const mockAuthRegister = jest.fn();
 const mockGetAllRoles = jest.fn();
+const mockGetRolesPaginated = jest.fn();
 const mockGetRoleWithPermissions = jest.fn();
 const mockAssignPermissionsToRole = jest.fn();
 const mockGetAllPermissions = jest.fn();
@@ -21,6 +22,7 @@ jest.mock("../../../services/authService", () => ({
 
 jest.mock("../../../services/roleService", () => ({
   getAllRoles: (...args) => mockGetAllRoles(...args),
+  getRolesPaginated: (...args) => mockGetRolesPaginated(...args),
   getRoleWithPermissions: (...args) => mockGetRoleWithPermissions(...args),
   assignPermissionsToRole: (...args) => mockAssignPermissionsToRole(...args),
 }));
@@ -165,9 +167,11 @@ describe("RBAC route contracts", () => {
     test("GET /api/roles should return 200 with role:read", async () => {
       const app = buildApp();
       const token = makeToken(["role:read"], "operator_admin");
-      mockGetAllRoles.mockResolvedValue([
-        { id: 1, name: "superadmin", permissions: [] },
-      ]);
+      mockGetRolesPaginated.mockResolvedValue({
+        docs: [{ id: 1, name: "superadmin", permissions: [] }],
+        total: 1,
+        pages: 1,
+      });
 
       const response = await request(app)
         .get("/api/roles")
@@ -176,7 +180,7 @@ describe("RBAC route contracts", () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data).toEqual([
-        { id: 1, name: "superadmin", permissions: [] },
+        { id: 1, name: "superadmin", permissions_count: 0 },
       ]);
     });
 
