@@ -56,6 +56,10 @@ describe("AuthService.login – case-sensitive username", () => {
     jest.spyOn(authService, "resolveRole").mockResolvedValue(MOCK_ROLE);
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   // ── Unified Users (operators) ───────────────────────────────────────────────
   describe("UnifiedUser (operator) path", () => {
     test("succeeds with exact-case username", async () => {
