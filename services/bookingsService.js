@@ -1411,6 +1411,80 @@ class BookingsService {
     };
   }
 
+  async getReceiptPdfData(id) {
+    const bookingId = normalizeInt(id, null);
+    if (bookingId === null) throw Object.assign(new Error("Invalid booking id"), { statusCode: 400 });
+
+    const record = await Booking.findByPk(bookingId);
+    if (!record) throw Object.assign(new Error("Booking not found."), { statusCode: 404 });
+
+    let operatorEmail = null;
+    let location = null;
+    let companyLogoBase64 = null;
+    if (record.companyId) {
+      const company = await Company.findByPk(record.companyId, {
+        attributes: ["email", "location", "operator_logo_image"],
+      });
+      if (company) {
+        operatorEmail = company.email;
+        location = company.location;
+        companyLogoBase64 = company.operator_logo_image || null;
+      }
+    }
+
+    const totalPax =
+      Number(record.noOfPaxAntarbangsa || 0) + Number(record.noOfPaxDomestik || 0);
+
+    const bookingType = String(record.bookingType || "").toLowerCase();
+
+    const base = {
+      id: record.id,
+      bookingType,
+      touristFullName: record.touristFullName,
+      companyName: record.companyName,
+      customerType: String(record.customerType || "tourist").toLowerCase(),
+      status: record.status,
+      operatorName: record.operatorName,
+      operatorEmail,
+      totalPrice: record.totalPrice,
+      createdAt: record.created_at,
+      companyLogoBase64,
+      totalPax,
+    };
+
+    if (bookingType === "accommodation") {
+      return {
+        ...base,
+        accommodationName: record.productName,
+        checkInDate: record.checkInDate,
+        checkOutDate: record.checkOutDate,
+        totalNight: Number(record.totalOfNight || 0),
+        totalRooms: totalPax,
+      };
+    }
+
+    if (bookingType === "package") {
+      const packageItems = await BookingPackageCompany.findAll({
+        where: { bookingPackageId: bookingId },
+        attributes: ["description", "perPrice"],
+      });
+      return {
+        ...base,
+        packageItems: packageItems.map((p) => ({
+          description: p.description,
+          perPrice: Number(p.perPrice || 0),
+        })),
+      };
+    }
+
+    // activity
+    return {
+      ...base,
+      activityName: record.productName,
+      location,
+    };
+  }
+
   async updateBooking(id, data, authUser) {
     const bookingId = normalizeInt(id, null);
     if (bookingId === null) {

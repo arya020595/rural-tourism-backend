@@ -34,6 +34,11 @@ router.get(
 );
 
 router.get(
+  "/:id/receipt-pdf",
+  asyncHandler(bookingController.generateReceiptPdf),
+);
+
+router.get(
   "/:id",
   authenticate,
   authorize("booking:read"),

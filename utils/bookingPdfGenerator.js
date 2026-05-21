@@ -1,7 +1,6 @@
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
 const fs = require("fs");
 const path = require("path");
+const { getBrowser } = require("./puppeteerBrowser");
 
 const EXPLORE_SABAH_BASE64 = (() => {
   try {
@@ -25,19 +24,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-let _browser = null;
-
-async function getBrowser() {
-  if (!_browser || !_browser.isConnected()) {
-    _browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
-  }
-  return _browser;
-}
 
 const MONTHS_MY = [
   "JAN",
@@ -100,8 +86,11 @@ function buildHtml(data) {
   const bookingId = escapeHtml(formatBookingId(id));
   const headerDate = escapeHtml(formatHeaderDate(createdAt));
 
-  const companyLogoHtml = companyLogoBase64
-    ? `<div class="logo-company"><img src="data:image/png;base64,${companyLogoBase64}" alt="Company Logo" /></div>`
+  const companyLogoSrc = companyLogoBase64
+    ? (companyLogoBase64.startsWith("data:") ? companyLogoBase64 : `data:image/png;base64,${companyLogoBase64}`)
+    : null;
+  const companyLogoHtml = companyLogoSrc
+    ? `<div class="logo-company"><img src="${companyLogoSrc}" alt="Company Logo" /></div>`
     : `<div class="logo-company-name">${escapeHtml(companyName) || "-"}</div>`;
 
   const exploreSabahHtml = EXPLORE_SABAH_BASE64
