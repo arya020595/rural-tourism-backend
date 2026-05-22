@@ -1,5 +1,5 @@
-const path = require("path");
-const fs = require("fs");
+const IS_PRODUCTION =
+  process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging";
 
 let _browser = null;
 
@@ -40,25 +40,22 @@ function resolveExecutablePath() {
 
 async function getBrowser() {
   if (!_browser || !_browser.isConnected()) {
-    const puppeteer = require("puppeteer");
-    const isLinux = process.platform === "linux";
-    const args = isLinux
-      ? [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--no-zygote",
-        ]
-      : [];
-
-    const launchOptions = { headless: true, args };
-    const executablePath = resolveExecutablePath();
-    if (executablePath) {
-      launchOptions.executablePath = executablePath;
+    if (IS_PRODUCTION) {
+      const puppeteer = require("puppeteer-core");
+      const chromium = require("@sparticuz/chromium");
+      _browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
+      });
+    } else {
+      const puppeteer = require("puppeteer");
+      _browser = await puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
     }
-
-    _browser = await puppeteer.launch(launchOptions);
   }
   return _browser;
 }
