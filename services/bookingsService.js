@@ -4,6 +4,7 @@ const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
 const Product = require("../models/productModel");
 const UnifiedUser = require("../models/unifiedUserModel");
 const Company = require("../models/companyModel");
+const Role = require("../models/roleModel");
 const {
   normalizeString,
   normalizeInt,
@@ -1726,6 +1727,190 @@ class BookingsService {
       await transaction.rollback();
       throw error;
     }
+  }
+
+  async getStatementData(year, type, fromMonth, toMonth, authUser) {
+    const currentYear = new Date().getFullYear();
+    const parsedYear = normalizeInt(year, currentYear);
+    if (parsedYear < 2000 || parsedYear > currentYear) {
+      const error = new Error(`year must be between 2000 and ${currentYear}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const ALLOWED_TYPES = ["activity", "accommodation", "package"];
+    const normalizedType = normalizeString(type)?.toLowerCase() || "all";
+    if (normalizedType !== "all" && !ALLOWED_TYPES.includes(normalizedType)) {
+      const error = new Error(
+        `type must be one of: all, ${ALLOWED_TYPES.join(", ")}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const actorContext = await this.resolveActorContext(authUser);
+    const companyId = normalizeInt(actorContext.companyId, null);
+
+    if (!actorContext.isSuperadmin && companyId === null) {
+      const error = new Error("No company associated with your account");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Month range (defaults to full year if not specified)
+    const parsedFrom = Math.min(12, Math.max(1, parseInt(fromMonth, 10) || 1));
+    const parsedTo   = Math.min(12, Math.max(parsedFrom, parseInt(toMonth, 10) || 12));
+
+    const maxMonthRange = Math.max(1, parseInt(process.env.STATEMENT_MAX_MONTH_RANGE, 10) || 3);
+    if (parsedTo - parsedFrom + 1 > maxMonthRange) {
+      const error = new Error(
+        `Month range cannot exceed ${maxMonthRange} month${maxMonthRange === 1 ? "" : "s"}. Please narrow your selection.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const startDate = new Date(`${parsedYear}-${String(parsedFrom).padStart(2, "0")}-01T00:00:00.000Z`);
+    const endYear   = parsedTo === 12 ? parsedYear + 1 : parsedYear;
+    const endMonth  = parsedTo === 12 ? 1 : parsedTo + 1;
+    const endDate   = new Date(`${endYear}-${String(endMonth).padStart(2, "0")}-01T00:00:00.000Z`);
+
+    const bookingWhere = {
+      created_at: { [Op.gte]: startDate, [Op.lt]: endDate },
+    };
+    if (companyId !== null) {
+      bookingWhere.companyId = companyId;
+    }
+    if (normalizedType !== "all") {
+      bookingWhere.bookingType = normalizedType;
+    }
+
+    // Fetch company info
+    const company = companyId !== null
+      ? await Company.findByPk(companyId)
+      : null;
+
+    // Fetch owner: first operator_admin user belonging to this company
+    let ownerName = "-";
+    if (companyId !== null) {
+      const adminRole = await Role.findOne({
+        where: { name: "operator_admin" },
+        attributes: ["id"],
+      });
+      if (adminRole) {
+        const owner = await UnifiedUser.findOne({
+          where: { company_id: companyId, role_id: adminRole.id },
+          attributes: ["name"],
+          order: [["id", "ASC"]],
+        });
+        ownerName = owner?.name || "-";
+      }
+    }
+
+    // Fetch bookings for the year
+    const bookings = await Booking.findAll({
+      where: bookingWhere,
+      include: [
+        {
+          model: BookingPackageCompany,
+          as: "package_companies",
+          required: false,
+          attributes: ["description"],
+        },
+      ],
+      order: [["created_at", "ASC"]],
+    });
+
+    const MONTH_NAMES = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+
+    const transactions = bookings.map((b) => {
+      const date = new Date(b.created_at);
+      let name = b.productName || "-";
+
+      if (
+        b.bookingType === "package" &&
+        Array.isArray(b.package_companies) &&
+        b.package_companies.length > 0
+      ) {
+        const descriptions = b.package_companies
+          .map((pc) => pc.description)
+          .filter(Boolean);
+        if (descriptions.length > 0) name = descriptions.join(", ");
+      }
+
+      const rawType = b.bookingType || "activity";
+      const type_label = rawType.charAt(0).toUpperCase() + rawType.slice(1);
+
+      return {
+        year: parsedYear,
+        month: MONTH_NAMES[date.getMonth()],
+        type: type_label,
+        name,
+        noOfPax:
+          Number(b.noOfPaxAntarbangsa || 0) + Number(b.noOfPaxDomestik || 0),
+        totalPrice: Number(b.totalPrice || 0).toFixed(2),
+      };
+    });
+
+    // Date range from first/last transaction
+    const fromDate = transactions.length
+      ? `${transactions[0].month} ${transactions[0].year}`
+      : `January ${parsedYear}`;
+    const toDate = transactions.length
+      ? `${transactions[transactions.length - 1].month} ${transactions[transactions.length - 1].year}`
+      : `December ${parsedYear}`;
+
+    // Created at date
+    const now = new Date();
+    const createdAt = `${now.getDate()} ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+
+    // Summary: group by name + type
+    const groupMap = new Map();
+    for (const t of transactions) {
+      const key = `${t.name}||${t.type}`;
+      if (!groupMap.has(key)) {
+        groupMap.set(key, { name: t.name, type: t.type, totalPax: 0, totalRevenue: 0 });
+      }
+      const g = groupMap.get(key);
+      g.totalPax += Number(t.noOfPax);
+      g.totalRevenue += parseFloat(t.totalPrice);
+    }
+    const summary = Array.from(groupMap.values()).map((g, i) => ({
+      no: i + 1,
+      name: g.name,
+      type: g.type,
+      totalPax: g.totalPax,
+      totalRevenue: g.totalRevenue.toFixed(2),
+    }));
+    const overallTotal = {
+      totalPax: summary.reduce((s, g) => s + g.totalPax, 0),
+      totalRevenue: summary.reduce((s, g) => s + parseFloat(g.totalRevenue), 0).toFixed(2),
+    };
+
+    return {
+      company: company
+        ? {
+            name: company.company_name || "-",
+            address: company.address || "-",
+            location: company.location || "-",
+            contactNo: company.contact_no || "-",
+            establishedYear: new Date(company.created_at).getFullYear(),
+            logoBase64: company.operator_logo_image || null,
+          }
+        : null,
+      ownerName,
+      year: parsedYear,
+      type: normalizedType,
+      createdAt,
+      fromDate,
+      toDate,
+      transactions,
+      summary,
+      overallTotal,
+    };
   }
 }
 

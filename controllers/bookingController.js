@@ -10,6 +10,9 @@ const { ForbiddenError } = require("../services/errors/AppError");
 const {
   generateBookingConfirmationPdf,
 } = require("../utils/bookingPdfGenerator");
+const {
+  generateTransactionStatementPdf,
+} = require("../utils/statementPdfGenerator");
 
 exports.createBooking = async (req, res) => {
   try {
@@ -197,6 +200,36 @@ exports.markBookingAsPaid = async (req, res) => {
     );
     return successResponse(res, booking, "Booking marked as paid successfully");
   } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+exports.getStatementPreview = async (req, res) => {
+  try {
+    const { year, type, fromMonth, toMonth } = req.query;
+    const data = await bookingsService.getStatementData(year, type, fromMonth, toMonth, req.user);
+    return successResponse(res, data, "Statement preview data");
+  } catch (error) {
+    console.error("[getStatementPreview] error:", error);
+    return errorResponse(res, error);
+  }
+};
+
+exports.generateStatementPdf = async (req, res) => {
+  try {
+    const { year, type, fromMonth, toMonth } = req.query;
+    const data = await bookingsService.getStatementData(year, type, fromMonth, toMonth, req.user);
+    const pdfBuffer = await generateTransactionStatementPdf(data);
+
+    const typeLabel = data.type === "all" ? "all" : data.type;
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="statement-${data.year}-${typeLabel}.pdf"`,
+      "Content-Length": pdfBuffer.length,
+    });
+    return res.end(pdfBuffer);
+  } catch (error) {
+    console.error("[generateStatementPdf] error:", error);
     return errorResponse(res, error);
   }
 };

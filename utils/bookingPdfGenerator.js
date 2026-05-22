@@ -1,5 +1,4 @@
-const puppeteer = require("puppeteer-core");
-const chromium = require("@sparticuz/chromium");
+const { getBrowser } = require("./browserHelper");
 const fs = require("fs");
 const path = require("path");
 
@@ -25,19 +24,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-let _browser = null;
-
-async function getBrowser() {
-  if (!_browser || !_browser.isConnected()) {
-    _browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
-  }
-  return _browser;
-}
 
 const MONTHS_MY = [
   "JAN",
