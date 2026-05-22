@@ -1,108 +1,160 @@
 const roleService = require("../services/roleService");
+const { policy } = require("../policies");
+const { serialize, serializeMany } = require("../serializers/roleSerializer");
+const {
+  successResponse,
+  paginatedResponse,
+  errorResponse,
+} = require("../utils/helpers");
+const {
+  ForbiddenError,
+  NotFoundError,
+} = require("../services/errors/AppError");
 
+// GET /api/roles — paginated list (superadmin only)
+exports.getAllRoles = async (req, res) => {
+  try {
+    if (!policy("role", req.user).index()) {
+      throw new ForbiddenError("Access denied");
+    }
+
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
+    const search = req.query.search || undefined;
+
+    const result = await roleService.getRolesPaginated({
+      page,
+      perPage,
+      search,
+    });
+
+    return paginatedResponse(
+      res,
+      serializeMany(result.docs),
+      "Roles fetched successfully",
+      { total: result.total, page, perPage, pages: result.pages },
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// GET /api/roles/:id — single role with permissions
+exports.getRoleById = async (req, res) => {
+  try {
+    if (!policy("role", req.user).show()) {
+      throw new ForbiddenError("Access denied");
+    }
+
+    const role = await roleService.getRoleWithPermissions(req.params.id);
+    if (!role) throw new NotFoundError("Role not found");
+    return successResponse(res, serialize(role), "Role fetched successfully");
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// GET /api/roles/:id/permissions-by-section
+exports.getRoleWithPermissionsBySection = async (req, res) => {
+  try {
+    if (!policy("role", req.user).show()) {
+      throw new ForbiddenError("Access denied");
+    }
+
+    const roleData = await roleService.getRolePermissionsBySection(
+      req.params.id,
+    );
+    return successResponse(
+      res,
+      roleData,
+      "Role with permissions grouped by section fetched successfully",
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// POST /api/roles — create role with optional permissions
 exports.createRole = async (req, res) => {
   try {
-    const { name, permissionIds } = req.body;
+    if (!policy("role", req.user).create()) {
+      throw new ForbiddenError("Access denied");
+    }
 
+    const { name, permissionIds } = req.body;
     const role = await roleService.createRoleWithPermissions({
       name,
       permissionIds: Array.isArray(permissionIds) ? permissionIds : [],
     });
 
-    return res.status(201).json({
-      success: true,
-      message: "Role created successfully",
-      data: role,
-    });
-  } catch (error) {
-    const statusCode = error.statusCode || 500;
-    return res.status(statusCode).json({
-      success: false,
-      message: error.message || "Failed to create role",
-    });
+    return successResponse(
+      res,
+      serialize(role),
+      "Role created successfully",
+      201,
+    );
+  } catch (err) {
+    return errorResponse(res, err);
   }
 };
 
-exports.getAllRoles = async (req, res) => {
+// PUT /api/roles/:id — update name and/or permissions
+exports.updateRole = async (req, res) => {
   try {
-    const roles = await roleService.getAllRoles();
-
-    return res.status(200).json({
-      success: true,
-      message: "Roles fetched successfully",
-      data: roles,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch roles",
-    });
-  }
-};
-
-exports.getRoleById = async (req, res) => {
-  try {
-    const role = await roleService.getRoleWithPermissions(req.params.id);
-
-    if (!role) {
-      return res.status(404).json({
-        success: false,
-        message: "Role not found",
-      });
+    if (!policy("role", req.user).update()) {
+      throw new ForbiddenError("Access denied");
     }
 
-    return res.status(200).json({
-      success: true,
-      message: "Role fetched successfully",
-      data: role,
+    const { name, permissionIds } = req.body;
+    const role = await roleService.updateRoleWithPermissions(req.params.id, {
+      name,
+      permissionIds:
+        permissionIds !== undefined
+          ? Array.isArray(permissionIds)
+            ? permissionIds
+            : []
+          : undefined,
     });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Failed to fetch role",
-    });
+
+    return successResponse(res, serialize(role), "Role updated successfully");
+  } catch (err) {
+    return errorResponse(res, err);
   }
 };
 
+// DELETE /api/roles/:id
+exports.deleteRole = async (req, res) => {
+  try {
+    if (!policy("role", req.user).destroy()) {
+      throw new ForbiddenError("Access denied");
+    }
+
+    await roleService.deleteRole(req.params.id);
+    return successResponse(res, null, "Role deleted successfully");
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// Legacy: kept for backward compat — redirects to updateRole
 exports.updateRolePermissions = async (req, res) => {
   try {
+    if (!policy("role", req.user).update()) {
+      throw new ForbiddenError("Access denied");
+    }
+
     const { permissionIds } = req.body;
     const role = await roleService.assignPermissionsToRole(
       req.params.id,
       Array.isArray(permissionIds) ? permissionIds : [],
     );
 
-    return res.status(200).json({
-      success: true,
-      message: "Role permissions updated successfully",
-      data: role,
-    });
-  } catch (error) {
-    const statusCode =
-      error.statusCode || (error.message === "Role not found" ? 404 : 500);
-
-    return res.status(statusCode).json({
-      success: false,
-      message: error.message || "Failed to update role permissions",
-    });
+    return successResponse(
+      res,
+      serialize(role),
+      "Role permissions updated successfully",
+    );
+  } catch (err) {
+    return errorResponse(res, err);
   }
 };
-
-  exports.getRoleWithPermissionsBySection = async (req, res) => {
-    try {
-      const roleData = await roleService.getRolePermissionsBySection(req.params.id);
-
-      return res.status(200).json({
-        success: true,
-        message: "Role with permissions grouped by section fetched successfully",
-        data: roleData,
-      });
-    } catch (error) {
-      const statusCode = error.message === "Role not found" ? 404 : 500;
-
-      return res.status(statusCode).json({
-        success: false,
-        message: error.message || "Failed to fetch role",
-      });
-    }
-  };

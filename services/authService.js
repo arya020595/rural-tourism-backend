@@ -121,6 +121,9 @@ class AuthService {
               ],
             },
           }),
+        identifierMatchesUser: (user) =>
+          user.username === normalizedIdentifier ||
+          (user.email != null && user.email === normalizedIdentifier),
         verifyPassword: async (user) =>
           bcrypt.compare(normalizedPassword, user.password),
         getIdentity: (user) => ({
@@ -143,6 +146,9 @@ class AuthService {
               ],
             },
           }),
+        identifierMatchesUser: (user) =>
+          user.username === normalizedIdentifier ||
+          (user.user_email != null && user.user_email === normalizedIdentifier),
         verifyPassword: async (user) => {
           if (
             user.default_password &&
@@ -171,6 +177,11 @@ class AuthService {
 
       const user = await resolver.findUser();
       if (!user) {
+        continue;
+      }
+
+      // Both username and email are case-sensitive
+      if (!resolver.identifierMatchesUser(user)) {
         continue;
       }
 
@@ -305,6 +316,13 @@ class AuthService {
       return null;
     }
 
+    // Both username and email lookups are case-sensitive
+    const matchesUsername = user.username === identifier;
+    const matchesEmail = user.email != null && user.email === identifier;
+    if (!matchesUsername && !matchesEmail) {
+      return null;
+    }
+
     const passwordOk = await bcrypt.compare(password, user.password);
     if (!passwordOk) {
       return null;
@@ -374,12 +392,20 @@ class AuthService {
     let companyLocation = null;
     if (user.company_id) {
       const company = await Company.findByPk(user.company_id, {
-        attributes: ["operator_logo_image", "company_name", "email", "location", "address"],
+        attributes: [
+          "operator_logo_image",
+          "company_name",
+          "email",
+          "location",
+          "address",
+        ],
       });
       companyLogo = company ? company.operator_logo_image || null : null;
       companyName = company ? company.company_name || null : null;
       companyEmail = company ? company.email || null : null;
-      companyLocation = company ? company.location || company.address || null : null;
+      companyLocation = company
+        ? company.location || company.address || null
+        : null;
     }
 
     return {
