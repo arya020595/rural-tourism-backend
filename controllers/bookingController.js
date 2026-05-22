@@ -11,10 +11,9 @@ const {
   generateBookingConfirmationPdf,
 } = require("../utils/bookingPdfGenerator");
 const {
-
   generateTransactionStatementPdf,
 } = require("../utils/statementPdfGenerator");
-=======
+const {
   generateAccommodationReceiptPdf,
 } = require("../utils/receiptAccommodationPdfGenerator");
 const {
