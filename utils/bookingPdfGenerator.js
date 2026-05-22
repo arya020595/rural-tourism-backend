@@ -1,6 +1,8 @@
+
 const { getBrowser } = require("./browserHelper");
 const fs = require("fs");
 const path = require("path");
+const { getBrowser } = require("./puppeteerBrowser");
 
 const EXPLORE_SABAH_BASE64 = (() => {
   try {
@@ -86,8 +88,11 @@ function buildHtml(data) {
   const bookingId = escapeHtml(formatBookingId(id));
   const headerDate = escapeHtml(formatHeaderDate(createdAt));
 
-  const companyLogoHtml = companyLogoBase64
-    ? `<div class="logo-company"><img src="data:image/png;base64,${companyLogoBase64}" alt="Company Logo" /></div>`
+  const companyLogoSrc = companyLogoBase64
+    ? (companyLogoBase64.startsWith("data:") ? companyLogoBase64 : `data:image/png;base64,${companyLogoBase64}`)
+    : null;
+  const companyLogoHtml = companyLogoSrc
+    ? `<div class="logo-company"><img src="${companyLogoSrc}" alt="Company Logo" /></div>`
     : `<div class="logo-company-name">${escapeHtml(companyName) || "-"}</div>`;
 
   const exploreSabahHtml = EXPLORE_SABAH_BASE64
@@ -259,9 +264,9 @@ function buildHtml(data) {
   <!-- Header -->
   <div class="header">
     <div class="logo-area">
-      ${companyLogoHtml}
-      <div class="logo-divider"></div>
       ${exploreSabahHtml}
+      <div class="logo-divider"></div>
+      ${companyLogoHtml}
     </div>
     <div class="booking-id-area">
       <div class="id">BOOKING ID: ${bookingId}</div>

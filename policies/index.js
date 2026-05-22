@@ -3,6 +3,7 @@ const CompanyPolicy = require("./companyPolicy");
 const ProductPolicy = require("./productPolicy");
 const AssociationPolicy = require("./associationPolicy");
 const BookingPolicy = require("./bookingPolicy");
+const RolePolicy = require("./rolePolicy");
 
 const POLICY_MAP = {
   user: UserPolicy,
@@ -10,6 +11,7 @@ const POLICY_MAP = {
   product: ProductPolicy,
   association: AssociationPolicy,
   booking: BookingPolicy,
+  role: RolePolicy,
 };
 
 /**
