@@ -262,9 +262,9 @@ function buildHtml(data) {
   <!-- Header -->
   <div class="header">
     <div class="logo-area">
-      ${companyLogoHtml}
-      <div class="logo-divider"></div>
       ${exploreSabahHtml}
+      <div class="logo-divider"></div>
+      ${companyLogoHtml}
     </div>
     <div class="booking-id-area">
       <div class="id">BOOKING ID: ${bookingId}</div>
