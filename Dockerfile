@@ -16,10 +16,7 @@ RUN apt-get update -qq && \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Skip Puppeteer bundled Chromium download (@sparticuz/chromium used instead)
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# Copy package files and install all dependencies
+# Copy package files and install all dependencies (puppeteer downloads bundled Chromium here)
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
@@ -34,8 +31,8 @@ ENV NODE_ENV=production \
     PORT=3000
 
 # Install runtime dependencies
-# - Fonts for proper PDF rendering (@sparticuz/chromium provides its own Chromium)
-# - Shared libraries required by Chromium on Debian slim
+# - Shared libraries required by puppeteer's bundled Chromium on Debian slim
+# - Fonts for proper PDF rendering
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
     fonts-liberation \
@@ -72,14 +69,11 @@ RUN apt-get update -qq && \
     libgcc-s1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Puppeteer configuration (@sparticuz/chromium handles executable path at runtime)
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
 # Create non-root user for security
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs appuser
 
-# Copy node_modules from builder
+# Copy node_modules from builder (includes puppeteer's bundled Chromium)
 COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
 
 # Copy application code
