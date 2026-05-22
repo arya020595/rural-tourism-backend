@@ -1,5 +1,6 @@
 ﻿const fs = require("fs");
 const path = require("path");
+const QRCode = require("qrcode");
 const { getBrowser } = require("./puppeteerBrowser");
 
 const EXPLORE_SABAH_BASE64 = (() => {
@@ -233,7 +234,7 @@ function buildHtml(data, pdfUrl) {
         <span>Imbas di sini untuk mendapatkan resit anda</span><br>
         <span class="qr-en">Scan here to get your receipt</span>
       </div>
-      <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrDataUrl)}" alt="QR" />
+      <img class="qr-img" src="${qrDataUrl}" alt="QR" />
     </div>
   </div>
 </body>
@@ -241,10 +242,11 @@ function buildHtml(data, pdfUrl) {
 }
 
 async function generateAccommodationReceiptPdf(data, pdfUrl) {
+  const qrDataUrl = await QRCode.toDataURL(pdfUrl, { width: 160, margin: 1 });
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
-    await page.setContent(buildHtml(data, pdfUrl), { waitUntil: "networkidle0" });
+    await page.setContent(buildHtml(data, qrDataUrl), { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
