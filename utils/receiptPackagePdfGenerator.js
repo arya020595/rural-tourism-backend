@@ -87,12 +87,18 @@ function buildHtml(data, pdfUrl) {
     align-items: flex-end;
     justify-content: space-between;
     padding-bottom: 20px;
-    border-bottom: 1px solid #d2d2d2;
   }
   .header-logos { display: flex; align-items: flex-end; gap: 14px; }
   .logo { object-fit: contain; height: 52px; max-width: 160px; display: block; }
   .logo-text { font-size: 14px; font-weight: bold; color: #333; }
   .logo-divider { width: 1px; height: 42px; background: #111; }
+  .title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2e7d32;
+    margin-bottom: 14px;
+  }
+  hr { border: none; border-top: 1.5px solid #ddd; margin-bottom: 22px; }
   .receipt-date {
     font-size: 18px;
     font-weight: 600;
@@ -154,6 +160,9 @@ function buildHtml(data, pdfUrl) {
       <div class="receipt-date">${dateStr}</div>
     </div>
 
+    <div class="title">RESIT PEMBAYARAN / PAYMENT RECEIPT</div>
+    <hr>
+
     <div class="receipt-body">
       <div class="details-grid">
         <div class="receipt-row">
@@ -192,7 +201,7 @@ function buildHtml(data, pdfUrl) {
         <span>Imbas di sini untuk mendapatkan resit anda</span><br>
         <span class="qr-en">Scan here to get your receipt</span>
       </div>
-      <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(qrDataUrl)}" alt="QR" />
+      <img class="qr-img" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrDataUrl)}" alt="QR" />
     </div>
   </div>
 </body>
