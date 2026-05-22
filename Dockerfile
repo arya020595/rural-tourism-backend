@@ -16,7 +16,10 @@ RUN apt-get update -qq && \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy package files and install all dependencies (puppeteer downloads bundled Chromium here)
+# Skip puppeteer bundled Chromium download — system chromium used at runtime
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+# Copy package files and install all dependencies
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev
 
@@ -30,50 +33,24 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000
 
-# Install runtime dependencies
-# - Shared libraries required by puppeteer's bundled Chromium on Debian slim
-# - Fonts for proper PDF rendering
+# Install system Chromium + shared libs + fonts for PDF rendering
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
+    chromium \
     fonts-liberation \
     fonts-noto-color-emoji \
     curl \
-    libnspr4 \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libcairo2 \
-    libglib2.0-0 \
-    libasound2 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxext6 \
-    libxi6 \
-    libxrender1 \
-    libxtst6 \
-    libxss1 \
-    libdbus-1-3 \
-    libexpat1 \
-    libfontconfig1 \
-    libgcc-s1 \
     && rm -rf /var/lib/apt/lists/*
+
+# Point puppeteer to system Chromium and skip its own download
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Create non-root user for security
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs appuser
 
-# Copy node_modules from builder (includes puppeteer's bundled Chromium)
+# Copy node_modules from builder
 COPY --from=builder --chown=appuser:nodejs /app/node_modules ./node_modules
 
 # Copy application code

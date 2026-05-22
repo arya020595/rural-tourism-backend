@@ -13,7 +13,11 @@ async function getBrowser() {
           "--no-zygote",
         ]
       : [];
-    _browser = await puppeteer.launch({ headless: "new", args });
+    const launchOptions = { headless: "new", args };
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+    _browser = await puppeteer.launch(launchOptions);
   }
   return _browser;
 }
