@@ -3,9 +3,11 @@ const {
   normalizeInt,
   normalizeNumber,
   isValidDate,
+  isValidTime,
 } = require("../utils/normalizers");
 
 const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
+const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 
 class ValidationResult {
   constructor(isValid = true, errors = []) {
@@ -36,8 +38,37 @@ class BookingValidator {
       );
     }
 
+    if (data.customer_type !== undefined) {
+      const customerType = normalizeString(data.customer_type).toLowerCase();
+      if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+        errors.push(
+          `customer_type must be one of: ${ALLOWED_CUSTOMER_TYPES.join(", ")}`,
+        );
+      }
+    }
+
     if (!normalizeString(data.tourist_full_name)) {
       errors.push("tourist_full_name is required");
+    }
+
+    const incomingPhone = data.phone_number ?? data.phoneNumber;
+    if (
+      incomingPhone !== undefined &&
+      incomingPhone !== null &&
+      incomingPhone !== "" &&
+      !normalizeString(incomingPhone)
+    ) {
+      errors.push("phone_number must be a valid string");
+    }
+
+    const incomingEmail = data.email ?? data.emailAddress ?? data.emailAddress;
+    if (
+      incomingEmail !== undefined &&
+      incomingEmail !== null &&
+      incomingEmail !== "" &&
+      !normalizeString(incomingEmail)
+    ) {
+      errors.push("email must be a valid string");
     }
 
     if (!normalizeString(data.citizenship)) {
@@ -126,6 +157,36 @@ class BookingValidator {
       );
     }
 
+    if (data.customer_type !== undefined) {
+      const customerType = normalizeString(data.customer_type).toLowerCase();
+      if (!ALLOWED_CUSTOMER_TYPES.includes(customerType)) {
+        errors.push(
+          `customer_type must be one of: ${ALLOWED_CUSTOMER_TYPES.join(", ")}`,
+        );
+      }
+    }
+
+    const incomingPhoneUpdate = data.phone_number ?? data.phoneNumber;
+    if (
+      incomingPhoneUpdate !== undefined &&
+      incomingPhoneUpdate !== null &&
+      incomingPhoneUpdate !== "" &&
+      !normalizeString(incomingPhoneUpdate)
+    ) {
+      errors.push("phone_number must be a valid string");
+    }
+
+    const incomingEmailUpdate =
+      data.email ?? data.emailAddress ?? data.emailAddress;
+    if (
+      incomingEmailUpdate !== undefined &&
+      incomingEmailUpdate !== null &&
+      incomingEmailUpdate !== "" &&
+      !normalizeString(incomingEmailUpdate)
+    ) {
+      errors.push("email must be a valid string");
+    }
+
     if (data.no_of_pax_antarbangsa !== undefined) {
       const value = normalizeInt(data.no_of_pax_antarbangsa);
       if (value === null || value < 0) {
@@ -175,7 +236,9 @@ class BookingValidator {
       data.activity_date !== undefined &&
       data.activity_date !== null &&
       data.activity_date !== "" &&
-      !isValidDate(data.activity_date)
+      !isValidDate(data.activity_date) &&
+      !(isValidDate(data.bookingDate) && isValidTime(data.bookingTime)) &&
+      !(isValidDate(data.booking_date) && isValidTime(data.booking_time))
     ) {
       errors.push("activity_date must be a valid timestamp");
     }

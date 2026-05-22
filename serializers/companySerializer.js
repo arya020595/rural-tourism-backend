@@ -24,4 +24,8 @@ function serialize(company) {
   };
 }
 
-module.exports = { serialize };
+function serializeMany(companies = []) {
+  return companies.map(serialize);
+}
+
+module.exports = { serialize, serializeMany };

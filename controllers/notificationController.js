@@ -133,9 +133,7 @@ exports.markAsRead = async (req, res) => {
     }
 
     if (notification.is_read) {
-      return res
-        .status(404)
-        .json({ message: "Notification not found or already read." });
+      return res.json({ message: "Notification already read." });
     }
 
     await notification.update({ is_read: 1 });
@@ -158,7 +156,7 @@ exports.getUnreadCount = async (req, res) => {
       where: { user_id: operator_id, is_read: 0 },
     });
 
-    res.json({ unreadCount: count });
+    res.json({ unread_count: count });
   } catch (err) {
     console.error(err);
     res

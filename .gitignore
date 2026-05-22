@@ -36,6 +36,7 @@ Thumbs.db
 
 # Uploads (optional - uncomment if you want to track uploads)
 # uploads/
+uploads/receipt_*.pdf
 
 # SSL certificates (sensitive)
 ssl/

@@ -14,27 +14,18 @@ const PRODUCT_INCLUDES = [
 ];
 
 class ProductService {
-  /**
-   * Get all products for a specific company (own company only)
-   * @param {number} companyId - The company ID to filter by
-   * @param {object} [options={}] - { where, order, search, page, perPage }
-   */
-  async getAllProductsByCompany(
-    companyId,
-    { where = {}, order = [], search, page = 1, perPage = 10 } = {},
+  async getAllProducts(
+    { where = {}, order = [], search, page = 1, perPage = 10, companyId } = {},
   ) {
-    if (!companyId) {
-      throw new BadRequestError("company_id is required");
-    }
-
-    // Apply search filter if provided
     if (search) {
       const pattern = `%${search}%`;
       where[Op.or] = [{ name: { [Op.like]: pattern } }];
     }
 
-    // Merge company filter with other conditions
-    const mergedWhere = { ...where, company_id: companyId };
+    const mergedWhere = { ...where };
+    if (companyId) {
+      mergedWhere.company_id = companyId;
+    }
 
     const result = await Product.paginate({
       where: mergedWhere,
@@ -49,6 +40,28 @@ class ProductService {
       total: result.total,
       pages: result.pages,
     };
+  }
+
+  /**
+   * Get all products for a specific company (own company only)
+   * @param {number} companyId - The company ID to filter by
+   * @param {object} [options={}] - { where, order, search, page, perPage }
+   */
+  async getAllProductsByCompany(
+    companyId,
+    { where = {}, order = [], search, page = 1, perPage = 10 } = {},
+  ) {
+    if (!companyId) {
+      throw new BadRequestError("company_id is required");
+    }
+    return this.getAllProducts({
+      where,
+      order,
+      search,
+      page,
+      perPage,
+      companyId,
+    });
   }
 
   /**

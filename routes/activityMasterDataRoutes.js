@@ -114,6 +114,10 @@ router.post(
     const { activity_name, description, address, things_to_know, image } =
       req.body;
 
+    if (!activity_name) {
+      return res.status(400).json({ error: "activity_name is required" });
+    }
+
     try {
       const newActivity = await ActivityMasterData.create({
         activity_name,

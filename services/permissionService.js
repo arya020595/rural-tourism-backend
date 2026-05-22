@@ -19,3 +19,23 @@ class PermissionService {
 }
 
 module.exports = new PermissionService();
+
+// Add method to group permissions by section
+PermissionService.prototype.getPermissionsBySection = async function() {
+  const permissions = await this.getAllPermissions();
+  const grouped = {};
+
+  permissions.forEach((permission) => {
+    if (!grouped[permission.section]) {
+      grouped[permission.section] = [];
+    }
+    grouped[permission.section].push({
+      id: permission.id,
+      name: permission.name,
+      code: permission.code,
+      resource: permission.resource,
+    });
+  });
+
+  return grouped;
+};

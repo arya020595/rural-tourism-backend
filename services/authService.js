@@ -121,6 +121,9 @@ class AuthService {
               ],
             },
           }),
+        identifierMatchesUser: (user) =>
+          user.username === normalizedIdentifier ||
+          (user.email != null && user.email === normalizedIdentifier),
         verifyPassword: async (user) =>
           bcrypt.compare(normalizedPassword, user.password),
         getIdentity: (user) => ({
@@ -143,6 +146,9 @@ class AuthService {
               ],
             },
           }),
+        identifierMatchesUser: (user) =>
+          user.username === normalizedIdentifier ||
+          (user.user_email != null && user.user_email === normalizedIdentifier),
         verifyPassword: async (user) => {
           if (
             user.default_password &&
@@ -158,6 +164,7 @@ class AuthService {
           email: user.user_email,
           name: user.full_name,
           roleId: user.role_id,
+          company_id: user.company_id,
           association_id: user.association_id,
         }),
       },
@@ -170,6 +177,11 @@ class AuthService {
 
       const user = await resolver.findUser();
       if (!user) {
+        continue;
+      }
+
+      // Both username and email are case-sensitive
+      if (!resolver.identifierMatchesUser(user)) {
         continue;
       }
 
@@ -186,12 +198,18 @@ class AuthService {
 
       const tokenPayload = {
         sub: `${resolver.userType}:${identity.id}`,
+        id: identity.id,
+        unified_user_id: identity.id,
         user_type: resolver.userType,
         legacy_user_id: identity.id,
         username: identity.username,
         role: role.name,
         permissions,
       };
+
+      if (identity.company_id) {
+        tokenPayload.company_id = identity.company_id;
+      }
 
       if (identity.association_id) {
         tokenPayload.association_id = identity.association_id;
@@ -218,11 +236,13 @@ class AuthService {
         token,
         user: {
           id: identity.id,
+          unified_user_id: identity.id,
           user_type: resolver.userType,
           legacy_user_id: identity.id,
           name: identity.name || null,
           username: identity.username,
           email: identity.email,
+          company_id: identity.company_id || null,
           association_id: identity.association_id || null,
           power_bi_url: powerBiUrl,
           role: {
@@ -296,6 +316,13 @@ class AuthService {
       return null;
     }
 
+    // Both username and email lookups are case-sensitive
+    const matchesUsername = user.username === identifier;
+    const matchesEmail = user.email != null && user.email === identifier;
+    if (!matchesUsername && !matchesEmail) {
+      return null;
+    }
+
     const passwordOk = await bcrypt.compare(password, user.password);
     if (!passwordOk) {
       return null;
@@ -359,6 +386,28 @@ class AuthService {
       powerBiUrl = assoc ? assoc.power_bi_url || null : null;
     }
 
+    let companyLogo = null;
+    let companyName = null;
+    let companyEmail = null;
+    let companyLocation = null;
+    if (user.company_id) {
+      const company = await Company.findByPk(user.company_id, {
+        attributes: [
+          "operator_logo_image",
+          "company_name",
+          "email",
+          "location",
+          "address",
+        ],
+      });
+      companyLogo = company ? company.operator_logo_image || null : null;
+      companyName = company ? company.company_name || null : null;
+      companyEmail = company ? company.email || null : null;
+      companyLocation = company
+        ? company.location || company.address || null
+        : null;
+    }
+
     return {
       token,
       user: {
@@ -374,6 +423,10 @@ class AuthService {
         association_id: user.association_id || null,
         power_bi_url: powerBiUrl,
         company_id: user.company_id || null,
+        company_logo: companyLogo,
+        company_name: companyName,
+        company_email: companyEmail,
+        company_location: companyLocation,
         role: {
           id: role.id,
           name: role.name,
