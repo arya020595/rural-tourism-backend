@@ -103,13 +103,27 @@ describe("AuthService.login – case-sensitive username", () => {
       expect(bcrypt.compare).not.toHaveBeenCalled();
     });
 
-    test("succeeds when identifier is the email (case-insensitive)", async () => {
+    test("returns null when email case does not match", async () => {
+      UnifiedUser.findOne.mockResolvedValue(makeUnifiedUser());
+      bcrypt.compare.mockResolvedValue(true);
+
+      const result = await authService.loginFromUnifiedUsers({
+        identifier: "Alice@Example.COM", // different case from stored "alice@example.com"
+        password: "secret",
+        allowedSet: null,
+      });
+
+      expect(result).toBeNull();
+      expect(bcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    test("succeeds when identifier is the email with exact case", async () => {
       UnifiedUser.findOne.mockResolvedValue(makeUnifiedUser());
       bcrypt.compare.mockResolvedValue(true);
 
       await expect(
         authService.loginFromUnifiedUsers({
-          identifier: "Alice@Example.COM", // different case from stored "alice@example.com"
+          identifier: "alice@example.com", // exact case as stored
           password: "secret",
           allowedSet: null,
         }),
@@ -158,7 +172,7 @@ describe("AuthService.login – case-sensitive username", () => {
       });
     });
 
-    test("succeeds with email regardless of case via full login()", async () => {
+    test("rejects login with wrong-case email via full login()", async () => {
       TouristUser.findOne.mockResolvedValue(
         makeTouristUser({ username: "TouristBob", email: "bob@example.com" }),
       );
@@ -167,6 +181,23 @@ describe("AuthService.login – case-sensitive username", () => {
       await expect(
         authService.login({
           identifier: "BOB@EXAMPLE.COM",
+          password: "secret",
+          allowedUserTypes: ["tourist"],
+        }),
+      ).rejects.toMatchObject({ statusCode: 401 });
+
+      expect(bcrypt.compare).not.toHaveBeenCalled();
+    });
+
+    test("succeeds with exact-case email via full login()", async () => {
+      TouristUser.findOne.mockResolvedValue(
+        makeTouristUser({ username: "TouristBob", email: "bob@example.com" }),
+      );
+      bcrypt.compare.mockResolvedValue(true);
+
+      await expect(
+        authService.login({
+          identifier: "bob@example.com",
           password: "secret",
           allowedUserTypes: ["tourist"],
         }),
