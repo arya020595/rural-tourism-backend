@@ -6,17 +6,12 @@ async function getBrowser() {
   if (!_browser || !_browser.isConnected()) {
     if (IS_PRODUCTION) {
       const puppeteer = require("puppeteer-core");
+      const chromium = require("@sparticuz/chromium");
       _browser = await puppeteer.launch({
-        executablePath:
-          process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--no-zygote",
-        ],
-        headless: true,
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
       });
     } else {
       const puppeteer = require("puppeteer");
