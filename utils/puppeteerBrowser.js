@@ -8,7 +8,7 @@ async function getBrowser() {
       const puppeteer = require("puppeteer-core");
       const chromium = require("@sparticuz/chromium");
       _browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [...chromium.args, "--disable-crash-reporter"],
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
