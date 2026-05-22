@@ -6,7 +6,7 @@ const EXPLORE_SABAH_BASE64 = (() => {
   try {
     const imgPath = path.join(
       __dirname,
-      "../../rural-tourism-frontend/src/assets/icon/explore_sabah-without_bg.png",
+      "../assets/explore_sabah-without_bg.png",
     );
     return fs.readFileSync(imgPath).toString("base64");
   } catch {
