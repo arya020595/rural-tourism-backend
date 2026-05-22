@@ -123,8 +123,7 @@ class AuthService {
           }),
         identifierMatchesUser: (user) =>
           user.username === normalizedIdentifier ||
-          (user.email != null &&
-            user.email.toLowerCase() === normalizedIdentifier.toLowerCase()),
+          (user.email != null && user.email === normalizedIdentifier),
         verifyPassword: async (user) =>
           bcrypt.compare(normalizedPassword, user.password),
         getIdentity: (user) => ({
@@ -149,9 +148,7 @@ class AuthService {
           }),
         identifierMatchesUser: (user) =>
           user.username === normalizedIdentifier ||
-          (user.user_email != null &&
-            user.user_email.toLowerCase() ===
-              normalizedIdentifier.toLowerCase()),
+          (user.user_email != null && user.user_email === normalizedIdentifier),
         verifyPassword: async (user) => {
           if (
             user.default_password &&
@@ -183,7 +180,7 @@ class AuthService {
         continue;
       }
 
-      // Username is case-sensitive; email is case-insensitive
+      // Both username and email are case-sensitive
       if (!resolver.identifierMatchesUser(user)) {
         continue;
       }
@@ -319,11 +316,9 @@ class AuthService {
       return null;
     }
 
-    // Username lookup is case-sensitive; email is case-insensitive (RFC 5321)
+    // Both username and email lookups are case-sensitive
     const matchesUsername = user.username === identifier;
-    const matchesEmail =
-      user.email != null &&
-      user.email.toLowerCase() === identifier.toLowerCase();
+    const matchesEmail = user.email != null && user.email === identifier;
     if (!matchesUsername && !matchesEmail) {
       return null;
     }
