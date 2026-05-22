@@ -27,6 +27,20 @@ router.get(
 );
 
 router.get(
+  "/statement/preview",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.getStatementPreview),
+);
+
+router.get(
+  "/statement/pdf",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.generateStatementPdf),
+);
+
+router.get(
   "/:id/pdf",
   authenticate,
   authorize("booking:read"),
