@@ -1,3 +1,5 @@
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
 let _browser = null;
 
 async function getBrowser() {
@@ -22,7 +24,6 @@ async function getBrowser() {
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
       });
     }
-    _browser = await puppeteer.launch(launchOptions);
   }
   return _browser;
 }
