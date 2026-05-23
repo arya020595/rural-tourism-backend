@@ -1,6 +1,5 @@
 ﻿const fs = require("fs");
 const path = require("path");
-const QRCode = require("qrcode");
 const { getBrowser } = require("./puppeteerBrowser");
 
 const EXPLORE_SABAH_BASE64 = (() => {
@@ -66,7 +65,6 @@ function buildHtml(data, pdfUrl) {
     : `<span class="logo-text" style="color:#2e7d32;">Explore SABAH</span>`;
 
   const dateStr = escapeHtml(formatDate(createdAt));
-  const qrDataUrl = pdfUrl;
 
   return `<!DOCTYPE html>
 <html>
@@ -156,18 +154,6 @@ function buildHtml(data, pdfUrl) {
   .total-block { text-align: right; }
   .total-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #333; }
   .total-amount { font-size: 26px; font-weight: 700; color: #1a1a1a; line-height: 1; }
-  .receipt-qr-section {
-    margin-top: 14px;
-    padding-top: 12px;
-    border-top: 1px solid #d2d2d2;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-  }
-  .qr-text { text-align: right; font-size: 11px; line-height: 1.5; color: #2d2d2d; }
-  .qr-en { font-style: italic; }
-  .qr-img { width: 100px; height: 100px; }
 </style>
 </head>
 <body>
@@ -229,24 +215,16 @@ function buildHtml(data, pdfUrl) {
       </div>
     </div>
 
-    <div class="receipt-qr-section">
-      <div class="qr-text">
-        <span>Imbas di sini untuk mendapatkan resit anda</span><br>
-        <span class="qr-en">Scan here to get your receipt</span>
-      </div>
-      <img class="qr-img" src="${qrDataUrl}" alt="QR" />
-    </div>
   </div>
 </body>
 </html>`;
 }
 
 async function generateAccommodationReceiptPdf(data, pdfUrl) {
-  const qrDataUrl = await QRCode.toDataURL(pdfUrl, { width: 160, margin: 1 });
   const browser = await getBrowser();
   const page = await browser.newPage();
   try {
-    await page.setContent(buildHtml(data, qrDataUrl), { waitUntil: "networkidle0" });
+    await page.setContent(buildHtml(data, pdfUrl), { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({
       format: "A4",
       printBackground: true,
