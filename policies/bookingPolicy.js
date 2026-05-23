@@ -21,6 +21,12 @@ class BookingPolicy extends ApplicationPolicy {
     return this._sameCompany();
   }
 
+  cancel() {
+    if (this.isAdmin()) return true;
+    if (!this.hasPermission("booking:cancel")) return false;
+    return this._sameCompany();
+  }
+
   destroy() {
     if (this.isAdmin()) return true;
     if (!this.hasPermission("booking:delete")) return false;
