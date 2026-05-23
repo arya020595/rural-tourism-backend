@@ -149,7 +149,9 @@ function buildHtml(data, pdfUrl) {
     align-items: center;
     gap: 24px;
     border-top: 1px solid #d2d2d2;
+    border-bottom: 1px solid #d2d2d2;
     padding-top: 16px;
+    padding-bottom: 16px;
     margin-top: 10px;
   }
   .issued-name {
