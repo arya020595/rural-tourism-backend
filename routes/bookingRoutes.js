@@ -76,7 +76,7 @@ router.patch(
 router.patch(
   "/:id/cancel",
   authenticate,
-  authorize("booking:update"),
+  authorize("booking:cancel"),
   asyncHandler(bookingController.cancelBooking),
 );
 

@@ -178,7 +178,7 @@ exports.deleteBooking = async (req, res) => {
 exports.cancelBooking = async (req, res) => {
   try {
     const existing = await bookingsService.getBookingById(req.params.id);
-    if (!policy("booking", req.user, existing).update()) {
+    if (!policy("booking", req.user, existing).cancel()) {
       throw new ForbiddenError(
         "You do not have permission to cancel this booking",
       );
