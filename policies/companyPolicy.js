@@ -6,6 +6,7 @@ const ApplicationPolicy = require("./applicationPolicy");
  * Access rules:
  *  - superadmin     → full access to any company
  *  - operator_admin → can read and update ONLY their own company
+ *  - operator_staff → can read ONLY their own company (no update)
  *  - all others     → denied
  */
 class CompanyPolicy extends ApplicationPolicy {
@@ -13,7 +14,10 @@ class CompanyPolicy extends ApplicationPolicy {
 
   show() {
     if (this.isAdmin()) return true;
-    if (this.user.role === "operator_admin") return this._isOwnCompany();
+    if (
+      this.user.role === "operator_admin" ||
+      this.user.role === "operator_staff"
+    ) return this._isOwnCompany();
     return false;
   }
 
