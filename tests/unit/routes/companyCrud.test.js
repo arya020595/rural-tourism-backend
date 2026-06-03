@@ -155,7 +155,7 @@ describe("Companies API – Read & Update", () => {
       expect(res.body.success).toBe(true);
     });
 
-    test("should return 403 for operator_staff (not allowed)", async () => {
+    test("should return 200 for operator_staff on own company", async () => {
       mockGetCompanyById.mockResolvedValue(sampleCompany);
       const app = buildApp();
 
@@ -163,8 +163,8 @@ describe("Companies API – Read & Update", () => {
         .get("/api/companies/1")
         .set("Authorization", `Bearer ${OPERATOR_STAFF_TOKEN}`);
 
-      expect(res.status).toBe(403);
-      expect(res.body.success).toBe(false);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
 
     test("should return 403 for tourist", async () => {
