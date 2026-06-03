@@ -78,6 +78,11 @@ const Booking = sequelize.define(
       allowNull: true,
       field: "total_price",
     },
+    totalDeposit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "total_deposit",
+    },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,

@@ -90,6 +90,17 @@ class BookingValidator {
       errors.push("total_price must be numeric and >= 0");
     }
 
+    if (
+      data.total_deposit !== undefined &&
+      data.total_deposit !== null &&
+      data.total_deposit !== ""
+    ) {
+      const totalDeposit = normalizeInt(data.total_deposit);
+      if (totalDeposit === null || totalDeposit < 0) {
+        errors.push("total_deposit must be an integer >= 0");
+      }
+    }
+
     if (bookingType === "activity") {
       if (normalizeInt(data.product_id) === null) {
         errors.push("product_id is required for activity booking");
@@ -209,6 +220,17 @@ class BookingValidator {
       const value = normalizeNumber(data.total_price);
       if (value === null || value < 0) {
         errors.push("total_price must be numeric and >= 0");
+      }
+    }
+
+    if (
+      data.total_deposit !== undefined &&
+      data.total_deposit !== null &&
+      data.total_deposit !== ""
+    ) {
+      const value = normalizeInt(data.total_deposit);
+      if (value === null || value < 0) {
+        errors.push("total_deposit must be an integer >= 0");
       }
     }
 

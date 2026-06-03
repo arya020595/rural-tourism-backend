@@ -494,6 +494,7 @@ class BookingsService {
       product_name: record.productName,
       activity_date: record.activityDate,
       total_price: record.totalPrice,
+      total_deposit: record.totalDeposit,
       user_id: record.userId,
       user_fullname: record.userFullname,
       check_in_date: record.checkInDate,
@@ -532,6 +533,7 @@ class BookingsService {
       product_name: record.productName,
       activity_date: record.activityDate,
       total_price: record.totalPrice,
+      total_deposit: record.totalDeposit,
       user_id: record.userId,
       user_fullname: record.userFullname,
       check_in_date: record.checkInDate,
@@ -673,6 +675,7 @@ class BookingsService {
       data.bookingTime ?? data.booking_time,
     );
     const totalPrice = normalizeNumber(data.total_price, null);
+    const totalDeposit = normalizeInt(data.total_deposit, null);
     const status = data.status
       ? this.ensureStatusAllowed(data.status)
       : "pending";
@@ -698,6 +701,15 @@ class BookingsService {
 
     if (totalPrice === null || totalPrice < 0) {
       errors.push("total_price must be numeric and >= 0");
+    }
+
+    if (
+      data.total_deposit !== undefined &&
+      data.total_deposit !== null &&
+      data.total_deposit !== "" &&
+      (totalDeposit === null || totalDeposit < 0)
+    ) {
+      errors.push("total_deposit must be an integer >= 0");
     }
 
     if (bookingType === "activity") {
@@ -767,6 +779,7 @@ class BookingsService {
       productName,
       activityDate,
       totalPrice,
+      totalDeposit: totalDeposit ?? null,
       userId: operatorContext.userId,
       userFullname: operatorContext.userFullname,
       checkInDate: normalizedStay.checkInDate,
@@ -903,6 +916,20 @@ class BookingsService {
         throw error;
       }
       payload.totalPrice = value;
+    }
+
+    if (data.total_deposit !== undefined) {
+      const value = normalizeInt(data.total_deposit, null);
+      if (
+        data.total_deposit !== null &&
+        data.total_deposit !== "" &&
+        (value === null || value < 0)
+      ) {
+        const error = new Error("total_deposit must be an integer >= 0");
+        error.statusCode = 400;
+        throw error;
+      }
+      payload.totalDeposit = value;
     }
 
     if (data.check_in_date !== undefined) {
@@ -1216,9 +1243,27 @@ class BookingsService {
     const where = { ...queryWhere };
     const dateRange = this.parseDateRangeFilter(query.start_date, query.end_date);
     if (dateRange) {
-      where.created_at = {
-        [Op.between]: [dateRange.start, dateRange.end],
-      };
+      const statuses = Array.isArray(queryWhere.status)
+        ? queryWhere.status
+        : queryWhere.status?.[Op.in] ?? (queryWhere.status ? [queryWhere.status] : []);
+      const isPaidQuery = statuses.some((s) => s === "paid" || s === "completed");
+      if (isPaidQuery) {
+        // For paid/completed receipts, match on receipt_created_at when available,
+        // falling back to created_at for older records that predate the column.
+        where[Op.or] = [
+          {
+            receiptCreatedAt: { [Op.between]: [dateRange.start, dateRange.end] },
+          },
+          {
+            receiptCreatedAt: null,
+            created_at: { [Op.between]: [dateRange.start, dateRange.end] },
+          },
+        ];
+      } else {
+        where.created_at = {
+          [Op.between]: [dateRange.start, dateRange.end],
+        };
+      }
     }
 
     const { count, rows } = await Booking.findAndCountAll({
