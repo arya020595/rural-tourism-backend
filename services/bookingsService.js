@@ -646,6 +646,7 @@ class BookingsService {
             normalizeString(refereeCompany.company_name),
           description: serviceName,
           perPrice,
+          associationId: referrerAssociationId,
         };
       }),
     );
@@ -1154,6 +1155,7 @@ class BookingsService {
           refereeCompany: item.refereeCompany,
           description: item.description,
           perPrice: item.perPrice,
+          associationId: item.associationId ?? null,
         }));
 
         await BookingPackageCompany.bulkCreate(rows, { transaction });
@@ -1756,6 +1758,7 @@ class BookingsService {
               refereeCompany: item.refereeCompany,
               description: item.description,
               perPrice: item.perPrice,
+              associationId: item.associationId ?? null,
             })),
             { transaction },
           );
@@ -1815,7 +1818,17 @@ class BookingsService {
       await record.update(updateData, { transaction });
       await transaction.commit();
 
-      return this.serialize(record);
+      const refreshed = await Booking.findByPk(record.id, {
+        include: [
+          {
+            model: BookingPackageCompany,
+            as: "package_companies",
+            required: false,
+          },
+        ],
+      });
+
+      return this.serialize(refreshed);
     } catch (error) {
       await transaction.rollback();
       throw error;

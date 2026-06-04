@@ -43,6 +43,11 @@ const BookingPackageCompany = sequelize.define(
       allowNull: false,
       field: "per_price",
     },
+    associationId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "association_id",
+    },
   },
   {
     tableName: "booking_package_companies",

@@ -1,5 +1,6 @@
 const { Op, fn, col, literal, where } = require("sequelize");
 const Booking = require("../models/bookingModel");
+const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
 const bookingsService = require("./bookingsService");
 
 const FINAL_STATUSES = ["paid", "completed"];
@@ -87,20 +88,20 @@ class DashboardService {
     return bookingsService.resolveActorContext(authUser);
   }
 
-  baseWhere({ userId, isSuperadmin, startDate, endDate }) {
+  baseWhere({ companyId, isSuperadmin, startDate, endDate }) {
     const whereClause = {
       status: { [Op.in]: FINAL_STATUSES },
       [Op.and]: [this.buildEffectiveDateWhere(startDate, endDate)],
     };
 
     if (!isSuperadmin) {
-      whereClause.userId = userId;
+      whereClause.companyId = companyId;
     }
 
     return whereClause;
   }
 
-  async aggregateByType({ userId, isSuperadmin, startDate, endDate }) {
+  async aggregateByType({ companyId, isSuperadmin, startDate, endDate }) {
     return Booking.findAll({
       attributes: [
         "bookingType",
@@ -118,13 +119,13 @@ class DashboardService {
           "totalTourists",
         ],
       ],
-      where: this.baseWhere({ userId, isSuperadmin, startDate, endDate }),
+      where: this.baseWhere({ companyId, isSuperadmin, startDate, endDate }),
       group: ["bookingType"],
       raw: true,
     });
   }
 
-  async aggregateMonthlyByType({ userId, isSuperadmin, startDate, endDate }) {
+  async aggregateMonthlyByType({ companyId, isSuperadmin, startDate, endDate }) {
     return Booking.findAll({
       attributes: [
         [fn("DATE_FORMAT", this.getEffectiveDateExpr(), "%Y-%m"), "month"],
@@ -143,7 +144,7 @@ class DashboardService {
           "totalTourists",
         ],
       ],
-      where: this.baseWhere({ userId, isSuperadmin, startDate, endDate }),
+      where: this.baseWhere({ companyId, isSuperadmin, startDate, endDate }),
       group: [
         fn("DATE_FORMAT", this.getEffectiveDateExpr(), "%Y-%m"),
         "bookingType",
@@ -151,6 +152,54 @@ class DashboardService {
       order: [[literal("month"), "ASC"]],
       raw: true,
     });
+  }
+
+  async aggregateReferralRevenue({ companyId, isSuperadmin, startDate, endDate }) {
+    if (isSuperadmin || !companyId) return 0;
+
+    const [rows] = await BookingPackageCompany.sequelize.query(`
+      SELECT
+        COALESCE(SUM(bpc.per_price), 0) AS referralRevenue,
+        COALESCE(SUM(COALESCE(b.no_of_pax_antarbangsa, 0) + COALESCE(b.no_of_pax_domestik, 0)), 0) AS referralTourists
+      FROM booking_package_companies bpc
+      INNER JOIN bookings b ON b.id = bpc.booking_package_id
+      WHERE bpc.referee_id = :companyId
+        AND b.status IN (:statuses)
+        AND COALESCE(b.receipt_created_at, b.updated_at, b.created_at)
+            BETWEEN :startDate AND :endDate
+    `, {
+      replacements: { companyId, statuses: FINAL_STATUSES, startDate, endDate },
+      type: BookingPackageCompany.sequelize.QueryTypes.SELECT,
+    });
+
+    return {
+      revenue: Number(rows?.referralRevenue || 0),
+      tourists: Number(rows?.referralTourists || 0),
+    };
+  }
+
+  async aggregateReferralRevenueMonthly({ companyId, isSuperadmin, startDate, endDate }) {
+    if (isSuperadmin || !companyId) return [];
+
+    const rows = await BookingPackageCompany.sequelize.query(`
+      SELECT
+        DATE_FORMAT(COALESCE(b.receipt_created_at, b.updated_at, b.created_at), '%Y-%m') AS month,
+        COALESCE(SUM(bpc.per_price), 0) AS referralRevenue,
+        COALESCE(SUM(COALESCE(b.no_of_pax_antarbangsa, 0) + COALESCE(b.no_of_pax_domestik, 0)), 0) AS referralTourists
+      FROM booking_package_companies bpc
+      INNER JOIN bookings b ON b.id = bpc.booking_package_id
+      WHERE bpc.referee_id = :companyId
+        AND b.status IN (:statuses)
+        AND COALESCE(b.receipt_created_at, b.updated_at, b.created_at)
+            BETWEEN :startDate AND :endDate
+      GROUP BY month
+      ORDER BY month ASC
+    `, {
+      replacements: { companyId, statuses: FINAL_STATUSES, startDate, endDate },
+      type: BookingPackageCompany.sequelize.QueryTypes.SELECT,
+    });
+
+    return rows;
   }
 
   normalizeTypeSummary(rows) {
@@ -286,22 +335,27 @@ class DashboardService {
 
   async getTodayDashboard(authUser, dateRaw) {
     const actor = await this.resolveActorContext(authUser);
-    const userId = actor.userId;
+    const companyId = actor.companyId;
     const isSuperadmin = actor.isSuperadmin;
     const { startDate, endDate, asOfDate } = this.resolveTodayRange(dateRaw);
 
-    const summaryRows = await this.aggregateByType({
-      userId,
-      isSuperadmin,
-      startDate,
-      endDate,
-    });
+    const [summaryRows, referral] = await Promise.all([
+      this.aggregateByType({ companyId, isSuperadmin, startDate, endDate }),
+      this.aggregateReferralRevenue({ companyId, isSuperadmin, startDate, endDate }),
+    ]);
 
     const typeSummary = this.normalizeTypeSummary(summaryRows);
 
+    // Fold referral revenue/tourists into the package slice so the charts
+    // reflect the same totals as the summary cards.
+    typeSummary.package.totalRevenue += referral.revenue;
+    typeSummary.package.totalTourists += referral.tourists;
+
+    const combined = this.toCombinedSummary(typeSummary);
+
     return {
       asOfDate,
-      summary: this.toCombinedSummary(typeSummary),
+      summary: combined,
       charts: this.toTodayCharts(typeSummary),
     };
   }
@@ -335,18 +389,36 @@ class DashboardService {
 
   async getTrendDashboard(authUser, fromRaw, toRaw) {
     const actor = await this.resolveActorContext(authUser);
-    const userId = actor.userId;
+    const companyId = actor.companyId;
     const isSuperadmin = actor.isSuperadmin;
     const { startDate, endDate, from, to } = this.resolveTrendRange(fromRaw, toRaw);
 
-    const [summaryRows, monthlyRows] = await Promise.all([
-      this.aggregateByType({ userId, isSuperadmin, startDate, endDate }),
-      this.aggregateMonthlyByType({ userId, isSuperadmin, startDate, endDate }),
+    const [summaryRows, monthlyRows, referral, referralMonthlyRows] = await Promise.all([
+      this.aggregateByType({ companyId, isSuperadmin, startDate, endDate }),
+      this.aggregateMonthlyByType({ companyId, isSuperadmin, startDate, endDate }),
+      this.aggregateReferralRevenue({ companyId, isSuperadmin, startDate, endDate }),
+      this.aggregateReferralRevenueMonthly({ companyId, isSuperadmin, startDate, endDate }),
     ]);
 
     const typeSummary = this.normalizeTypeSummary(summaryRows);
     const monthKeys = this.buildMonthKeys(startDate, endDate);
     const trends = this.normalizeMonthlyMaps(monthKeys, monthlyRows);
+    const combined = this.toCombinedSummary(typeSummary);
+    combined.totalRevenue += referral.revenue;
+    combined.totalTourists += referral.tourists;
+
+    // Add referral revenue and tourists into the package trend per month
+    const referralMonthlyMap = new Map(referralMonthlyRows.map((r) => [r.month, r]));
+    trends.revenueTrend = trends.revenueTrend.map((row, i) => {
+      const key = monthKeys[i];
+      const extra = Number(referralMonthlyMap.get(key)?.referralRevenue || 0);
+      return { ...row, package: (row.package || 0) + extra };
+    });
+    trends.touristsTrend = trends.touristsTrend.map((row, i) => {
+      const key = monthKeys[i];
+      const extra = Number(referralMonthlyMap.get(key)?.referralTourists || 0);
+      return { ...row, package: (row.package || 0) + extra };
+    });
 
     return {
       range: {
@@ -355,7 +427,7 @@ class DashboardService {
         start: startDate.toISOString(),
         end: endDate.toISOString(),
       },
-      summary: this.toCombinedSummary(typeSummary),
+      summary: combined,
       revenueTrend: trends.revenueTrend,
       receiptsTrend: trends.receiptsTrend,
       touristsTrend: trends.touristsTrend,
