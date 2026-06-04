@@ -49,11 +49,24 @@ class BookingPolicy extends ApplicationPolicy {
   _sameCompany() {
     if (!this.record) return false;
     const plain = this.record.toJSON ? this.record.toJSON() : this.record;
-    // Service serialize() returns snake_case `company_id`
     const recordCompanyId = plain.company_id ?? plain.companyId;
-    if (this.user.company_id && recordCompanyId) {
-      return this.user.company_id === recordCompanyId;
+    const userCompanyId = this.user.company_id;
+
+    if (!userCompanyId) return false;
+
+    // Direct company match (creator) — use == to handle int/string mismatch
+    if (recordCompanyId && userCompanyId == recordCompanyId) return true;
+
+    // Referee match — allow access if this company is a participant in the package
+    const packageCompanies = plain.package_companies ?? [];
+    if (packageCompanies.length > 0) {
+      return packageCompanies.some(
+        (pc) =>
+          (pc.referee_id ?? pc.refereeId) == userCompanyId ||
+          (pc.referrer_id ?? pc.referrerId) == userCompanyId,
+      );
     }
+
     return false;
   }
 }

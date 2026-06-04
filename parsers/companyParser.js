@@ -47,9 +47,9 @@ function extractCompanyUpdateFields(body, files) {
   }
 
   // Extract user-level fields
-  if (body.association_id !== undefined) {
-    user.association_id = parseNullableInt(body.association_id);
-  }
+  // NOTE: association_id is intentionally excluded — changing it would orphan
+  // existing package bookings that reference cross-association companies.
+  // Only a superadmin DB migration should reassign a company's association.
   if (body.owner_full_name !== undefined) {
     user.name = body.owner_full_name; // Map frontend field to DB column
   }
