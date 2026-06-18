@@ -1100,6 +1100,14 @@ class BookingsService {
       payload.idempotencyKey = idempotencyKey;
       payload.version = 0;
 
+      // E-receipt bookings are created directly as "paid" (the booking-page
+      // flow instead transitions to paid later, stamping receipt_created_at in
+      // updateBooking). Stamp it here too so the receipt date is consistent
+      // across both flows when none was supplied by the client.
+      if (payload.status === "paid" && !payload.receiptCreatedAt) {
+        payload.receiptCreatedAt = new Date();
+      }
+
       if (
         payload.bookingType === "activity" ||
         payload.bookingType === "accommodation"
