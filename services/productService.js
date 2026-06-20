@@ -1,7 +1,11 @@
 const { Op } = require("sequelize");
 const Product = require("../models/productModel");
 const Company = require("../models/companyModel");
-const { NotFoundError, BadRequestError } = require("./errors/AppError");
+const {
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+} = require("./errors/AppError");
 require("../models/associations");
 
 const PRODUCT_INCLUDES = [
@@ -225,7 +229,19 @@ class ProductService {
   async deleteProduct(id) {
     const product = await Product.findByPk(id);
     if (!product) throw new NotFoundError("Product not found");
-    await product.destroy();
+    try {
+      await product.destroy();
+    } catch (err) {
+      // If the schema still has an ON DELETE RESTRICT foreign key (e.g. a
+      // staging DB that hasn't run the SET NULL migration yet), MySQL rejects
+      // the delete. Surface a clear 409 instead of leaking the raw SQL error.
+      if (err?.name === "SequelizeForeignKeyConstraintError") {
+        throw new ConflictError(
+          "Cannot delete this product because it is still used by existing bookings.",
+        );
+      }
+      throw err;
+    }
   }
 }
 
