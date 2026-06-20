@@ -42,6 +42,10 @@ function buildHtml(data, pdfUrl) {
     totalPrice, createdAt, companyLogoBase64,
   } = data;
 
+  // "Issued By" uses the operator who created the booking, falling back to the
+  // company name when no operator name was recorded.
+  const issuedByName = escapeHtml(String(operatorName || "").trim() || companyName) || "-";
+
   const companyLogoSrc = companyLogoBase64
     ? (companyLogoBase64.startsWith("data:") ? companyLogoBase64 : `data:image/png;base64,${companyLogoBase64}`)
     : null;
@@ -234,7 +238,7 @@ function buildHtml(data, pdfUrl) {
     <div class="receipt-footer">
       <div class="issued-block">
         <div class="issued-label">DIKELUARKAN OLEH/ISSUED BY:</div>
-        <div class="issued-name">${escapeHtml(companyName) || "-"}</div>
+        <div class="issued-name">${issuedByName}</div>
         <div class="issued-email">${escapeHtml(operatorEmail)}</div>
       </div>
       <div class="total-block">

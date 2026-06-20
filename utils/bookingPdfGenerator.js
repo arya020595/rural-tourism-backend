@@ -50,11 +50,7 @@ function formatHeaderDate(dateStr) {
   const day = String(date.getDate()).padStart(2, "0");
   const month = MONTHS_MY[date.getMonth()];
   const year = date.getFullYear();
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  const ampm = hours >= 12 ? "PM" : "AM";
-  hours = hours % 12 || 12;
-  return `${day} ${month} ${year}, ${hours}:${minutes}${ampm}`;
+  return `${day} ${month} ${year}`;
 }
 
 function formatActivityDate(dateStr) {
@@ -69,12 +65,16 @@ function formatActivityDate(dateStr) {
 function buildHtml(data) {
   const {
     id,
+    bookingType,
     touristFullName,
     companyName,
     productName,
     totalPax,
     location,
     activityDate,
+    checkInDate,
+    checkOutDate,
+    totalOfNight,
     status,
     operatorName,
     operatorEmail,
@@ -83,6 +83,7 @@ function buildHtml(data) {
     companyLogoBase64,
   } = data;
 
+  const isAccommodation = bookingType === "accommodation";
   const bookingId = escapeHtml(formatBookingId(id));
   const headerDate = escapeHtml(formatHeaderDate(createdAt));
 
@@ -97,6 +98,9 @@ function buildHtml(data) {
     ? `<div class="logo-explore"><img src="data:image/png;base64,${EXPLORE_SABAH_BASE64}" alt="Explore Sabah" /></div>`
     : `<div class="logo-explore"><span class="explore-word">Explore</span><span class="sabah-word">SABAH</span><div class="sub">NORTH BORNEO, MALAYSIA</div></div>`;
   const activityDateFormatted = escapeHtml(formatActivityDate(activityDate));
+  const checkInFormatted = escapeHtml(formatActivityDate(checkInDate));
+  const checkOutFormatted = escapeHtml(formatActivityDate(checkOutDate));
+  const totalNightsDisplay = escapeHtml(`${totalOfNight || 0} MALAM/NIGHTS`);
   const totalPaxDisplay = escapeHtml(`${totalPax || 0} ORANG`);
   const totalPriceFormatted = escapeHtml(Number(totalPrice || 0).toFixed(2));
   const safeTouristFullName = escapeHtml(touristFullName) || "-";
@@ -106,6 +110,31 @@ function buildHtml(data) {
   const safeStatus = escapeHtml((status || "").toUpperCase()) || "-";
   const safeOperatorName = escapeHtml(operatorName) || "-";
   const safeOperatorEmail = escapeHtml(operatorEmail);
+
+  // Product label + date rows differ between activity and accommodation.
+  const productLabel = isAccommodation
+    ? "PENGINAPAN/<em>ACCOMMODATION</em>"
+    : "AKTIVITI/<em>ACTIVITY</em>";
+
+  const dateRows = isAccommodation
+    ? `
+    <div>
+      <div class="field-label">TARIKH DAFTAR MASUK/<em>CHECK IN DATE</em></div>
+      <div class="field-value">${checkInFormatted}</div>
+    </div>
+    <div>
+      <div class="field-label">TARIKH DAFTAR KELUAR/<em>CHECK OUT DATE</em></div>
+      <div class="field-value">${checkOutFormatted}</div>
+    </div>
+    <div>
+      <div class="field-label">JUMLAH MALAM/<em>TOTAL NO. OF NIGHTS</em></div>
+      <div class="field-value">${totalNightsDisplay}</div>
+    </div>`
+    : `
+    <div>
+      <div class="field-label">TARIKH/<em>ACTIVITY DATE</em></div>
+      <div class="field-value">${activityDateFormatted}</div>
+    </div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -286,7 +315,7 @@ function buildHtml(data) {
       <div class="field-value">${safeCompanyName}</div>
     </div>
     <div>
-      <div class="field-label">AKTIVITI/<em>ACTIVITY</em></div>
+      <div class="field-label">${productLabel}</div>
       <div class="field-value">${safeProductName}</div>
     </div>
     <div>
@@ -297,10 +326,7 @@ function buildHtml(data) {
       <div class="field-label">LOKASI/<em>LOCATION</em></div>
       <div class="field-value">${safeLocation}</div>
     </div>
-    <div>
-      <div class="field-label">TARIKH/<em>ACTIVITY DATE</em></div>
-      <div class="field-value">${activityDateFormatted}</div>
-    </div>
+    ${dateRows}
     <div class="full-width">
       <div class="field-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>
       <div class="field-value">${safeStatus}</div>
