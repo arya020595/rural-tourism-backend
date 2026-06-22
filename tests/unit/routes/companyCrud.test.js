@@ -5,6 +5,7 @@ const { generateToken } = require("../../../middleware/auth");
 // ── Service mocks ──────────────────────────────────────────────────────────
 const mockGetCompanyById = jest.fn();
 const mockUpdateCompany = jest.fn();
+const mockUpdateCompanyOwner = jest.fn();
 
 jest.mock("../../../middleware/uploadLogo", () => ({
   fields: () => (req, res, next) => next(),
@@ -13,6 +14,7 @@ jest.mock("../../../middleware/uploadLogo", () => ({
 jest.mock("../../../services/companyService", () => ({
   getCompanyById: (...args) => mockGetCompanyById(...args),
   updateCompany: (...args) => mockUpdateCompany(...args),
+  updateCompanyOwner: (...args) => mockUpdateCompanyOwner(...args),
 }));
 
 const companyRoutes = require("../../../routes/companyRoutes");
