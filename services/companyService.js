@@ -1,6 +1,7 @@
 const { Op } = require("sequelize");
 const Company = require("../models/companyModel");
 const UnifiedUser = require("../models/unifiedUserModel");
+const Role = require("../models/roleModel");
 const { NotFoundError, BadRequestError } = require("./errors/AppError");
 require("../models/associations");
 
@@ -16,6 +17,26 @@ class CompanyService {
     if (!company) throw new NotFoundError("Company not found");
     await company.update(updates);
     return company;
+  }
+
+  /**
+   * Update the company owner's user fields (e.g. name). The owner is the
+   * operator_admin of the company — scope the update to that role so staff
+   * accounts in the same company are never overwritten.
+   */
+  async updateCompanyOwner(companyId, userFields) {
+    if (!userFields || Object.keys(userFields).length === 0) return;
+
+    // Sequelize cannot filter by an included association in a bulk update, so
+    // resolve the operator_admin role id and scope by company_id + role_id.
+    const adminRole = await Role.findOne({
+      where: { name: "operator_admin" },
+    });
+    if (!adminRole) return;
+
+    await UnifiedUser.update(userFields, {
+      where: { company_id: companyId, role_id: adminRole.id },
+    });
   }
 
   async getAllCompanies() {

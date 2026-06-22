@@ -47,13 +47,8 @@ exports.updateCompany = async (req, res) => {
       companyFields,
     );
 
-    // Update associated user(s) if user fields are present
-    if (Object.keys(userFields).length > 0) {
-      const UnifiedUser = require("../models/unifiedUserModel");
-      await UnifiedUser.update(userFields, {
-        where: { company_id: req.params.id },
-      });
-    }
+    // Update the company owner (operator_admin) if owner fields are present.
+    await companyService.updateCompanyOwner(req.params.id, userFields);
 
     return successResponse(
       res,

@@ -108,7 +108,10 @@ function buildHtml(data) {
   const safeProductName = escapeHtml(productName) || "-";
   const safeLocation = escapeHtml(location) || "-";
   const safeStatus = escapeHtml((status || "").toUpperCase()) || "-";
-  const safeOperatorName = escapeHtml(operatorName) || "-";
+  // Fall back to the company name when no operator name was provided,
+  // matching the e-receipt PDF behaviour.
+  const safeOperatorName =
+    escapeHtml(String(operatorName || "").trim() || companyName) || "-";
   const safeOperatorEmail = escapeHtml(operatorEmail);
 
   // Product label + date rows differ between activity and accommodation.
