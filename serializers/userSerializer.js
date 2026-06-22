@@ -15,6 +15,7 @@ function serialize(user) {
     association_id: plain.association_id || null,
     role_id: plain.role_id || null,
     company_id: plain.company_id || null,
+    owner_full_name: plain.owner_full_name ?? null,
     role: plain.role || null,
     association: plain.association || null,
     company: plain.company || null,
