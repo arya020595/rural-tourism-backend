@@ -120,6 +120,29 @@ exports.me = async (req, res) => {
   });
 };
 
+exports.changePassword = async (req, res) => {
+  try {
+    const { current_password, new_password } = req.body;
+
+    await authService.changePassword({
+      user: req.user,
+      currentPassword: current_password,
+      newPassword: new_password,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Password changed successfully.",
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || "Internal server error",
+    });
+  }
+};
+
 exports.register = async (req, res) => {
   try {
     const userType = req.body.user_type || req.body.userType;
