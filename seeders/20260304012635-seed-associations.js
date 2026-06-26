@@ -6,38 +6,44 @@ module.exports = {
     const now = new Date();
     const seedRows = [
       {
-        name: "KOBETA",
+        name: "KOTA BELUD TOURISM ASSOCIATION (KOBETA)",
         image: "/uploads/associations/kobeta_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: "RATA",
+        name: "RANAU TOURISM ASSOCIATION (RATA)",
         image: "/uploads/associations/rata_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: "KOMTDA",
+        name: "KOTA MARUDU TOURISM DEVELOPMENT ASSOCIATION (KOMTDA)",
         image: "/uploads/associations/komtda_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: "USTA",
+        name: "PERSATUAN PELANCONGAN ULU SUGUT (USTA)",
         image: "/uploads/associations/usta_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: "NTA",
+        name: "NABALU TOURISM ASSOCIATION (NTA)",
         image: "/uploads/associations/nta_logo.jpg",
         created_at: now,
         updated_at: now,
       },
       {
-        name: "KATA",
+        name: "PERSATUAN PELANCONGAN KADAMAIAN SABAH (KATA)",
         image: "/uploads/associations/kata_logo.jpg",
+        created_at: now,
+        updated_at: now,
+      },
+      {
+        name: "KIULU TOURISM ASSOCIATION (KTA)",
+        image: "/uploads/associations/kta_logo.jpg",
         created_at: now,
         updated_at: now,
       },
@@ -63,7 +69,15 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.bulkDelete("associations", {
-      name: ["KOBETA", "RATA", "KOMTDA", "USTA", "NTA", "KATA"],
+      name: [
+        "KOTA BELUD TOURISM ASSOCIATION (KOBETA)",
+        "RANAU TOURISM ASSOCIATION (RATA)",
+        "KOTA MARUDU TOURISM DEVELOPMENT ASSOCIATION (KOMTDA)",
+        "PERSATUAN PELANCONGAN ULU SUGUT (USTA)",
+        "NABALU TOURISM ASSOCIATION (NTA)",
+        "PERSATUAN PELANCONGAN KADAMAIAN SABAH (KATA)",
+        "KIULU TOURISM ASSOCIATION (KTA)",
+      ],
     });
   },
 };

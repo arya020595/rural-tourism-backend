@@ -408,6 +408,16 @@ class AuthService {
         : null;
     }
 
+    let association = null;
+    if (user.association_id) {
+      const assoc = await Association.findByPk(user.association_id, {
+        attributes: ["id", "name", "image"],
+      });
+      association = assoc
+        ? { id: assoc.id, name: assoc.name, image: assoc.image || null }
+        : null;
+    }
+
     return {
       token,
       user: {
@@ -421,6 +431,7 @@ class AuthService {
         username: user.username,
         email: user.email,
         association_id: user.association_id || null,
+        association,
         power_bi_url: powerBiUrl,
         company_id: user.company_id || null,
         company_logo: companyLogo,
@@ -761,6 +772,58 @@ class AuthService {
     }
 
     return [...new Set(codes)];
+  }
+
+  /**
+   * Changes the password for an authenticated user in the unified `users`
+   * table (operators and association accounts seeded there). Verifies the
+   * current password before applying the new one.
+   */
+  async changePassword({ user, currentPassword, newPassword } = {}) {
+    const userId = user?.id || user?.unified_user_id || user?.legacy_user_id;
+
+    if (!userId) {
+      const error = new Error("Unable to identify the authenticated user.");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    if (!currentPassword || !newPassword) {
+      const error = new Error(
+        "Current password and new password are required.",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (String(newPassword).length < 8) {
+      const error = new Error(
+        "New password must be at least 8 characters long.",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const dbUser = await UnifiedUser.findByPk(userId);
+    if (!dbUser) {
+      const error = new Error("User not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const currentOk = await bcrypt.compare(currentPassword, dbUser.password);
+    if (!currentOk) {
+      const error = new Error("Current password is incorrect.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const passwordHash = await bcrypt.hash(String(newPassword), 10);
+    dbUser.password = passwordHash;
+    dbUser.confirm_password = passwordHash;
+    await dbUser.save();
+
+    return { success: true };
   }
 }
 
