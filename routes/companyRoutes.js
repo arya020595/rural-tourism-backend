@@ -12,6 +12,13 @@ const companyUploadFields = upload.fields([
   { name: "homestay_certificate", maxCount: 1 },
 ]);
 
+// GET /api/companies/package-options
+router.get(
+  "/package-options",
+  authenticate,
+  asyncHandler(companyController.getPackageCompanies),
+);
+
 // GET /api/companies/:id
 router.get(
   "/:id",

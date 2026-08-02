@@ -51,6 +51,7 @@ const errorResponse = (res, messageOrError, statusCode, errors) => {
     if (err.details) {
       body.errors = err.details;
     }
+    if (err.meta) Object.assign(body, err.meta);
     return res.status(err.statusCode || 500).json(body);
   }
 

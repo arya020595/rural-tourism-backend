@@ -20,3 +20,20 @@ exports.getAllPermissions = async (req, res) => {
     });
   }
 };
+
+exports.getPermissionsBySection = async (req, res) => {
+  try {
+    const permissionsBySection = await permissionService.getPermissionsBySection();
+
+    return res.status(200).json({
+      success: true,
+      message: "Permissions grouped by section fetched successfully",
+      data: permissionsBySection,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch permissions",
+    });
+  }
+};

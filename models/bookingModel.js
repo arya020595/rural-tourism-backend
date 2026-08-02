@@ -9,10 +9,27 @@ const Booking = sequelize.define(
       autoIncrement: true,
       primaryKey: true,
     },
+    idempotencyKey: {
+      type: DataTypes.STRING(36),
+      allowNull: true,
+      defaultValue: null,
+      field: "idempotency_key",
+    },
+    version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     bookingType: {
       type: DataTypes.ENUM("activity", "accommodation", "package"),
       allowNull: false,
       field: "booking_type",
+    },
+    customerType: {
+      type: DataTypes.ENUM("tourist", "company"),
+      allowNull: false,
+      defaultValue: "tourist",
+      field: "customer_type",
     },
     touristFullName: {
       type: DataTypes.STRING(255),
@@ -61,6 +78,11 @@ const Booking = sequelize.define(
       allowNull: true,
       field: "total_price",
     },
+    totalDeposit: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: "total_deposit",
+    },
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -92,7 +114,7 @@ const Booking = sequelize.define(
     status: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: "pending",
+      defaultValue: "booked",
     },
     receiptCreatedAt: {
       type: DataTypes.DATE,
@@ -113,6 +135,16 @@ const Booking = sequelize.define(
       type: DataTypes.STRING(255),
       allowNull: true,
       field: "company_name",
+    },
+    phoneNumber: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      field: "phone_number",
+    },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: "email",
     },
   },
   {

@@ -1,0 +1,249 @@
+{
+  "info": {
+    "name": "Booking PDF API",
+    "description": "Endpoints to generate and download a Booking Confirmation PDF.\n\n## Setup\n1. Set `baseUrl` (default: `http://localhost:3000`)\n2. Run **Login** first — the token is auto-saved to `token`\n3. Set `bookingId` to the ID you want to generate a PDF for\n\n## Notes\n- The PDF endpoint streams a binary `application/pdf` response directly (no intermediate file URL)\n- In Postman, click **Send and Download** to save the file locally",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Login to obtain a JWT token.",
+      "item": [
+        {
+          "name": "Login (Superadmin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "    pm.test('Token saved', function () {",
+                  "        pm.expect(pm.collectionVariables.get('token')).to.not.be.empty;",
+                  "    });",
+                  "}",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"superadmin_seed\",\n  \"password\": \"superadmin123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as superadmin. Token is auto-saved to the `token` variable."
+          }
+        },
+        {
+          "name": "Login (Operator Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.success && res.data && res.data.token) {",
+                  "    pm.collectionVariables.set('token', res.data.token);",
+                  "    pm.test('Token saved', function () {",
+                  "        pm.expect(pm.collectionVariables.get('token')).to.not.be.empty;",
+                  "    });",
+                  "}",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"operator_seed\",\n  \"password\": \"operator123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login as an operator admin. Token is auto-saved to the `token` variable."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Booking PDF",
+      "description": "Generate and download a Booking Confirmation PDF.",
+      "item": [
+        {
+          "name": "Generate Booking Confirmation PDF",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is a PDF', function () {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/pdf');",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition header is present', function () {",
+                  "    const disposition = pm.response.headers.get('Content-Disposition');",
+                  "    pm.expect(disposition).to.include('attachment');",
+                  "    pm.expect(disposition).to.include('.pdf');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "JWT token from Login"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "pdf"]
+            },
+            "description": "Generates a Booking Confirmation PDF for the given booking ID and streams it as a binary `application/pdf` response.\n\n**In Postman:** click **Send and Download** to save the PDF to your machine.\n\n**Authorization:** Requires `booking:read` permission. Operators can only download PDFs for bookings belonging to their own company.\n\n**Response headers:**\n- `Content-Type: application/pdf`\n- `Content-Disposition: attachment; filename=\"booking-{id}.pdf\"`\n- `Content-Length: <bytes>`"
+          }
+        },
+        {
+          "name": "Generate PDF – 404 (Booking Not Found)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message in response', function () {",
+                  "    const res = pm.response.json();",
+                  "    pm.expect(res.success).to.eql(false);",
+                  "    pm.expect(res.message).to.include('not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/999999/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "999999", "pdf"]
+            },
+            "description": "Expects a 404 when the booking ID does not exist."
+          }
+        },
+        {
+          "name": "Generate PDF – 401 (No Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "pdf"]
+            },
+            "description": "Expects a 401 when no Authorization header is provided."
+          }
+        },
+        {
+          "name": "Generate PDF – 403 (Wrong Company)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}",
+                "description": "Token of an operator from a DIFFERENT company than the booking's company_id"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/bookings/{{bookingId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "bookings", "{{bookingId}}", "pdf"]
+            },
+            "description": "Expects a 403 when an operator tries to download a PDF for a booking that does not belong to their company."
+          }
+        }
+      ]
+    }
+  ]
+}

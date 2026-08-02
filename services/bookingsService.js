@@ -1,8 +1,10 @@
 const { Op } = require("sequelize");
 const Booking = require("../models/bookingModel");
 const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
+const Product = require("../models/productModel");
 const UnifiedUser = require("../models/unifiedUserModel");
 const Company = require("../models/companyModel");
+const Role = require("../models/roleModel");
 const {
   normalizeString,
   normalizeInt,
@@ -10,6 +12,7 @@ const {
   normalizeNullableDate,
   normalizeDateOnly,
 } = require("../utils/normalizers");
+const { buildMeta } = require("../utils/helpers");
 
 const ALLOWED_STATUSES = [
   "pending",
@@ -22,8 +25,72 @@ const ALLOWED_STATUSES = [
 ];
 
 const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
+const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 
 class BookingsService {
+  parseStatusFilter(statusValue) {
+    const raw = normalizeString(statusValue);
+    if (!raw) return null;
+
+    const statuses = raw
+      .split(",")
+      .map((item) => this.ensureStatusAllowed(item))
+      .filter(Boolean);
+
+    return Array.from(new Set(statuses));
+  }
+
+  parseDateRangeFilter(startDateRaw, endDateRaw) {
+    if (
+      (startDateRaw === undefined || startDateRaw === null || startDateRaw === "") &&
+      (endDateRaw === undefined || endDateRaw === null || endDateRaw === "")
+    ) {
+      return null;
+    }
+
+    const startDateOnly =
+      startDateRaw !== undefined && startDateRaw !== null && startDateRaw !== ""
+        ? normalizeDateOnly(startDateRaw)
+        : null;
+    const endDateOnly =
+      endDateRaw !== undefined && endDateRaw !== null && endDateRaw !== ""
+        ? normalizeDateOnly(endDateRaw)
+        : null;
+
+    if (!startDateOnly && startDateRaw) {
+      const error = new Error(
+        "start_date must be a valid date in YYYY-MM-DD format",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!endDateOnly && endDateRaw) {
+      const error = new Error(
+        "end_date must be a valid date in YYYY-MM-DD format",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (!startDateOnly || !endDateOnly) {
+      const error = new Error("start_date and end_date must be provided together");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const start = new Date(`${startDateOnly}T00:00:00.000Z`);
+    const end = new Date(`${endDateOnly}T23:59:59.999Z`);
+
+    if (end < start) {
+      const error = new Error("end_date must be on or after start_date");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return { start, end };
+  }
+
   ensureStatusAllowed(status) {
     const normalizedStatus = normalizeString(status).toLowerCase();
 
@@ -50,6 +117,94 @@ class BookingsService {
     }
 
     return normalizedType;
+  }
+
+  ensureCustomerTypeAllowed(type) {
+    const normalizedType = normalizeString(type).toLowerCase();
+
+    if (!ALLOWED_CUSTOMER_TYPES.includes(normalizedType)) {
+      const error = new Error(
+        `Invalid customer_type. Allowed values: ${ALLOWED_CUSTOMER_TYPES.join(", ")}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return normalizedType;
+  }
+
+  async resolveProductSnapshot(productId, bookingType, transaction = null) {
+    const normalizedProductId = normalizeInt(productId, null);
+    if (normalizedProductId === null) {
+      const error = new Error("product_id must be an integer");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const normalizedBookingType = this.ensureBookingTypeAllowed(bookingType);
+
+    const product = await Product.findByPk(normalizedProductId, {
+      attributes: ["id", "name", "product_type"],
+      transaction,
+    });
+
+    if (!product) {
+      const error = new Error(
+        `Product with id ${normalizedProductId} not found.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (product.product_type !== normalizedBookingType) {
+      const error = new Error(
+        `Selected product must be an ${normalizedBookingType} product.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return {
+      id: product.id,
+      name: normalizeString(product.name),
+      productType: product.product_type,
+    };
+  }
+
+  normalizeActivityDateTime(activityDateValue, bookingTimeValue) {
+    const normalizedActivityDate = normalizeString(activityDateValue);
+    if (!normalizedActivityDate) {
+      return null;
+    }
+
+    if (/[T\s]\d{1,2}:\d{2}/.test(normalizedActivityDate)) {
+      return normalizeNullableDate(normalizedActivityDate);
+    }
+
+    const normalizedTime = normalizeString(bookingTimeValue);
+    if (!normalizedTime) {
+      return normalizeNullableDate(normalizedActivityDate);
+    }
+
+    const dateOnly = normalizeDateOnly(normalizedActivityDate);
+    if (!dateOnly) {
+      return null;
+    }
+
+    const timeMatch = normalizedTime.match(
+      /^([01]?\d|2[0-3]):([0-5]\d)(?::([0-5]\d))?$/,
+    );
+    if (!timeMatch) {
+      return null;
+    }
+
+    const hours = String(Number(timeMatch[1])).padStart(2, "0");
+    const minutes = String(Number(timeMatch[2])).padStart(2, "0");
+    const seconds = timeMatch[3]
+      ? String(Number(timeMatch[3])).padStart(2, "0")
+      : "00";
+
+    return normalizeNullableDate(`${dateOnly}T${hours}:${minutes}:${seconds}`);
   }
 
   computeNightDiff(checkInDate, checkOutDate) {
@@ -161,6 +316,67 @@ class BookingsService {
     };
   }
 
+  isSuperadmin(authUser) {
+    return (
+      authUser?.role === "superadmin" ||
+      (Array.isArray(authUser?.permissions) &&
+        authUser.permissions.includes("*:*"))
+    );
+  }
+
+  async resolveActorContext(authUser, transaction = null) {
+    const operatorContext = await this.resolveOperatorContext(
+      authUser,
+      transaction,
+    );
+
+    return {
+      ...operatorContext,
+      isSuperadmin: this.isSuperadmin(authUser),
+    };
+  }
+
+  async validateProductAccess(productId, actorContext, transaction = null) {
+    const normalizedProductId = normalizeInt(productId, null);
+    if (normalizedProductId === null) {
+      const error = new Error("product_id must be an integer");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const product = await Product.findByPk(normalizedProductId, {
+      attributes: ["id", "company_id", "name"],
+      transaction,
+    });
+
+    if (!product) {
+      const error = new Error("Invalid product_id");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (actorContext.isSuperadmin) {
+      return product;
+    }
+
+    const operatorCompanyId = normalizeInt(actorContext.companyId, null);
+    const productCompanyId = normalizeInt(product.company_id, null);
+
+    if (
+      operatorCompanyId === null ||
+      productCompanyId === null ||
+      operatorCompanyId !== productCompanyId
+    ) {
+      const error = new Error(
+        "Forbidden. You can only process bookings for products in your own company.",
+      );
+      error.statusCode = 403;
+      throw error;
+    }
+
+    return product;
+  }
+
   async resolveCompanySnapshot(
     companyId,
     fallbackName = "",
@@ -193,6 +409,52 @@ class BookingsService {
     };
   }
 
+  async resolveCompanyAssociationId(companyId, transaction = null) {
+    const normalizedCompanyId = normalizeInt(companyId, null);
+    if (normalizedCompanyId === null) {
+      const error = new Error("Company id must be an integer.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Collect all non-null association_ids for users belonging to this company
+    const rows = await UnifiedUser.findAll({
+      attributes: ["association_id", "id", "name"],
+      where: {
+        company_id: normalizedCompanyId,
+        association_id: { [Op.not]: null },
+      },
+      transaction,
+      raw: true,
+    });
+
+    if (!rows || rows.length === 0) {
+      const error = new Error(
+        `Company with id ${normalizedCompanyId} is not linked to an association.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const assocSet = new Set(rows.map((r) => Number(r.association_id)));
+
+    if (assocSet.size > 1) {
+      // Ambiguous association mapping for this company — surface a clear error
+      const details = rows
+        .map(
+          (r) => `user_id=${r.id} name="${r.name}" assoc=${r.association_id}`,
+        )
+        .join("; ");
+      const error = new Error(
+        `Company with id ${normalizedCompanyId} has multiple association_id values: ${[...assocSet].join(", ")}. Users: ${details}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    return Number([...assocSet][0]);
+  }
+
   serializePackageCompany(record) {
     return {
       id: record.id,
@@ -215,8 +477,13 @@ class BookingsService {
 
     return {
       id: record.id,
+      idempotency_key: record.idempotencyKey,
+      version: record.version,
       booking_type: record.bookingType,
+      customer_type: record.customerType,
       tourist_full_name: record.touristFullName,
+      phone_number: record.phoneNumber,
+      email: record.email,
       citizenship: record.citizenship,
       no_of_pax_antarbangsa: record.noOfPaxAntarbangsa,
       no_of_pax_domestik: record.noOfPaxDomestik,
@@ -227,6 +494,7 @@ class BookingsService {
       product_name: record.productName,
       activity_date: record.activityDate,
       total_price: record.totalPrice,
+      total_deposit: record.totalDeposit,
       user_id: record.userId,
       user_fullname: record.userFullname,
       check_in_date: record.checkInDate,
@@ -240,6 +508,47 @@ class BookingsService {
       package_companies: packageCompanies.map((item) =>
         this.serializePackageCompany(item),
       ),
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+    };
+  }
+
+  serializeBookingSummary(record) {
+    return {
+      id: record.id,
+      idempotency_key: record.idempotencyKey,
+      version: record.version,
+      booking_type: record.bookingType,
+      customer_type: record.customerType,
+      tourist_full_name: record.touristFullName,
+      phone_number: record.phoneNumber,
+      email: record.email,
+      citizenship: record.citizenship,
+      no_of_pax_antarbangsa: record.noOfPaxAntarbangsa,
+      no_of_pax_domestik: record.noOfPaxDomestik,
+      total_pax:
+        Number(record.noOfPaxAntarbangsa || 0) +
+        Number(record.noOfPaxDomestik || 0),
+      product_id: record.productId,
+      product_name: record.productName,
+      activity_date: record.activityDate,
+      total_price: record.totalPrice,
+      total_deposit: record.totalDeposit,
+      user_id: record.userId,
+      user_fullname: record.userFullname,
+      check_in_date: record.checkInDate,
+      check_out_date: record.checkOutDate,
+      total_of_night: record.totalOfNight,
+      status: record.status,
+      receipt_created_at: record.receiptCreatedAt,
+      operator_name: record.operatorName,
+      company_id: record.companyId,
+      company_name: record.companyName,
+      package_companies: Array.isArray(record.package_companies)
+        ? record.package_companies.map((item) =>
+            this.serializePackageCompany(item),
+          )
+        : [],
       created_at: record.created_at,
       updated_at: record.updated_at,
     };
@@ -295,9 +604,33 @@ class BookingsService {
           throw error;
         }
 
+        const referrerAssociationId = await this.resolveCompanyAssociationId(
+          referrerId,
+          transaction,
+        );
+        const refereeAssociationId = await this.resolveCompanyAssociationId(
+          refereeId,
+          transaction,
+        );
+
+        if (referrerAssociationId !== refereeAssociationId) {
+          const error = new Error(
+            `Package companies must belong to the same association. Referrer (company ${referrerId}) is in association ${referrerAssociationId}, but referee (company ${refereeId}) is in association ${refereeAssociationId}.`,
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+
         const perPrice = normalizeNumber(item?.per_price, null);
         if (perPrice === null || perPrice < 0) {
           const error = new Error("per_price must be numeric and >= 0");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const serviceName = normalizeString(item?.description);
+        if (!serviceName) {
+          const error = new Error("description is required for package item.");
           error.statusCode = 400;
           throw error;
         }
@@ -311,8 +644,9 @@ class BookingsService {
           refereeCompany:
             normalizeString(item?.referee_company) ||
             normalizeString(refereeCompany.company_name),
-          description: normalizeString(item?.description) || null,
+          description: serviceName,
           perPrice,
+          associationId: referrerAssociationId,
         };
       }),
     );
@@ -320,14 +654,29 @@ class BookingsService {
 
   buildCreatePayload(data, operatorContext) {
     const bookingType = this.ensureBookingTypeAllowed(data.booking_type);
+    const rawCustomerType = normalizeString(data.customer_type);
+    const customerType = rawCustomerType
+      ? this.ensureCustomerTypeAllowed(rawCustomerType)
+      : "tourist";
     const touristFullName = normalizeString(data.tourist_full_name) || null;
+    // Accept both snake_case (API clients) and camelCase (some frontends)
+    const phoneNumber =
+      normalizeString(data.phone_number ?? data.phoneNumber) || null;
+    const email =
+      normalizeString(
+        data.email ?? data.emailAddress ?? data.email_address ?? data.email,
+      ) || null;
     const citizenship = normalizeString(data.citizenship) || null;
     const noOfPaxAntarbangsa = normalizeInt(data.no_of_pax_antarbangsa, null);
     const noOfPaxDomestik = normalizeInt(data.no_of_pax_domestik, null);
     const productId = normalizeInt(data.product_id, null);
     const productName = normalizeString(data.product_name) || null;
-    const activityDate = normalizeNullableDate(data.activity_date);
+    const activityDate = this.normalizeActivityDateTime(
+      data.activity_date,
+      data.bookingTime ?? data.booking_time,
+    );
     const totalPrice = normalizeNumber(data.total_price, null);
+    const totalDeposit = normalizeInt(data.total_deposit, null);
     const status = data.status
       ? this.ensureStatusAllowed(data.status)
       : "pending";
@@ -353,6 +702,15 @@ class BookingsService {
 
     if (totalPrice === null || totalPrice < 0) {
       errors.push("total_price must be numeric and >= 0");
+    }
+
+    if (
+      data.total_deposit !== undefined &&
+      data.total_deposit !== null &&
+      data.total_deposit !== "" &&
+      (totalDeposit === null || totalDeposit < 0)
+    ) {
+      errors.push("total_deposit must be an integer >= 0");
     }
 
     if (bookingType === "activity") {
@@ -411,7 +769,10 @@ class BookingsService {
 
     return {
       bookingType,
+      customerType: bookingType === "package" ? customerType : "tourist",
       touristFullName,
+      phoneNumber,
+      email,
       citizenship,
       noOfPaxAntarbangsa,
       noOfPaxDomestik,
@@ -419,6 +780,7 @@ class BookingsService {
       productName,
       activityDate,
       totalPrice,
+      totalDeposit: totalDeposit ?? null,
       userId: operatorContext.userId,
       userFullname: operatorContext.userFullname,
       checkInDate: normalizedStay.checkInDate,
@@ -439,6 +801,10 @@ class BookingsService {
       payload.bookingType = this.ensureBookingTypeAllowed(data.booking_type);
     }
 
+    if (data.customer_type !== undefined) {
+      payload.customerType = this.ensureCustomerTypeAllowed(data.customer_type);
+    }
+
     if (data.tourist_full_name !== undefined) {
       const value = normalizeString(data.tourist_full_name);
       if (!value) {
@@ -447,6 +813,21 @@ class BookingsService {
         throw error;
       }
       payload.touristFullName = value;
+    }
+
+    if (data.phone_number !== undefined || data.phoneNumber !== undefined) {
+      payload.phoneNumber =
+        normalizeString(data.phone_number ?? data.phoneNumber) || null;
+    }
+
+    if (
+      data.email !== undefined ||
+      data.emailAddress !== undefined ||
+      data.emailAddress !== undefined ||
+      data.email !== undefined
+    ) {
+      payload.email =
+        normalizeString(data.email ?? data.emailAddress ?? data.email) || null;
     }
 
     if (data.citizenship !== undefined) {
@@ -500,13 +881,28 @@ class BookingsService {
     }
 
     if (data.activity_date !== undefined) {
-      const value = normalizeNullableDate(data.activity_date);
+      const value = this.normalizeActivityDateTime(
+        data.activity_date,
+        data.bookingTime ?? data.booking_time ?? data.time,
+      );
       if (data.activity_date !== null && data.activity_date !== "" && !value) {
         const error = new Error("activity_date must be a valid timestamp");
         error.statusCode = 400;
         throw error;
       }
       payload.activityDate = value;
+    } else if (
+      data.bookingDate !== undefined ||
+      data.booking_date !== undefined
+    ) {
+      const value = this.normalizeActivityDateTime(
+        data.bookingDate ?? data.booking_date,
+        data.bookingTime ?? data.booking_time ?? data.time,
+      );
+
+      if (value) {
+        payload.activityDate = value;
+      }
     }
 
     if (data.total_price !== undefined) {
@@ -521,6 +917,20 @@ class BookingsService {
         throw error;
       }
       payload.totalPrice = value;
+    }
+
+    if (data.total_deposit !== undefined) {
+      const value = normalizeInt(data.total_deposit, null);
+      if (
+        data.total_deposit !== null &&
+        data.total_deposit !== "" &&
+        (value === null || value < 0)
+      ) {
+        const error = new Error("total_deposit must be an integer >= 0");
+        error.statusCode = 400;
+        throw error;
+      }
+      payload.totalDeposit = value;
     }
 
     if (data.check_in_date !== undefined) {
@@ -662,11 +1072,55 @@ class BookingsService {
 
     const transaction = await Booking.sequelize.transaction();
     try {
-      const operatorContext = await this.resolveOperatorContext(
+      const actorContext = await this.resolveActorContext(
         authUser,
         transaction,
       );
-      const payload = this.buildCreatePayload(data, operatorContext);
+      const payload = this.buildCreatePayload(data, actorContext);
+
+      const idempotencyKey = normalizeString(data.idempotency_key) || null;
+      if (idempotencyKey) {
+        const existing = await Booking.findOne({
+          where: { idempotencyKey },
+          include: [
+            {
+              model: BookingPackageCompany,
+              as: "package_companies",
+              required: false,
+            },
+          ],
+          transaction,
+        });
+        if (existing) {
+          await transaction.commit();
+          return this.serialize(existing);
+        }
+      }
+
+      payload.idempotencyKey = idempotencyKey;
+      payload.version = 0;
+
+      // E-receipt bookings are created directly as "paid" (the booking-page
+      // flow instead transitions to paid later, stamping receipt_created_at in
+      // updateBooking). Stamp it here too so the receipt date is consistent
+      // across both flows when none was supplied by the client.
+      if (payload.status === "paid" && !payload.receiptCreatedAt) {
+        payload.receiptCreatedAt = new Date();
+      }
+
+      if (
+        payload.bookingType === "activity" ||
+        payload.bookingType === "accommodation"
+      ) {
+        const product = await this.resolveProductSnapshot(
+          payload.productId,
+          payload.bookingType,
+          transaction,
+        );
+
+        payload.productId = product.id;
+        payload.productName = product.name;
+      }
 
       if (
         payload.bookingType === "package" &&
@@ -677,6 +1131,17 @@ class BookingsService {
         );
         error.statusCode = 400;
         throw error;
+      }
+
+      if (
+        payload.bookingType === "activity" ||
+        payload.bookingType === "accommodation"
+      ) {
+        await this.validateProductAccess(
+          payload.productId,
+          actorContext,
+          transaction,
+        );
       }
 
       const packageCompanies =
@@ -698,6 +1163,7 @@ class BookingsService {
           refereeCompany: item.refereeCompany,
           description: item.description,
           perPrice: item.perPrice,
+          associationId: item.associationId ?? null,
         }));
 
         await BookingPackageCompany.bulkCreate(rows, { transaction });
@@ -722,7 +1188,7 @@ class BookingsService {
     }
   }
 
-  async getBookings(query = {}, scope = {}) {
+  async getBookings(query = {}, authUser = null) {
     const page = Math.max(1, normalizeInt(query.page, 1));
     const perPage = Math.max(
       1,
@@ -739,7 +1205,11 @@ class BookingsService {
     }
 
     if (query.status) {
-      queryWhere.status = this.ensureStatusAllowed(query.status);
+      const statuses = this.parseStatusFilter(query.status);
+      if (statuses && statuses.length > 0) {
+        queryWhere.status =
+          statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
+      }
     }
 
     if (query.user_id !== undefined) {
@@ -752,14 +1222,18 @@ class BookingsService {
       queryWhere.userId = userId;
     }
 
-    if (query.company_id !== undefined) {
-      const companyId = normalizeInt(query.company_id, null);
-      if (companyId === null) {
-        const error = new Error("company_id filter must be an integer");
-        error.statusCode = 400;
+    const actorContext = authUser
+      ? await this.resolveActorContext(authUser)
+      : null;
+
+    if (actorContext && !actorContext.isSuperadmin) {
+      const actorCompanyId = normalizeInt(actorContext.companyId, null);
+      if (actorCompanyId === null) {
+        const error = new Error("Operator company context is missing.");
+        error.statusCode = 403;
         throw error;
       }
-      queryWhere.companyId = companyId;
+      queryWhere.companyId = actorCompanyId;
     }
 
     if (query.search) {
@@ -775,8 +1249,32 @@ class BookingsService {
       }
     }
 
-    // Policy scope always wins over query filters (prevents cross-tenant access)
-    const where = { ...queryWhere, ...scope };
+    // Apply the accumulated query filters
+    const where = { ...queryWhere };
+    const dateRange = this.parseDateRangeFilter(query.start_date, query.end_date);
+    if (dateRange) {
+      const statuses = Array.isArray(queryWhere.status)
+        ? queryWhere.status
+        : queryWhere.status?.[Op.in] ?? (queryWhere.status ? [queryWhere.status] : []);
+      const isPaidQuery = statuses.some((s) => s === "paid" || s === "completed");
+      if (isPaidQuery) {
+        // For paid/completed receipts, match on receipt_created_at when available,
+        // falling back to created_at for older records that predate the column.
+        where[Op.or] = [
+          {
+            receiptCreatedAt: { [Op.between]: [dateRange.start, dateRange.end] },
+          },
+          {
+            receiptCreatedAt: null,
+            created_at: { [Op.between]: [dateRange.start, dateRange.end] },
+          },
+        ];
+      } else {
+        where.created_at = {
+          [Op.between]: [dateRange.start, dateRange.end],
+        };
+      }
+    }
 
     const { count, rows } = await Booking.findAndCountAll({
       where,
@@ -796,11 +1294,98 @@ class BookingsService {
     const totalPages = Math.ceil(count / perPage);
 
     return {
-      docs: rows.map((row) => this.serialize(row)),
-      total: count,
-      pages: totalPages,
-      page,
-      perPage,
+      data: rows.map((row) => this.serialize(row)),
+      meta: buildMeta(count, page, perPage, totalPages),
+    };
+  }
+
+  async getPackageBookings(query = {}, authUser = null) {
+    const page = Math.max(1, normalizeInt(query.page, 1));
+    const perPage = Math.max(
+      1,
+      Math.min(100, normalizeInt(query.per_page, 20)),
+    );
+    const offset = (page - 1) * perPage;
+
+    const where = {};
+    const bookingWhere = { bookingType: "package" };
+    if (query.status) {
+      const statuses = this.parseStatusFilter(query.status);
+      if (statuses && statuses.length > 0) {
+        bookingWhere.status =
+          statuses.length === 1 ? statuses[0] : { [Op.in]: statuses };
+      }
+    }
+
+    const dateRange = this.parseDateRangeFilter(query.start_date, query.end_date);
+    if (dateRange) {
+      bookingWhere.created_at = {
+        [Op.between]: [dateRange.start, dateRange.end],
+      };
+    }
+
+    const actorContext = authUser
+      ? await this.resolveActorContext(authUser)
+      : null;
+
+    if (actorContext && !actorContext.isSuperadmin) {
+      const actorCompanyId = normalizeInt(actorContext.companyId, null);
+      if (actorCompanyId === null) {
+        const error = new Error("Operator company context is missing.");
+        error.statusCode = 403;
+        throw error;
+      }
+
+      where[Op.or] = [
+        { referrerId: actorCompanyId },
+        { refereeId: actorCompanyId },
+      ];
+    }
+
+    if (query.search) {
+      const search = String(query.search).trim();
+      if (search) {
+        where[Op.and] = (where[Op.and] || []).concat({
+          [Op.or]: [
+            { referralCompany: { [Op.like]: `%${search}%` } },
+            { refereeCompany: { [Op.like]: `%${search}%` } },
+            { description: { [Op.like]: `%${search}%` } },
+          ],
+        });
+      }
+    }
+
+    const { count, rows } = await BookingPackageCompany.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Booking,
+          as: "booking_package",
+          required: true,
+          where: bookingWhere,
+          include: [
+            {
+              model: BookingPackageCompany,
+              as: "package_companies",
+              required: false,
+            },
+          ],
+        },
+      ],
+      order: [["id", "DESC"]],
+      limit: perPage,
+      offset,
+      distinct: true,
+    });
+
+    const totalPages = Math.ceil(count / perPage);
+
+    return {
+      data: rows.map((row) => ({
+        ...this.serializePackageCompany(row),
+        booking: this.serializeBookingSummary(row.booking_package),
+      })),
+      meta: buildMeta(count, page, perPage, totalPages),
     };
   }
 
@@ -831,7 +1416,143 @@ class BookingsService {
     return this.serialize(record);
   }
 
-  async updateBooking(id, data) {
+  async getBookingPdfData(id) {
+    const bookingId = normalizeInt(id, null);
+    if (bookingId === null) {
+      const error = new Error("Invalid booking id");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const record = await Booking.findByPk(bookingId);
+    if (!record) {
+      const error = new Error("Booking not found.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    let operatorEmail = null;
+    let location = null;
+    let companyLogoBase64 = null;
+    if (record.companyId) {
+      const company = await Company.findByPk(record.companyId, {
+        attributes: ["email", "location", "operator_logo_image"],
+      });
+      if (company) {
+        operatorEmail = company.email;
+        location = company.location;
+        companyLogoBase64 = company.operator_logo_image || null;
+      }
+    }
+
+    const totalPax =
+      Number(record.noOfPaxAntarbangsa || 0) +
+      Number(record.noOfPaxDomestik || 0);
+
+    return {
+      id: record.id,
+      company_id: record.companyId,
+      bookingType: record.bookingType,
+      touristFullName: record.touristFullName,
+      companyName: record.companyName,
+      productName: record.productName,
+      totalPax,
+      location,
+      activityDate: record.activityDate,
+      checkInDate: record.checkInDate,
+      checkOutDate: record.checkOutDate,
+      totalOfNight: record.totalOfNight,
+      status: record.status,
+      operatorName: record.operatorName,
+      operatorEmail,
+      totalPrice: record.totalPrice,
+      createdAt: record.created_at,
+      companyLogoBase64,
+    };
+  }
+
+  async getReceiptPdfData(id) {
+    const bookingId = normalizeInt(id, null);
+    if (bookingId === null) throw Object.assign(new Error("Invalid booking id"), { statusCode: 400 });
+
+    const record = await Booking.findByPk(bookingId);
+    if (!record) throw Object.assign(new Error("Booking not found."), { statusCode: 404 });
+
+    let operatorEmail = null;
+    let location = null;
+    let companyLogoBase64 = null;
+    if (record.companyId) {
+      const company = await Company.findByPk(record.companyId, {
+        attributes: ["email", "location", "operator_logo_image"],
+      });
+      if (company) {
+        operatorEmail = company.email;
+        location = company.location;
+        companyLogoBase64 = company.operator_logo_image || null;
+      }
+    }
+
+    const totalPax =
+      Number(record.noOfPaxAntarbangsa || 0) + Number(record.noOfPaxDomestik || 0);
+
+    const bookingType = String(record.bookingType || "").toLowerCase();
+
+    const base = {
+      id: record.id,
+      bookingType,
+      touristFullName: record.touristFullName,
+      companyName: record.companyName,
+      customerType: String(record.customerType || "tourist").toLowerCase(),
+      status: record.status,
+      operatorName: record.operatorName,
+      operatorEmail,
+      totalPrice: record.totalPrice,
+      // Show the receipt-issued date, matching the on-screen receipt page's
+      // priority: receipt_created_at → updated_at → created_at.
+      createdAt:
+        record.receiptCreatedAt ||
+        record.updated_at ||
+        record.updatedAt ||
+        record.created_at ||
+        record.createdAt,
+      companyLogoBase64,
+      totalPax,
+    };
+
+    if (bookingType === "accommodation") {
+      return {
+        ...base,
+        accommodationName: record.productName,
+        checkInDate: record.checkInDate,
+        checkOutDate: record.checkOutDate,
+        totalNight: Number(record.totalOfNight || 0),
+        totalRooms: totalPax,
+      };
+    }
+
+    if (bookingType === "package") {
+      const packageItems = await BookingPackageCompany.findAll({
+        where: { bookingPackageId: bookingId },
+        attributes: ["description", "perPrice"],
+      });
+      return {
+        ...base,
+        packageItems: packageItems.map((p) => ({
+          description: p.description,
+          perPrice: Number(p.perPrice || 0),
+        })),
+      };
+    }
+
+    // activity
+    return {
+      ...base,
+      activityName: record.productName,
+      location,
+    };
+  }
+
+  async updateBooking(id, data, authUser) {
     const bookingId = normalizeInt(id, null);
     if (bookingId === null) {
       const error = new Error("Invalid booking id");
@@ -841,6 +1562,11 @@ class BookingsService {
 
     const transaction = await Booking.sequelize.transaction();
     try {
+      const actorContext = await this.resolveActorContext(
+        authUser,
+        transaction,
+      );
+
       const record = await Booking.findByPk(bookingId, {
         transaction,
         include: [
@@ -856,6 +1582,25 @@ class BookingsService {
         const error = new Error("Booking not found.");
         error.statusCode = 404;
         throw error;
+      }
+
+      const idempotencyKey = normalizeString(data.idempotency_key) || null;
+      const baseVersion =
+        data.base_version !== undefined
+          ? normalizeInt(data.base_version, null)
+          : null;
+
+      if (idempotencyKey && record.idempotencyKey === idempotencyKey) {
+        await transaction.commit();
+        return this.serialize(record);
+      }
+
+      if (baseVersion !== null && record.version !== baseVersion) {
+        const { ConflictError } = require("./errors/AppError");
+        throw new ConflictError(
+          "Booking was modified by another user while you were offline",
+          { serverVersion: record.version, serverData: this.serialize(record) },
+        );
       }
 
       const payload = this.buildUpdatePayload(data);
@@ -913,10 +1658,37 @@ class BookingsService {
             : record.totalOfNight,
       };
 
+      if (
+        draft.bookingType === "activity" ||
+        draft.bookingType === "accommodation"
+      ) {
+        if (draft.productId !== null && draft.productId !== undefined) {
+          const product = await this.resolveProductSnapshot(
+            draft.productId,
+            draft.bookingType,
+            transaction,
+          );
+
+          draft.productId = product.id;
+          draft.productName = product.name;
+        }
+      }
+
       const errors = [];
       this.validateTypeSpecificRules(draft.bookingType, draft, errors);
       if (isBookingTypeChanged) {
         this.validateCreateRequiredFieldsForDraft(draft, errors);
+      }
+
+      if (
+        draft.bookingType === "activity" ||
+        draft.bookingType === "accommodation"
+      ) {
+        await this.validateProductAccess(
+          draft.productId,
+          actorContext,
+          transaction,
+        );
       }
 
       if (draft.bookingType === "activity") {
@@ -939,6 +1711,8 @@ class BookingsService {
         payload.totalOfNight = null;
         payload.productId = null;
         payload.productName = null;
+      } else {
+        payload.customerType = "tourist";
       }
 
       const packageCompaniesRaw = data.package_companies;
@@ -978,6 +1752,9 @@ class BookingsService {
         throw error;
       }
 
+      payload.version = record.version + 1;
+      if (idempotencyKey) payload.idempotencyKey = idempotencyKey;
+
       await record.update(payload, { transaction });
 
       if (hasPackageCompaniesInput) {
@@ -1000,6 +1777,7 @@ class BookingsService {
               refereeCompany: item.refereeCompany,
               description: item.description,
               perPrice: item.perPrice,
+              associationId: item.associationId ?? null,
             })),
             { transaction },
           );
@@ -1048,10 +1826,28 @@ class BookingsService {
       }
 
       const normalizedStatus = this.ensureStatusAllowed(status);
-      await record.update({ status: normalizedStatus }, { transaction });
+
+      // If status is changing to "paid", set receipt_created_at to current date
+      const updateData = { status: normalizedStatus };
+      if (normalizedStatus === "paid" && record.status !== "paid") {
+        // Use the model attribute name (camelCase) so Sequelize recognizes it on the instance
+        updateData.receiptCreatedAt = new Date();
+      }
+
+      await record.update(updateData, { transaction });
       await transaction.commit();
 
-      return this.serialize(record);
+      const refreshed = await Booking.findByPk(record.id, {
+        include: [
+          {
+            model: BookingPackageCompany,
+            as: "package_companies",
+            required: false,
+          },
+        ],
+      });
+
+      return this.serialize(refreshed);
     } catch (error) {
       await transaction.rollback();
       throw error;
@@ -1082,6 +1878,190 @@ class BookingsService {
       await transaction.rollback();
       throw error;
     }
+  }
+
+  async getStatementData(year, type, fromMonth, toMonth, authUser) {
+    const currentYear = new Date().getFullYear();
+    const parsedYear = normalizeInt(year, currentYear);
+    if (parsedYear < 2000 || parsedYear > currentYear) {
+      const error = new Error(`year must be between 2000 and ${currentYear}`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const ALLOWED_TYPES = ["activity", "accommodation", "package"];
+    const normalizedType = normalizeString(type)?.toLowerCase() || "all";
+    if (normalizedType !== "all" && !ALLOWED_TYPES.includes(normalizedType)) {
+      const error = new Error(
+        `type must be one of: all, ${ALLOWED_TYPES.join(", ")}`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const actorContext = await this.resolveActorContext(authUser);
+    const companyId = normalizeInt(actorContext.companyId, null);
+
+    if (!actorContext.isSuperadmin && companyId === null) {
+      const error = new Error("No company associated with your account");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    // Month range (defaults to full year if not specified)
+    const parsedFrom = Math.min(12, Math.max(1, parseInt(fromMonth, 10) || 1));
+    const parsedTo   = Math.min(12, Math.max(parsedFrom, parseInt(toMonth, 10) || 12));
+
+    const maxMonthRange = Math.max(1, parseInt(process.env.STATEMENT_MAX_MONTH_RANGE, 10) || 3);
+    if (parsedTo - parsedFrom + 1 > maxMonthRange) {
+      const error = new Error(
+        `Month range cannot exceed ${maxMonthRange} month${maxMonthRange === 1 ? "" : "s"}. Please narrow your selection.`,
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const startDate = new Date(`${parsedYear}-${String(parsedFrom).padStart(2, "0")}-01T00:00:00.000Z`);
+    const endYear   = parsedTo === 12 ? parsedYear + 1 : parsedYear;
+    const endMonth  = parsedTo === 12 ? 1 : parsedTo + 1;
+    const endDate   = new Date(`${endYear}-${String(endMonth).padStart(2, "0")}-01T00:00:00.000Z`);
+
+    const bookingWhere = {
+      created_at: { [Op.gte]: startDate, [Op.lt]: endDate },
+    };
+    if (companyId !== null) {
+      bookingWhere.companyId = companyId;
+    }
+    if (normalizedType !== "all") {
+      bookingWhere.bookingType = normalizedType;
+    }
+
+    // Fetch company info
+    const company = companyId !== null
+      ? await Company.findByPk(companyId)
+      : null;
+
+    // Fetch owner: first operator_admin user belonging to this company
+    let ownerName = "-";
+    if (companyId !== null) {
+      const adminRole = await Role.findOne({
+        where: { name: "operator_admin" },
+        attributes: ["id"],
+      });
+      if (adminRole) {
+        const owner = await UnifiedUser.findOne({
+          where: { company_id: companyId, role_id: adminRole.id },
+          attributes: ["name"],
+          order: [["id", "ASC"]],
+        });
+        ownerName = owner?.name || "-";
+      }
+    }
+
+    // Fetch bookings for the year
+    const bookings = await Booking.findAll({
+      where: bookingWhere,
+      include: [
+        {
+          model: BookingPackageCompany,
+          as: "package_companies",
+          required: false,
+          attributes: ["description"],
+        },
+      ],
+      order: [["created_at", "ASC"]],
+    });
+
+    const MONTH_NAMES = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December",
+    ];
+
+    const transactions = bookings.map((b) => {
+      const date = new Date(b.created_at);
+      let name = b.productName || "-";
+
+      if (
+        b.bookingType === "package" &&
+        Array.isArray(b.package_companies) &&
+        b.package_companies.length > 0
+      ) {
+        const descriptions = b.package_companies
+          .map((pc) => pc.description)
+          .filter(Boolean);
+        if (descriptions.length > 0) name = descriptions.join(", ");
+      }
+
+      const rawType = b.bookingType || "activity";
+      const type_label = rawType.charAt(0).toUpperCase() + rawType.slice(1);
+
+      return {
+        year: parsedYear,
+        month: MONTH_NAMES[date.getMonth()],
+        type: type_label,
+        name,
+        noOfPax:
+          Number(b.noOfPaxAntarbangsa || 0) + Number(b.noOfPaxDomestik || 0),
+        totalPrice: Number(b.totalPrice || 0).toFixed(2),
+      };
+    });
+
+    // Date range from first/last transaction
+    const fromDate = transactions.length
+      ? `${transactions[0].month} ${transactions[0].year}`
+      : `January ${parsedYear}`;
+    const toDate = transactions.length
+      ? `${transactions[transactions.length - 1].month} ${transactions[transactions.length - 1].year}`
+      : `December ${parsedYear}`;
+
+    // Created at date
+    const now = new Date();
+    const createdAt = `${now.getDate()} ${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+
+    // Summary: group by name + type
+    const groupMap = new Map();
+    for (const t of transactions) {
+      const key = `${t.name}||${t.type}`;
+      if (!groupMap.has(key)) {
+        groupMap.set(key, { name: t.name, type: t.type, totalPax: 0, totalRevenue: 0 });
+      }
+      const g = groupMap.get(key);
+      g.totalPax += Number(t.noOfPax);
+      g.totalRevenue += parseFloat(t.totalPrice);
+    }
+    const summary = Array.from(groupMap.values()).map((g, i) => ({
+      no: i + 1,
+      name: g.name,
+      type: g.type,
+      totalPax: g.totalPax,
+      totalRevenue: g.totalRevenue.toFixed(2),
+    }));
+    const overallTotal = {
+      totalPax: summary.reduce((s, g) => s + g.totalPax, 0),
+      totalRevenue: summary.reduce((s, g) => s + parseFloat(g.totalRevenue), 0).toFixed(2),
+    };
+
+    return {
+      company: company
+        ? {
+            name: company.company_name || "-",
+            address: company.address || "-",
+            location: company.location || "-",
+            contactNo: company.contact_no || "-",
+            establishedYear: new Date(company.created_at).getFullYear(),
+            logoBase64: company.operator_logo_image || null,
+          }
+        : null,
+      ownerName,
+      year: parsedYear,
+      type: normalizedType,
+      createdAt,
+      fromDate,
+      toDate,
+      transactions,
+      summary,
+      overallTotal,
+    };
   }
 }
 

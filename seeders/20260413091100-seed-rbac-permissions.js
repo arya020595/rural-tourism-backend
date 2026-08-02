@@ -163,6 +163,12 @@ const DEFAULT_PERMISSIONS = [
     resource: "permission",
     section: "Role & Permission Management",
   },
+    {
+      name: "Create Roles",
+      code: "role:create",
+      resource: "role",
+      section: "Role & Permission Management",
+    },
   {
     name: "Create Product",
     code: "product:create",
@@ -186,6 +192,12 @@ const DEFAULT_PERMISSIONS = [
     code: "product:delete",
     resource: "product",
     section: "Product Management",
+  },
+  {
+    name: "View Dashboard",
+    code: "dashboard:read",
+    resource: "dashboard",
+    section: "Dashboard",
   },
 ];
 

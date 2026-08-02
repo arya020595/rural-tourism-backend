@@ -36,7 +36,12 @@ function isValidDate(value) {
 
 function isValidTime(value) {
   if (!value) return false;
-  return /^([01]\d|2[0-3]):([0-5]\d)$/.test(String(value).trim());
+  const text = String(value).trim();
+  return (
+    /^([01]\d|2[0-3]):([0-5]\d)$/.test(text) ||
+    /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.test(text) ||
+    /^([01]?\d|2[0-3]):([0-5]\d)\s*([AP]M)$/i.test(text)
+  );
 }
 
 module.exports = {

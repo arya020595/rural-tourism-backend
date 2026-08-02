@@ -12,4 +12,11 @@ router.get(
   permissionController.getAllPermissions,
 );
 
+router.get(
+  "/by-section",
+  authenticate,
+  authorize("permission:read"),
+  permissionController.getPermissionsBySection,
+);
+
 module.exports = router;

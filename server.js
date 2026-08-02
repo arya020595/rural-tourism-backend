@@ -13,6 +13,9 @@ require("dotenv").config();
 require("./config/db");
 require("./models/associations");
 
+// Scheduler
+const bookingReminderScheduler = require("./scripts/bookingReminderScheduler");
+
 // Route imports
 const userRoutes = require("./routes/userRoutes");
 const formRoutes = require("./routes/formRoutes");
@@ -36,6 +39,7 @@ const permissionRoutes = require("./routes/permissionRoutes");
 const companyRoutes = require("./routes/companyRoutes");
 const productRoutes = require("./routes/productRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
@@ -108,6 +112,7 @@ app.get("/api", (req, res) => {
         accommodation: "/api/accommodation-booking",
         unified: "/api/bookings",
       },
+      dashboard: "/api/dashboard",
       receipts: "/api/receipts",
       notifications: "/api/notifications",
       associations: "/api/associations",
@@ -121,6 +126,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/accom", accomRoutes);
@@ -162,7 +168,14 @@ const HOST = "0.0.0.0";
 if (require.main === module) {
   app.listen(PORT, HOST, () => {
     console.log(`Server is running on http://${HOST}:${PORT}`);
+
+    if (process.env.NODE_ENV !== "test") {
+      bookingReminderScheduler.start();
+    }
   });
+
+  process.on("SIGTERM", () => bookingReminderScheduler.stop());
+  process.on("SIGINT", () => bookingReminderScheduler.stop());
 }
 
 module.exports = app;

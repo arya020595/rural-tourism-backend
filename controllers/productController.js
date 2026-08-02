@@ -1,5 +1,6 @@
 const productService = require("../services/productService");
 const { policy } = require("../policies");
+const UnifiedUser = require("../models/unifiedUserModel");
 const {
   serialize,
   serializeMany,
@@ -9,7 +10,14 @@ const {
   paginatedResponse,
   errorResponse,
 } = require("../utils/helpers");
-const { ForbiddenError } = require("../services/errors/AppError");
+const {
+  ForbiddenError,
+  BadRequestError,
+} = require("../services/errors/AppError");
+
+const isSuperadmin = (user = {}) =>
+  user.role === "superadmin" ||
+  (Array.isArray(user.permissions) && user.permissions.includes("*:*"));
 
 /* ── Controller actions ────────────────────────────────────────── */
 
@@ -20,6 +28,7 @@ const { ForbiddenError } = require("../services/errors/AppError");
 exports.getAllProducts = async (req, res) => {
   try {
     const companyId = req.user.company_id;
+    const superadmin = isSuperadmin(req.user);
 
     // Verify policy allows listing products
     if (!policy("product", req.user, {}).index()) {
@@ -30,13 +39,29 @@ exports.getAllProducts = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
-    const result = await productService.getAllProductsByCompany(companyId, {
-      where,
-      order,
-      search: req.query.search,
-      page,
-      perPage,
-    });
+    const queryCompanyId = req.query.company_id
+      ? Number(req.query.company_id)
+      : null;
+
+    const result = superadmin
+      ? await productService.getAllProducts({
+          where,
+          order,
+          search: req.query.search,
+          page,
+          perPage,
+          companyId:
+            Number.isInteger(queryCompanyId) && queryCompanyId > 0
+              ? queryCompanyId
+              : null,
+        })
+      : await productService.getAllProductsByCompany(companyId, {
+          where,
+          order,
+          search: req.query.search,
+          page,
+          perPage,
+        });
 
     return paginatedResponse(
       res,
@@ -67,6 +92,65 @@ exports.getProductsByLocation = async (req, res) => {
     const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
 
     const result = await productService.getAllProductsByLocation(companyId, {
+      where,
+      order,
+      search: req.query.search,
+      page,
+      perPage,
+    });
+
+    return paginatedResponse(
+      res,
+      serializeMany(result.docs),
+      "Products fetched successfully",
+      { total: result.total, page, perPage, pages: result.pages },
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+/**
+ * GET /api/products/company/:companyId
+ * List products for a specific company, scoped to the caller's association.
+ */
+exports.getProductsByCompany = async (req, res) => {
+  try {
+    const companyId = parseInt(req.params.companyId, 10);
+    if (!Number.isInteger(companyId) || companyId <= 0) {
+      throw new BadRequestError("Invalid company id");
+    }
+
+    const isAdmin =
+      req.user?.role === "superadmin" ||
+      (Array.isArray(req.user?.permissions) &&
+        req.user.permissions.includes("*:*"));
+
+    if (!isAdmin) {
+      if (!req.user?.association_id) {
+        throw new ForbiddenError("Association scope is required.");
+      }
+
+      const allowedCompany = await UnifiedUser.findOne({
+        attributes: ["id"],
+        where: {
+          company_id: companyId,
+          association_id: req.user.association_id,
+        },
+      });
+
+      if (!allowedCompany) {
+        throw new ForbiddenError(
+          "You do not have permission to view products for this company.",
+        );
+      }
+    }
+
+    const { where, order } = req.ransack;
+    const page = parseInt(req.query.page) || 1;
+    const perPage = parseInt(req.query.per_page || req.query.limit) || 10;
+
+    const result = await productService.getAllProductsByCompany(companyId, {
       where,
       order,
       search: req.query.search,
@@ -118,17 +202,26 @@ exports.createProduct = async (req, res) => {
   try {
     const { name, product_type } = req.body;
     const companyId = req.user.company_id;
+    const superadmin = isSuperadmin(req.user);
 
     // Verify policy allows creating products
     if (!policy("product", req.user, {}).create()) {
       throw new ForbiddenError("You do not have permission to create products");
     }
 
-    // Enforce company_id from authenticated user
+    const requestCompanyId = req.body.company_id
+      ? Number(req.body.company_id)
+      : null;
+
+    const targetCompanyId = superadmin
+      ? requestCompanyId
+      : companyId;
+
+    // Superadmin may assign any company_id; non-superadmin always use own company.
     const product = await productService.createProduct({
       name,
       product_type,
-      company_id: companyId,
+      company_id: targetCompanyId,
     });
 
     return successResponse(

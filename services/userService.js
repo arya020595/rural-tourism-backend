@@ -69,7 +69,38 @@ class UserService {
       include: USER_INCLUDES,
     });
     if (!user) throw new NotFoundError("User not found");
+
+    // The company owner is the operator_admin of the user's company, not the
+    // logged-in user. Attach it so staff accounts see the real owner name.
+    user.setDataValue(
+      "owner_full_name",
+      await this.resolveCompanyOwnerName(user.company_id),
+    );
+
     return user;
+  }
+
+  /**
+   * Resolve the owner (operator_admin) full name for a company.
+   * Returns null when the company has no operator_admin.
+   */
+  async resolveCompanyOwnerName(companyId) {
+    if (!companyId) return null;
+
+    const owner = await UnifiedUser.findOne({
+      where: { company_id: companyId },
+      include: [
+        {
+          model: Role,
+          as: "role",
+          required: true,
+          where: { name: "operator_admin" },
+        },
+      ],
+      order: [["id", "ASC"]],
+    });
+
+    return owner ? owner.name : null;
   }
 
   /**

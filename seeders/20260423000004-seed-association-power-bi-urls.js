@@ -5,14 +5,18 @@
  * Replace the placeholder URLs with actual Power BI embed URLs.
  */
 const ASSOCIATION_POWER_BI_URLS = {
-  KOBETA:
+  "KOTA BELUD TOURISM ASSOCIATION (KOBETA)":
     "https://app.powerbi.com/reportEmbed?reportId=KOBETA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
-  RATA: "https://app.powerbi.com/reportEmbed?reportId=RATA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
-  KOMTDA:
+  "RANAU TOURISM ASSOCIATION (RATA)":
+    "https://app.powerbi.com/reportEmbed?reportId=RATA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
+  "KOTA MARUDU TOURISM DEVELOPMENT ASSOCIATION (KOMTDA)":
     "https://app.powerbi.com/reportEmbed?reportId=KOMTDA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
-  USTA: "https://app.powerbi.com/reportEmbed?reportId=USTA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
-  NTA: "https://app.powerbi.com/reportEmbed?reportId=NTA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
-  KATA: "https://app.powerbi.com/reportEmbed?reportId=KATA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
+  "PERSATUAN PELANCONGAN ULU SUGUT (USTA)":
+    "https://app.powerbi.com/reportEmbed?reportId=USTA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
+  "NABALU TOURISM ASSOCIATION (NTA)":
+    "https://app.powerbi.com/reportEmbed?reportId=NTA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
+  "PERSATUAN PELANCONGAN KADAMAIAN SABAH (KATA)":
+    "https://app.powerbi.com/reportEmbed?reportId=KATA_REPORT_ID&autoAuth=true&ctid=TENANT_ID",
 };
 
 /** @type {import('sequelize-cli').Migration} */

@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("company", {
+    await queryInterface.createTable("companies", {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -77,7 +77,7 @@ module.exports = {
       type: "foreign key",
       name: "users_company_id_foreign_idx",
       references: {
-        table: "company",
+        table: "companies",
         field: "id",
       },
       onUpdate: "CASCADE",
@@ -86,7 +86,10 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.removeConstraint("users", "users_company_id_foreign_idx");
-    await queryInterface.dropTable("company");
+    await queryInterface.removeConstraint(
+      "users",
+      "users_company_id_foreign_idx",
+    );
+    await queryInterface.dropTable("companies");
   },
 };

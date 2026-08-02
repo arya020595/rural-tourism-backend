@@ -28,6 +28,15 @@ router.get(
   asyncHandler(productController.getProductsByLocation),
 );
 
+// List products for a specific company within the same association
+router.get(
+  "/company/:companyId(\\d+)",
+  authenticate,
+  authorize("product:read"),
+  ransackMiddleware,
+  asyncHandler(productController.getProductsByCompany),
+);
+
 // Get product by ID
 router.get(
   "/:id(\\d+)",

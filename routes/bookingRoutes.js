@@ -20,6 +20,39 @@ router.get(
 );
 
 router.get(
+  "/packages",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.getPackageBookings),
+);
+
+router.get(
+  "/statement/preview",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.getStatementPreview),
+);
+
+router.get(
+  "/statement/pdf",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.generateStatementPdf),
+);
+
+router.get(
+  "/:id/pdf",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.generateBookingPdf),
+);
+
+router.get(
+  "/:id/receipt-pdf",
+  asyncHandler(bookingController.generateReceiptPdf),
+);
+
+router.get(
   "/:id",
   authenticate,
   authorize("booking:read"),
@@ -38,6 +71,20 @@ router.patch(
   authenticate,
   authorize("booking:update"),
   asyncHandler(bookingController.updateBookingStatus),
+);
+
+router.patch(
+  "/:id/cancel",
+  authenticate,
+  authorize("booking:cancel"),
+  asyncHandler(bookingController.cancelBooking),
+);
+
+router.patch(
+  "/:id/payment",
+  authenticate,
+  authorize("booking:update"),
+  asyncHandler(bookingController.markBookingAsPaid),
 );
 
 router.delete(

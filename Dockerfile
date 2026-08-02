@@ -16,7 +16,7 @@ RUN apt-get update -qq && \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Skip Puppeteer bundled Chromium download (system chromium used in runtime)
+# Skip Puppeteer bundled Chromium download (@sparticuz/chromium used instead)
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Copy package files and install all dependencies
@@ -34,19 +34,46 @@ ENV NODE_ENV=production \
     PORT=3000
 
 # Install runtime dependencies
-# - Chromium for Puppeteer (PDF generation)
-# - Fonts for proper PDF rendering
+# - Fonts for proper PDF rendering (@sparticuz/chromium provides its own Chromium)
+# - Shared libraries required by Chromium on Debian slim
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
-    chromium \
     fonts-liberation \
     fonts-noto-color-emoji \
     curl \
+    libnspr4 \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libcairo2 \
+    libglib2.0-0 \
+    libasound2 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxext6 \
+    libxi6 \
+    libxrender1 \
+    libxtst6 \
+    libxss1 \
+    libdbus-1-3 \
+    libexpat1 \
+    libfontconfig1 \
+    libgcc-s1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Puppeteer configuration
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Puppeteer configuration (@sparticuz/chromium handles executable path at runtime)
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
 # Create non-root user for security
 RUN groupadd --system --gid 1001 nodejs && \
