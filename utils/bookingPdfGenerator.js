@@ -26,18 +26,18 @@ function escapeHtml(str) {
 
 
 const MONTHS_MY = [
-  "JAN",
-  "FEB",
+  "JANUARI",
+  "FEBRUARI",
   "MAC",
-  "APR",
+  "APRIL",
   "MEI",
   "JUN",
-  "JUL",
-  "OGO",
-  "SEP",
-  "OKT",
-  "NOV",
-  "DIS",
+  "JULAI",
+  "OGOS",
+  "SEPTEMBER",
+  "OKTOBER",
+  "NOVEMBER",
+  "DISEMBER",
 ];
 
 function formatBookingId(id) {

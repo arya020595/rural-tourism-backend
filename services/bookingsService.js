@@ -1507,7 +1507,14 @@ class BookingsService {
       operatorName: record.operatorName,
       operatorEmail,
       totalPrice: record.totalPrice,
-      createdAt: record.created_at,
+      // Show the receipt-issued date, matching the on-screen receipt page's
+      // priority: receipt_created_at → updated_at → created_at.
+      createdAt:
+        record.receiptCreatedAt ||
+        record.updated_at ||
+        record.updatedAt ||
+        record.created_at ||
+        record.createdAt,
       companyLogoBase64,
       totalPax,
     };
