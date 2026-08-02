@@ -24,7 +24,7 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
-const MONTHS_MY = ["JAN","FEB","MAC","APR","MEI","JUN","JUL","OGO","SEP","OKT","NOV","DIS"];
+const MONTHS_MY = ["JANUARI","FEBRUARI","MAC","APRIL","MEI","JUN","JULAI","OGOS","SEPTEMBER","OKTOBER","NOVEMBER","DISEMBER"];
 
 function formatDate(dateStr) {
   if (!dateStr) return "-";
