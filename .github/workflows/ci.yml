@@ -47,3 +47,71 @@ jobs:
           DB_USER: root
           DB_PASSWORD: root
           JWT_SECRET: test-secret-key
+
+  migration-check:
+    name: Migration Dry-Run
+    runs-on: ubuntu-latest
+    # tests/setup.js builds the test schema via sequelize.sync(), which
+    # never executes migrations/**. This job is the only place that runs
+    # the real migration files against a real MySQL database, so a
+    # migration that only works on Postgres semantics (or otherwise
+    # doesn't run on MySQL) fails CI instead of the production deploy.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: rural_tourism_migration_check
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # A handful of older migrations assume specific seeders already ran
+      # against production at that point in its deploy history (e.g. RBAC
+      # roles, the bi_dashboard permission) instead of seeding what they
+      # need themselves. That history can't be reconstructed from the
+      # migration files alone, so a full from-scratch replay is bootstrapped
+      # up to the last such checkpoint, the required seeders are run, and
+      # the rest of the migrations continue normally from there.
+      #
+      # If a NEW migration you're adding also depends on seeded data, either
+      # have the migration seed/upsert what it needs itself (preferred), or
+      # add another `db:seed --seed <file>` step here and update the `--to`
+      # cutoff below to your migration's predecessor.
+      - name: Migrate up to the pre-seed-dependency checkpoint
+        run: npx sequelize-cli db:migrate --to 20260625000001-add-kiulu-tourism-association.js
+        env: &migration_check_env
+          NODE_ENV: production
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_NAME: rural_tourism_migration_check
+          DB_USER: root
+          DB_PASSWORD: root
+
+      - name: Seed data required by later migrations
+        run: |
+          npx sequelize-cli db:seed --seed 20260413091000-seed-rbac-roles.js
+          npx sequelize-cli db:seed --seed 20260423000002-add-bi-dashboard-permission.js
+        env: *migration_check_env
+
+      - name: Run all remaining migrations against a clean database
+        run: npx sequelize-cli db:migrate
+        env: *migration_check_env
+
+      - name: Roll back the most recently added migration (verifies its down() works)
+        run: npx sequelize-cli db:migrate:undo
+        env: *migration_check_env

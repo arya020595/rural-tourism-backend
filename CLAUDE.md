@@ -61,6 +61,13 @@ This file documents conventions for AI assistants (Claude, Copilot, etc.) workin
 - Pass a single string or array to `authorize(...)` middleware.
 - `superadmin` role or `*:*` permission bypasses all checks.
 
+### Migrations (`migrations/`)
+
+- This project targets **MySQL only**. Sequelize does not always error when a migration option isn't supported by the current dialect — some are silently dropped instead. Notably, `addIndex(..., { where })` (partial/filtered index) is a Postgres/SQLite/MSSQL feature; MySQL has no partial index support, and Sequelize's MySQL dialect just drops the `where` clause and creates a full-table index instead. If you're porting a pattern from Postgres docs/examples, verify it against MySQL semantics first.
+  - To emulate a partial unique index on MySQL, add a generated (`STORED`) column that evaluates to `NULL` for rows outside the target condition — NULLs never collide in a MySQL/InnoDB unique index — and put the unique index on that column instead of using `where`. See `migrations/20260518000001-add-unique-index-to-notifications.js`.
+- Test new migrations locally against a real MySQL instance before merging (`docker run -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=<db> -p 3307:3306 mysql:8.0`), seeded with realistic/dirty data, not just an empty schema. `tests/setup.js` builds the test DB via `sequelize.sync()` and never executes `migrations/**`, and CI's `migration-check` job (below) only proves a migration runs against a *clean* database — neither will catch a migration that fails because of data already sitting in production (e.g. a new unique constraint colliding with existing duplicate rows).
+- A few existing migrations assume specific seeders already ran against the database at that point (RBAC roles, the `bi_dashboard` permission) rather than seeding what they need themselves — a side effect of production being deployed incrementally over months rather than replayed from scratch. `.github/workflows/ci.yml`'s `migration-check` job hardcodes the checkpoints needed to replay the full history in CI. **New migrations should seed/upsert any data they depend on themselves** rather than assuming a seeder ran first — it keeps the migration self-contained and avoids adding another checkpoint to that CI job.
+
 ---
 
 ## Do NOT
