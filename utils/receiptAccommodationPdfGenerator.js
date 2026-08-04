@@ -183,8 +183,16 @@ function buildHtml(data, pdfUrl) {
           <div class="row-value">${escapeHtml(touristFullName) || "-"}</div>
         </div>
         <div class="receipt-row">
+          <div class="row-label">NAMA PERNIAGAAN/<em>BUSINESS NAME</em></div>
+          <div class="row-value">${escapeHtml(companyName) || "-"}</div>
+        </div>
+        <div class="receipt-row">
           <div class="row-label">PENGINAPAN/<em>ACCOMMODATION</em></div>
           <div class="row-value">${escapeHtml(accommodationName) || "-"}</div>
+        </div>
+        <div class="receipt-row">
+          <div class="row-label">JUMLAH MALAM/<em>TOTAL NIGHTS</em></div>
+          <div class="row-value">${escapeHtml(String(totalNight || 0))} MALAM/NIGHTS</div>
         </div>
         <div class="receipt-row">
           <div class="row-label">DAFTAR MASUK/<em>CHECK-IN</em></div>
@@ -195,14 +203,10 @@ function buildHtml(data, pdfUrl) {
           <div class="row-value">${escapeHtml(formatDate(checkOutDate))}</div>
         </div>
         <div class="receipt-row">
-          <div class="row-label">JUMLAH MALAM/<em>TOTAL NIGHTS</em></div>
-          <div class="row-value">${escapeHtml(String(totalNight || 0))} MALAM/NIGHTS</div>
+          <div class="row-label">JUMLAH BILANGAN ORANG/<em>TOTAL NO. OF PAX</em></div>
+          <div class="row-value">${escapeHtml(String(totalRooms || 0))} ORANG/PAX</div>
         </div>
         <div class="receipt-row">
-          <div class="row-label">JUMLAH BILANGAN BILIK/<em>TOTAL NO. OF ROOMS</em></div>
-          <div class="row-value">${escapeHtml(String(totalRooms || 0))} BILIK/ROOMS</div>
-        </div>
-        <div class="receipt-row" style="grid-column: 1 / -1;">
           <div class="row-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>
           <div class="row-value">${escapeHtml((status || "paid").toUpperCase())}</div>
         </div>
