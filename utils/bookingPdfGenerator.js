@@ -69,6 +69,7 @@ function buildHtml(data) {
     touristFullName,
     companyName,
     productName,
+    packageItems,
     totalPax,
     location,
     activityDate,
@@ -79,6 +80,7 @@ function buildHtml(data) {
     operatorName,
     operatorEmail,
     totalPrice,
+    totalDeposit,
     createdAt,
     companyLogoBase64,
   } = data;
@@ -103,6 +105,8 @@ function buildHtml(data) {
   const totalNightsDisplay = escapeHtml(`${totalOfNight || 0} MALAM/NIGHTS`);
   const totalPaxDisplay = escapeHtml(`${totalPax || 0} ORANG`);
   const totalPriceFormatted = escapeHtml(Number(totalPrice || 0).toFixed(2));
+  // The deposit receipt shows the deposit amount under the TOTAL label.
+  const totalDepositFormatted = escapeHtml(Number(totalDeposit || 0).toFixed(2));
   const safeTouristFullName = escapeHtml(touristFullName) || "-";
   const safeCompanyName = escapeHtml(companyName) || "-";
   const safeProductName = escapeHtml(productName) || "-";
@@ -114,11 +118,29 @@ function buildHtml(data) {
     escapeHtml(String(operatorName || "").trim() || companyName) || "-";
   const safeOperatorEmail = escapeHtml(operatorEmail);
 
-  // Product label + date rows differ between activity and accommodation.
+  const isPackage = bookingType === "package";
+
+  // Product label + value differ per booking type. Package bookings list their
+  // items instead of a single product name.
   const productLabel = isAccommodation
     ? "PENGINAPAN/<em>ACCOMMODATION</em>"
-    : "AKTIVITI/<em>ACTIVITY</em>";
+    : isPackage
+      ? "PAKEJ/<em>PACKAGE</em>"
+      : "AKTIVITI/<em>ACTIVITY</em>";
 
+  const packageItemsHtml =
+    Array.isArray(packageItems) && packageItems.length
+      ? packageItems
+          .map(
+            (item, i) =>
+              `<div>${i + 1}. ${escapeHtml(String(item.description || "-"))}</div>`,
+          )
+          .join("")
+      : "-";
+
+  const productValueHtml = isPackage ? packageItemsHtml : safeProductName;
+
+  // Date rows differ per booking type.
   const dateRows = isAccommodation
     ? `
     <div>
@@ -135,7 +157,7 @@ function buildHtml(data) {
     </div>`
     : `
     <div>
-      <div class="field-label">TARIKH/<em>ACTIVITY DATE</em></div>
+      <div class="field-label">TARIKH/<em>${isPackage ? "DATE" : "ACTIVITY DATE"}</em></div>
       <div class="field-value">${activityDateFormatted}</div>
     </div>`;
 
@@ -248,44 +270,48 @@ function buildHtml(data) {
     grid-column: 1 / -1;
   }
 
-  /* â”€â”€ Issued by â”€â”€ */
-  .issued-by {
-    text-align: center;
-    padding: 12px 0 16px;
-    font-size: 11px;
-    color: #666;
-    line-height: 1.8;
-  }
-  .issued-by .label {
-    font-size: 11px;
-    color: #666;
-  }
-  .issued-by .name {
-    font-size: 14px;
-    font-weight: bold;
-    color: #111;
-  }
-  .issued-by .email {
-    font-size: 12px;
-    color: #555;
-  }
-
-  /* â”€â”€ Total â”€â”€ */
-  .total-section {
-    text-align: right;
+  /* â”€â”€ Footer: issued-by (left) + total (right) â”€â”€ */
+  .receipt-footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 24px;
     padding-top: 16px;
+    margin-top: 4px;
+  }
+  .issued-label {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #4f4f4f;
+    margin-bottom: 6px;
+  }
+  .issued-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1e1e1e;
+    text-transform: uppercase;
+  }
+  .issued-email {
+    font-size: 13px;
+    color: #333;
+  }
+  .total-block {
+    text-align: right;
   }
   .total-label {
-    font-size: 10px;
-    color: #888;
+    font-size: 11px;
+    font-weight: bold;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    color: #333;
     margin-bottom: 4px;
   }
   .total-value {
     font-size: 26px;
     font-weight: bold;
     color: #111;
+    line-height: 1;
   }
 </style>
 </head>
@@ -304,7 +330,7 @@ function buildHtml(data) {
     </div>
   </div>
 
-  <div class="title">BOOKING CONFIRMATION</div>
+  <div class="title">BOOKING DEPOSIT RECEIPT</div>
   <hr>
 
   <!-- Info grid -->
@@ -319,7 +345,7 @@ function buildHtml(data) {
     </div>
     <div>
       <div class="field-label">${productLabel}</div>
-      <div class="field-value">${safeProductName}</div>
+      <div class="field-value">${productValueHtml}</div>
     </div>
     <div>
       <div class="field-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
@@ -338,19 +364,17 @@ function buildHtml(data) {
 
   <hr>
 
-  <!-- Issued by -->
-  <div class="issued-by">
-    <div class="label">DIKELUARKAN OLEH/ISSUED BY:</div>
-    <div class="name">${safeOperatorName}</div>
-    <div class="email">${safeOperatorEmail}</div>
-  </div>
-
-  <hr>
-
-  <!-- Total -->
-  <div class="total-section">
-    <div class="total-label">JUMLAH/TOTAL(RM)</div>
-    <div class="total-value">${totalPriceFormatted}</div>
+  <!-- Footer: issued-by (left) + total (right), matching the payment receipt -->
+  <div class="receipt-footer">
+    <div class="issued-block">
+      <div class="issued-label">DIKELUARKAN OLEH/ISSUED BY:</div>
+      <div class="issued-name">${safeOperatorName}</div>
+      <div class="issued-email">${safeOperatorEmail}</div>
+    </div>
+    <div class="total-block">
+      <div class="total-label">JUMLAH/TOTAL(RM)</div>
+      <div class="total-value">${totalDepositFormatted}</div>
+    </div>
   </div>
 
 </body>
