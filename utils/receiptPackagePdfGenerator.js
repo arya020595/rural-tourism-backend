@@ -163,12 +163,16 @@ function buildHtml(data, pdfUrl) {
           <div class="row-value">${escapeHtml(touristFullName) || "-"}</div>
         </div>
         <div class="receipt-row">
-          <div class="row-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
-          <div class="row-value">${escapeHtml(String(totalPax || 0))} ORANG/PEOPLE</div>
+          <div class="row-label">NAMA PERNIAGAAN/<em>BUSINESS NAME</em></div>
+          <div class="row-value">${escapeHtml(companyName) || "-"}</div>
         </div>
         <div class="receipt-row">
           <div class="row-label">PAKEJ/<em>PACKAGE</em></div>
           <div class="package-value">${packageItemsHtml}</div>
+        </div>
+        <div class="receipt-row">
+          <div class="row-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
+          <div class="row-value">${escapeHtml(String(totalPax || 0))} ORANG/PEOPLE</div>
         </div>
         <div class="receipt-row">
           <div class="row-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>

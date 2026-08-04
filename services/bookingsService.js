@@ -1449,6 +1449,20 @@ class BookingsService {
       Number(record.noOfPaxAntarbangsa || 0) +
       Number(record.noOfPaxDomestik || 0);
 
+    // Package bookings have multiple items (no single productName), so load the
+    // package list for the PDF the same way the payment receipt does.
+    let packageItems = [];
+    if (String(record.bookingType || "").toLowerCase() === "package") {
+      const items = await BookingPackageCompany.findAll({
+        where: { bookingPackageId: bookingId },
+        attributes: ["description", "perPrice"],
+      });
+      packageItems = items.map((p) => ({
+        description: p.description,
+        perPrice: Number(p.perPrice || 0),
+      }));
+    }
+
     return {
       id: record.id,
       company_id: record.companyId,
@@ -1456,6 +1470,7 @@ class BookingsService {
       touristFullName: record.touristFullName,
       companyName: record.companyName,
       productName: record.productName,
+      packageItems,
       totalPax,
       location,
       activityDate: record.activityDate,
@@ -1466,6 +1481,7 @@ class BookingsService {
       operatorName: record.operatorName,
       operatorEmail,
       totalPrice: record.totalPrice,
+      totalDeposit: record.totalDeposit,
       createdAt: record.created_at,
       companyLogoBase64,
     };
