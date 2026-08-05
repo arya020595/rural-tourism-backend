@@ -34,3 +34,27 @@ exports.getTrendDashboard = async (req, res) => {
     return errorResponse(res, err);
   }
 };
+
+// Superadmin-only: all-time totals per association.
+exports.getAssociationStats = async (req, res) => {
+  try {
+    const isSuperadmin =
+      req.user?.role === "superadmin" ||
+      (Array.isArray(req.user?.permissions) &&
+        req.user.permissions.includes("*:*"));
+    if (!isSuperadmin) {
+      const error = new Error("Superadmin access is required.");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const result = await dashboardService.getAssociationStats();
+    return successResponse(
+      res,
+      result,
+      "Association stats fetched successfully",
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
