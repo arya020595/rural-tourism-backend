@@ -19,4 +19,11 @@ router.get(
   asyncHandler(dashboardController.getTrendDashboard),
 );
 
+// Superadmin-only per-association totals (the controller enforces superadmin).
+router.get(
+  "/association-stats",
+  authenticate,
+  asyncHandler(dashboardController.getAssociationStats),
+);
+
 module.exports = router;
