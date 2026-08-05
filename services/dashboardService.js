@@ -433,6 +433,64 @@ class DashboardService {
       touristsTrend: trends.touristsTrend,
     };
   }
+
+  /**
+   * Superadmin-only: all-time totals per association — total bookings,
+   * total receipts (paid bookings), and total tourists (sum of pax).
+   *
+   * A company's association comes from its operator's `users.association_id`
+   * (companies has no association_id). The subquery collapses each company to
+   * a single association so bookings are counted once (no join fan-out when an
+   * association has several operator users for the same company). Cancelled
+   * bookings are excluded.
+   */
+  async getAssociationStats() {
+    const rows = await Booking.sequelize.query(
+      `
+      SELECT
+        a.id   AS associationId,
+        a.name AS associationName,
+        COUNT(b.id) AS totalBookings,
+        COALESCE(SUM(b.status = 'paid'), 0) AS totalReceipts,
+        COALESCE(
+          SUM(COALESCE(b.no_of_pax_antarbangsa, 0) + COALESCE(b.no_of_pax_domestik, 0)),
+          0
+        ) AS totalTourists
+      FROM associations a
+      LEFT JOIN (
+        SELECT company_id, MIN(association_id) AS association_id
+        FROM users
+        WHERE company_id IS NOT NULL AND association_id IS NOT NULL
+        GROUP BY company_id
+      ) ca ON ca.association_id = a.id
+      LEFT JOIN bookings b
+        ON b.company_id = ca.company_id AND b.status <> 'cancelled'
+      GROUP BY a.id, a.name
+      ORDER BY a.name
+      `,
+      { type: Booking.sequelize.QueryTypes.SELECT },
+    );
+
+    const associations = rows.map((r) => ({
+      associationId: Number(r.associationId),
+      associationName: r.associationName,
+      totalBookings: Number(r.totalBookings) || 0,
+      totalReceipts: Number(r.totalReceipts) || 0,
+      totalTourists: Number(r.totalTourists) || 0,
+    }));
+
+    const totals = associations.reduce(
+      (acc, a) => {
+        acc.totalBookings += a.totalBookings;
+        acc.totalReceipts += a.totalReceipts;
+        acc.totalTourists += a.totalTourists;
+        return acc;
+      },
+      { totalBookings: 0, totalReceipts: 0, totalTourists: 0 },
+    );
+
+    return { associations, totals };
+  }
 }
 
 module.exports = new DashboardService();
