@@ -435,58 +435,110 @@ class DashboardService {
   }
 
   /**
-   * Superadmin-only: all-time totals per association — total bookings,
-   * total receipts (paid bookings), and total tourists (sum of pax).
+   * Superadmin-only: all-time per-association figures plus the companies in
+   * each association.
+   *
+   * Metrics:
+   *  - totalBookings  : ALL bookings (any status, cancelled included)
+   *  - totalReceipts  : bookings with status = 'paid'
+   *  - totalTourists  : sum of pax for status = 'paid' only (pending is
+   *                     unconfirmed, so its pax are not counted)
+   *  - totalCancelled : bookings with status = 'cancelled'
    *
    * A company's association comes from its operator's `users.association_id`
    * (companies has no association_id). The subquery collapses each company to
    * a single association so bookings are counted once (no join fan-out when an
-   * association has several operator users for the same company). Cancelled
-   * bookings are excluded.
+   * association has several operator users for the same company).
    */
   async getAssociationStats() {
-    const rows = await Booking.sequelize.query(
-      `
-      SELECT
-        a.id   AS associationId,
-        a.name AS associationName,
-        COUNT(b.id) AS totalBookings,
-        COALESCE(SUM(b.status = 'paid'), 0) AS totalReceipts,
-        COALESCE(
-          SUM(COALESCE(b.no_of_pax_antarbangsa, 0) + COALESCE(b.no_of_pax_domestik, 0)),
-          0
-        ) AS totalTourists
-      FROM associations a
-      LEFT JOIN (
-        SELECT company_id, MIN(association_id) AS association_id
-        FROM users
-        WHERE company_id IS NOT NULL AND association_id IS NOT NULL
-        GROUP BY company_id
-      ) ca ON ca.association_id = a.id
-      LEFT JOIN bookings b
-        ON b.company_id = ca.company_id AND b.status <> 'cancelled'
-      GROUP BY a.id, a.name
-      ORDER BY a.name
-      `,
-      { type: Booking.sequelize.QueryTypes.SELECT },
-    );
+    const [statRows, companyRows] = await Promise.all([
+      Booking.sequelize.query(
+        `
+        SELECT
+          a.id   AS associationId,
+          a.name AS associationName,
+          COUNT(b.id) AS totalBookings,
+          COALESCE(SUM(b.status = 'paid'), 0) AS totalReceipts,
+          COALESCE(
+            SUM(
+              CASE WHEN b.status = 'paid'
+                THEN COALESCE(b.no_of_pax_antarbangsa, 0) + COALESCE(b.no_of_pax_domestik, 0)
+                ELSE 0
+              END
+            ),
+            0
+          ) AS totalTourists,
+          COALESCE(SUM(b.status = 'cancelled'), 0) AS totalCancelled
+        FROM associations a
+        LEFT JOIN (
+          SELECT company_id, MIN(association_id) AS association_id
+          FROM users
+          WHERE company_id IS NOT NULL AND association_id IS NOT NULL
+          GROUP BY company_id
+        ) ca ON ca.association_id = a.id
+        LEFT JOIN bookings b ON b.company_id = ca.company_id
+        GROUP BY a.id, a.name
+        ORDER BY a.name
+        `,
+        { type: Booking.sequelize.QueryTypes.SELECT },
+      ),
+      // Companies per association (operator's association_id).
+      Booking.sequelize.query(
+        `
+        SELECT
+          ca.association_id AS associationId,
+          c.id             AS companyId,
+          c.company_name   AS companyName
+        FROM (
+          SELECT company_id, MIN(association_id) AS association_id
+          FROM users
+          WHERE company_id IS NOT NULL AND association_id IS NOT NULL
+          GROUP BY company_id
+        ) ca
+        JOIN companies c ON c.id = ca.company_id
+        ORDER BY ca.association_id, c.company_name
+        `,
+        { type: Booking.sequelize.QueryTypes.SELECT },
+      ),
+    ]);
 
-    const associations = rows.map((r) => ({
-      associationId: Number(r.associationId),
-      associationName: r.associationName,
-      totalBookings: Number(r.totalBookings) || 0,
-      totalReceipts: Number(r.totalReceipts) || 0,
-      totalTourists: Number(r.totalTourists) || 0,
-    }));
+    const companiesByAssoc = new Map();
+    companyRows.forEach((r) => {
+      const key = Number(r.associationId);
+      if (!companiesByAssoc.has(key)) companiesByAssoc.set(key, []);
+      companiesByAssoc.get(key).push({
+        companyId: Number(r.companyId),
+        companyName: r.companyName || "",
+      });
+    });
+
+    const associations = statRows.map((r) => {
+      const id = Number(r.associationId);
+      return {
+        associationId: id,
+        associationName: r.associationName,
+        totalBookings: Number(r.totalBookings) || 0,
+        totalReceipts: Number(r.totalReceipts) || 0,
+        totalTourists: Number(r.totalTourists) || 0,
+        totalCancelled: Number(r.totalCancelled) || 0,
+        companies: companiesByAssoc.get(id) || [],
+      };
+    });
 
     const totals = associations.reduce(
       (acc, a) => {
         acc.totalBookings += a.totalBookings;
         acc.totalReceipts += a.totalReceipts;
         acc.totalTourists += a.totalTourists;
+        acc.totalCancelled += a.totalCancelled;
         return acc;
       },
-      { totalBookings: 0, totalReceipts: 0, totalTourists: 0 },
+      {
+        totalBookings: 0,
+        totalReceipts: 0,
+        totalTourists: 0,
+        totalCancelled: 0,
+      },
     );
 
     return { associations, totals };
