@@ -121,6 +121,16 @@ const Booking = sequelize.define(
       allowNull: true,
       field: "receipt_created_at",
     },
+    recalledBy: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "recalled_by",
+    },
+    recalledAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "recalled_at",
+    },
     operatorName: {
       type: DataTypes.STRING(255),
       allowNull: true,

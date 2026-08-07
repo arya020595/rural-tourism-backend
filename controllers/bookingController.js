@@ -6,7 +6,7 @@ const {
   paginatedResponse,
   errorResponse,
 } = require("../utils/helpers");
-const { ForbiddenError } = require("../services/errors/AppError");
+const { ForbiddenError, BadRequestError } = require("../services/errors/AppError");
 const {
   generateBookingConfirmationPdf,
 } = require("../utils/bookingPdfGenerator");
@@ -209,6 +209,35 @@ exports.markBookingAsPaid = async (req, res) => {
       "paid",
     );
     return successResponse(res, booking, "Booking marked as paid successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
+// PATCH /api/bookings/:id/recall — revert a paid booking to pending. Clears the
+// receipt (status + receipt_created_at) and records who recalled it.
+exports.recallBooking = async (req, res) => {
+  try {
+    const existing = await bookingsService.getBookingById(req.params.id);
+    if (!policy("booking", req.user, existing).update()) {
+      throw new ForbiddenError(
+        "You do not have permission to recall this booking",
+      );
+    }
+
+    if (String(existing?.status).toLowerCase() !== "paid") {
+      throw new BadRequestError("Only paid bookings can be recalled.");
+    }
+
+    const recalledBy =
+      req.user?.username || req.user?.name || String(req.user?.id || "unknown");
+
+    const booking = await bookingsService.updateBookingStatus(
+      req.params.id,
+      "pending",
+      { isRecall: true, recalledBy },
+    );
+    return successResponse(res, booking, "Booking recalled successfully");
   } catch (error) {
     return errorResponse(res, error);
   }
