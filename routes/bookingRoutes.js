@@ -87,6 +87,14 @@ router.patch(
   asyncHandler(bookingController.markBookingAsPaid),
 );
 
+// Recall a paid booking back to pending (operators only, via booking:update).
+router.patch(
+  "/:id/recall",
+  authenticate,
+  authorize("booking:update"),
+  asyncHandler(bookingController.recallBooking),
+);
+
 router.delete(
   "/:id",
   authenticate,
