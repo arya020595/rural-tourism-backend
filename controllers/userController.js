@@ -27,6 +27,7 @@ exports.getAllUsers = async (req, res) => {
       search: req.query.search,
       page,
       perPage,
+      pendingDeletionOnly: req.query.pending_deletion === "true",
     });
 
     return paginatedResponse(
@@ -141,6 +142,54 @@ exports.deleteUser = async (req, res) => {
     await userService.deleteUser(req.params.id);
 
     return successResponse(res, null, "User deleted successfully");
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// PATCH /api/users/:id/request-deletion — self-service: a user requests
+// their own account be deleted. Route-level ownership check (authorizeOwnership)
+// ensures only the account owner (or an admin) can call this.
+exports.requestDeletion = async (req, res) => {
+  try {
+    const user = await userService.requestDeletion(
+      req.params.id,
+      req.body?.reason,
+    );
+    return successResponse(
+      res,
+      serialize(user),
+      "Account deletion requested. An administrator will review your request.",
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// PATCH /api/users/:id/reject-deletion — superadmin rejects a pending
+// self-service deletion request, clearing the flag. Reviewing these requests
+// is a superadmin-only responsibility — operator_admin manages its own staff
+// directly via DELETE /users/:id instead, so this uses isAdmin() rather than
+// the broader user:delete permission operator_admin also holds. Approving a
+// request is just the existing DELETE endpoint.
+exports.rejectDeletion = async (req, res) => {
+  try {
+    const targetUser = await userService.getUserById(req.params.id);
+
+    if (!policy("user", req.user, targetUser).isAdmin()) {
+      throw new ForbiddenError(
+        "Only a superadmin can review account deletion requests.",
+      );
+    }
+
+    const reviewer =
+      req.user?.username || req.user?.name || String(req.user?.id || "unknown");
+    const user = await userService.rejectDeletionRequest(
+      req.params.id,
+      reviewer,
+    );
+
+    return successResponse(res, serialize(user), "Deletion request rejected");
   } catch (err) {
     return errorResponse(res, err);
   }

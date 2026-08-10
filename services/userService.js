@@ -32,7 +32,14 @@ class UserService {
    */
   async getAllUsers(
     scope = {},
-    { where = {}, order = [], search, page = 1, perPage = 10 } = {},
+    {
+      where = {},
+      order = [],
+      search,
+      page = 1,
+      perPage = 10,
+      pendingDeletionOnly = false,
+    } = {},
   ) {
     // ?search= shortcut — searches name + email with LIKE
     if (search) {
@@ -41,6 +48,10 @@ class UserService {
         { name: { [Op.like]: pattern } },
         { email: { [Op.like]: pattern } },
       ];
+    }
+
+    if (pendingDeletionOnly) {
+      where.deletion_requested_at = { [Op.ne]: null };
     }
 
     // Policy scope keys (company_id, etc.) always win over ransack where
@@ -227,6 +238,43 @@ class UserService {
     const user = await UnifiedUser.findByPk(id);
     if (!user) throw new NotFoundError("User not found");
     await user.destroy();
+  }
+
+  /**
+   * Self-service: flag a user's own account for deletion. An admin reviews
+   * and actions the request (approve → deleteUser, or reject → clear flag).
+   */
+  async requestDeletion(id, reason) {
+    const user = await UnifiedUser.findByPk(id);
+    if (!user) throw new NotFoundError("User not found");
+    if (user.deletion_requested_at) {
+      throw new BadRequestError("A deletion request is already pending.");
+    }
+    await user.update({
+      deletion_requested_at: new Date(),
+      deletion_reason: reason || null,
+    });
+    return this.getUserById(id);
+  }
+
+  /**
+   * Admin: reject a pending deletion request, clearing the flag. Approving a
+   * request is just the existing deleteUser() — no separate "approve" state
+   * to track once the account is gone.
+   */
+  async rejectDeletionRequest(id, reviewerUsername) {
+    const user = await UnifiedUser.findByPk(id);
+    if (!user) throw new NotFoundError("User not found");
+    if (!user.deletion_requested_at) {
+      throw new BadRequestError("This user has no pending deletion request.");
+    }
+    await user.update({
+      deletion_requested_at: null,
+      deletion_reason: null,
+      deletion_reviewed_by: reviewerUsername || null,
+      deletion_reviewed_at: new Date(),
+    });
+    return this.getUserById(id);
   }
 
   /* ── Private ─────────────────────────────────────────────────── */
