@@ -51,6 +51,22 @@ const UnifiedUser = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    deletion_requested_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    deletion_reason: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
+    deletion_reviewed_by: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    deletion_reviewed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "users",

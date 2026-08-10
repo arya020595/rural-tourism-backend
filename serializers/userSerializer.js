@@ -19,6 +19,10 @@ function serialize(user) {
     role: plain.role || null,
     association: plain.association || null,
     company: plain.company || null,
+    deletion_requested_at: plain.deletion_requested_at || null,
+    deletion_reason: plain.deletion_reason || null,
+    deletion_reviewed_by: plain.deletion_reviewed_by || null,
+    deletion_reviewed_at: plain.deletion_reviewed_at || null,
     created_at: plain.created_at,
     updated_at: plain.updated_at,
   };
