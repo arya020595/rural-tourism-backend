@@ -85,7 +85,7 @@ const Booking = sequelize.define(
     },
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       field: "user_id",
     },
     userFullname: {
