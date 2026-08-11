@@ -58,6 +58,30 @@ exports.getUserById = async (req, res) => {
   }
 };
 
+// GET /api/users/:id/company-documents — separate from getUserById since
+// these are large base64 blobs only needed by Company Profile's document
+// viewer, not by every user lookup (see userService.getCompanyDocuments).
+exports.getCompanyDocuments = async (req, res) => {
+  try {
+    const user = await userService.getUserById(req.params.id);
+
+    if (!policy("user", req.user, user).show()) {
+      throw new ForbiddenError(
+        "You can only access users within your own company.",
+      );
+    }
+
+    const documents = await userService.getCompanyDocuments(req.params.id);
+    return successResponse(
+      res,
+      documents,
+      "Company documents fetched successfully",
+    );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
 // POST /api/users — create (authenticated)
 exports.createUser = async (req, res) => {
   try {
