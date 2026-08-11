@@ -28,6 +28,16 @@ router.get(
   asyncHandler(userController.getUserById),
 );
 
+// Get company license/certificate documents for a user's company — fetched
+// separately from the user record itself (large base64 blobs)
+router.get(
+  "/:id(\\d+)/company-documents",
+  authenticate,
+  authorize(["user:read", "profile:read"]),
+  authorizeOwnership("id", ["user:read"]),
+  asyncHandler(userController.getCompanyDocuments),
+);
+
 // Create user (authenticated — operator_admin or superadmin)
 router.post(
   "/",
