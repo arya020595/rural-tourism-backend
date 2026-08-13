@@ -5,6 +5,7 @@ const logger = require("morgan");
 const createError = require("http-errors");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const multer = require("multer");
 
 // Load environment variables
 require("dotenv").config();
@@ -146,6 +147,14 @@ app.use((req, res, next) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
+
+  if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      message: "File too large. Each file must be 5MB or smaller.",
+    });
+  }
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message,
