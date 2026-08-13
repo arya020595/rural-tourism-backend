@@ -51,6 +51,14 @@ class TokenExpiredError extends AppError {
   }
 }
 
+class ServiceUnavailableError extends AppError {
+  constructor(message = "Service unavailable", meta = {}) {
+    super(message, 503, "SERVICE_UNAVAILABLE");
+    this.name = "ServiceUnavailableError";
+    this.meta = meta;
+  }
+}
+
 module.exports = {
   AppError,
   BadRequestError,
@@ -59,4 +67,5 @@ module.exports = {
   ConflictError,
   ForbiddenError,
   TokenExpiredError,
+  ServiceUnavailableError,
 };

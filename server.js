@@ -40,6 +40,7 @@ const companyRoutes = require("./routes/companyRoutes");
 const productRoutes = require("./routes/productRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const healthRoutes = require("./routes/healthRoutes");
 
 const app = express();
 
@@ -80,17 +81,6 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    status: "healthy",
-    environment: process.env.NODE_ENV || "development",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-  });
-});
-
 // API Info endpoint
 app.get("/api", (req, res) => {
   res.json({
@@ -117,10 +107,12 @@ app.get("/api", (req, res) => {
       notifications: "/api/notifications",
       associations: "/api/associations",
       companies: "/api/companies",
+      health: "/api/health",
     },
   });
 });
 
+app.use("/api/health", healthRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);
