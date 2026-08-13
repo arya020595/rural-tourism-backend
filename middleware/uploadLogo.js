@@ -13,7 +13,7 @@ const allowedMimeTypesByField = {
 const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024,
+    fileSize: 20 * 1024 * 1024,
   },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = allowedMimeTypesByField[file.fieldname];
