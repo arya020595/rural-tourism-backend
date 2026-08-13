@@ -15,7 +15,6 @@ function extractCompanyUpdateFields(body, files) {
   const STRING_FIELDS = [
     "company_name",
     "address",
-    "email",
     "location",
     "postcode",
     "contact_no",
@@ -46,12 +45,17 @@ function extractCompanyUpdateFields(body, files) {
     }
   }
 
-  // Extract user-level fields
+  // Extract user-level fields. The company profile's owner name AND email live
+  // on the owner's `users` row (not the `companies` table), so route them
+  // through the user bucket → updateCompanyOwner.
   // NOTE: association_id is intentionally excluded — changing it would orphan
   // existing package bookings that reference cross-association companies.
   // Only a superadmin DB migration should reassign a company's association.
   if (body.owner_full_name !== undefined) {
     user.name = body.owner_full_name; // Map frontend field to DB column
+  }
+  if (body.email !== undefined) {
+    user.email = body.email;
   }
 
   return { company, user };

@@ -18,9 +18,36 @@ const DEFAULT_USER_ORDER = [
   ["id", "DESC"],
 ];
 
+// Company documents (motac_license_file, trading_operation_license,
+// homestay_certificate) and operator_logo_image are base64-encoded file
+// data — each can be several MB. Every place that lists or fetches a user
+// (Users page, Company Profile's own load, update/delete/deletion-request
+// lookups) previously pulled the *entire* company row along with the user,
+// so a single request could balloon to 9MB+, which was silently failing to
+// persist client-side and even breaking the underlying network fetch
+// (net::ERR_CACHE_WRITE_FAILURE) on some devices. Company Profile's document
+// viewer fetches these fields separately via getCompanyDocuments() instead.
+const COMPANY_SAFE_ATTRIBUTES = [
+  "id",
+  "company_name",
+  "address",
+  "email",
+  "location",
+  "postcode",
+  "total_fulltime_staff",
+  "total_partime_staff",
+  "contact_no",
+  "operator_logo_image",
+];
+
 const USER_INCLUDES = [
   { model: Association, as: "association", required: false },
-  { model: Company, as: "company", required: false },
+  {
+    model: Company,
+    as: "company",
+    required: false,
+    attributes: COMPANY_SAFE_ATTRIBUTES,
+  },
   { model: Role, as: "role", required: false },
 ];
 
@@ -32,7 +59,14 @@ class UserService {
    */
   async getAllUsers(
     scope = {},
-    { where = {}, order = [], search, page = 1, perPage = 10 } = {},
+    {
+      where = {},
+      order = [],
+      search,
+      page = 1,
+      perPage = 10,
+      pendingDeletionOnly = false,
+    } = {},
   ) {
     // ?search= shortcut — searches name + email with LIKE
     if (search) {
@@ -41,6 +75,10 @@ class UserService {
         { name: { [Op.like]: pattern } },
         { email: { [Op.like]: pattern } },
       ];
+    }
+
+    if (pendingDeletionOnly) {
+      where.deletion_requested_at = { [Op.ne]: null };
     }
 
     // Policy scope keys (company_id, etc.) always win over ransack where
@@ -78,6 +116,39 @@ class UserService {
     );
 
     return user;
+  }
+
+  /**
+   * Fetch just the license/certificate document fields for a user's company.
+   * Kept separate from getUserById() — these are large base64 blobs only
+   * needed by Company Profile's document viewer, not by every user lookup.
+   */
+  async getCompanyDocuments(userId) {
+    const user = await UnifiedUser.findByPk(userId, {
+      attributes: ["id", "company_id"],
+    });
+    if (!user) throw new NotFoundError("User not found");
+    if (!user.company_id) {
+      return {
+        motac_license_file: null,
+        trading_operation_license: null,
+        homestay_certificate: null,
+      };
+    }
+
+    const company = await Company.findByPk(user.company_id, {
+      attributes: [
+        "motac_license_file",
+        "trading_operation_license",
+        "homestay_certificate",
+      ],
+    });
+
+    return {
+      motac_license_file: company?.motac_license_file || null,
+      trading_operation_license: company?.trading_operation_license || null,
+      homestay_certificate: company?.homestay_certificate || null,
+    };
   }
 
   /**
@@ -227,6 +298,43 @@ class UserService {
     const user = await UnifiedUser.findByPk(id);
     if (!user) throw new NotFoundError("User not found");
     await user.destroy();
+  }
+
+  /**
+   * Self-service: flag a user's own account for deletion. An admin reviews
+   * and actions the request (approve → deleteUser, or reject → clear flag).
+   */
+  async requestDeletion(id, reason) {
+    const user = await UnifiedUser.findByPk(id);
+    if (!user) throw new NotFoundError("User not found");
+    if (user.deletion_requested_at) {
+      throw new BadRequestError("A deletion request is already pending.");
+    }
+    await user.update({
+      deletion_requested_at: new Date(),
+      deletion_reason: reason || null,
+    });
+    return this.getUserById(id);
+  }
+
+  /**
+   * Admin: reject a pending deletion request, clearing the flag. Approving a
+   * request is just the existing deleteUser() — no separate "approve" state
+   * to track once the account is gone.
+   */
+  async rejectDeletionRequest(id, reviewerUsername) {
+    const user = await UnifiedUser.findByPk(id);
+    if (!user) throw new NotFoundError("User not found");
+    if (!user.deletion_requested_at) {
+      throw new BadRequestError("This user has no pending deletion request.");
+    }
+    await user.update({
+      deletion_requested_at: null,
+      deletion_reason: null,
+      deletion_reviewed_by: reviewerUsername || null,
+      deletion_reviewed_at: new Date(),
+    });
+    return this.getUserById(id);
   }
 
   /* ── Private ─────────────────────────────────────────────────── */

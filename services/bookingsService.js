@@ -1824,7 +1824,7 @@ class BookingsService {
     }
   }
 
-  async updateBookingStatus(id, status) {
+  async updateBookingStatus(id, status, options = {}) {
     const bookingId = normalizeInt(id, null);
     if (bookingId === null) {
       const error = new Error("Invalid booking id");
@@ -1843,11 +1843,25 @@ class BookingsService {
 
       const normalizedStatus = this.ensureStatusAllowed(status);
 
-      // If status is changing to "paid", set receipt_created_at to current date
       const updateData = { status: normalizedStatus };
+
+      // Going to "paid": stamp the receipt-issued date.
       if (normalizedStatus === "paid" && record.status !== "paid") {
-        // Use the model attribute name (camelCase) so Sequelize recognizes it on the instance
+        // Use the model attribute name (camelCase) so Sequelize recognizes it.
         updateData.receiptCreatedAt = new Date();
+      }
+
+      // Recall (paid → pending): the receipt is derived from status +
+      // receipt_created_at (there is no separate receipt record), so clearing
+      // receipt_created_at fully "removes" the receipt. Stamp who/when for audit.
+      if (
+        options.isRecall &&
+        record.status === "paid" &&
+        normalizedStatus === "pending"
+      ) {
+        updateData.receiptCreatedAt = null;
+        updateData.recalledBy = options.recalledBy || null;
+        updateData.recalledAt = new Date();
       }
 
       await record.update(updateData, { transaction });

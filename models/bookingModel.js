@@ -85,7 +85,7 @@ const Booking = sequelize.define(
     },
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       field: "user_id",
     },
     userFullname: {
@@ -120,6 +120,16 @@ const Booking = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
       field: "receipt_created_at",
+    },
+    recalledBy: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: "recalled_by",
+    },
+    recalledAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "recalled_at",
     },
     operatorName: {
       type: DataTypes.STRING(255),

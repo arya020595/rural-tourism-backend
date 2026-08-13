@@ -28,6 +28,16 @@ router.get(
   asyncHandler(userController.getUserById),
 );
 
+// Get company license/certificate documents for a user's company — fetched
+// separately from the user record itself (large base64 blobs)
+router.get(
+  "/:id(\\d+)/company-documents",
+  authenticate,
+  authorize(["user:read", "profile:read"]),
+  authorizeOwnership("id", ["user:read"]),
+  asyncHandler(userController.getCompanyDocuments),
+);
+
 // Create user (authenticated — operator_admin or superadmin)
 router.post(
   "/",
@@ -53,6 +63,27 @@ router.delete(
   authenticate,
   authorize("user:delete"),
   asyncHandler(userController.deleteUser),
+);
+
+// Request deletion of own account — strictly self-service. No bypass
+// permissions: operator_admin holds user:delete (for managing its own
+// staff via DELETE /users/:id), but that must not let it file a deletion
+// *request* on another user's behalf. Only the account owner, or
+// superadmin (via authorizeOwnership's built-in role check), may call this.
+router.patch(
+  "/:id/request-deletion",
+  authenticate,
+  authorize(["user:update", "profile:update"]),
+  authorizeOwnership("id"),
+  asyncHandler(userController.requestDeletion),
+);
+
+// Admin: reject a pending deletion request
+router.patch(
+  "/:id/reject-deletion",
+  authenticate,
+  authorize("user:delete"),
+  asyncHandler(userController.rejectDeletion),
 );
 
 module.exports = router;
