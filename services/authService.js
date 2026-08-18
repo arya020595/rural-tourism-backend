@@ -8,6 +8,7 @@ const Company = require("../models/companyModel");
 const Association = require("../models/associationModel");
 const Role = require("../models/roleModel");
 const Permission = require("../models/permissionModel");
+const { saveUploadedFile } = require("../utils/fileStorage");
 require("../models/associations");
 
 const USER_TYPE_OPERATOR = "operator";
@@ -31,11 +32,6 @@ const parsePoscode = (value) => {
   const normalized = String(value).trim();
   if (!/^\d{5}$/.test(normalized)) return null;
   return normalized;
-};
-
-const toBase64DataUri = (file) => {
-  if (!file || !file.buffer) return null;
-  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
 };
 
 class AuthService {
@@ -578,6 +574,24 @@ class AuthService {
     const tradingOperationFile = files?.trading_operation_license?.[0] || null;
     const homestayFile = files?.homestay_certificate?.[0] || null;
 
+    // Verify magic bytes before opening the transaction — no point holding a
+    // DB transaction open while sniffing file content.
+    const [
+      operatorLogoImage,
+      motacLicenseFile,
+      tradingOperationLicense,
+      homestayCertificate,
+    ] = await Promise.all([
+      logoFile ? saveUploadedFile(logoFile.buffer, logoFile.mimetype) : null,
+      motacFile ? saveUploadedFile(motacFile.buffer, motacFile.mimetype) : null,
+      tradingOperationFile
+        ? saveUploadedFile(tradingOperationFile.buffer, tradingOperationFile.mimetype)
+        : null,
+      homestayFile
+        ? saveUploadedFile(homestayFile.buffer, homestayFile.mimetype)
+        : null,
+    ]);
+
     const transaction = await UnifiedUser.sequelize.transaction();
 
     try {
@@ -591,10 +605,10 @@ class AuthService {
           total_fulltime_staff: parseNullableInt(payload.no_of_full_time_staff),
           total_partime_staff: parseNullableInt(payload.no_of_part_time_staff),
           contact_no: payload.contact_no || null,
-          operator_logo_image: toBase64DataUri(logoFile),
-          motac_license_file: toBase64DataUri(motacFile),
-          trading_operation_license: toBase64DataUri(tradingOperationFile),
-          homestay_certificate: toBase64DataUri(homestayFile),
+          operator_logo_image: operatorLogoImage,
+          motac_license_file: motacLicenseFile,
+          trading_operation_license: tradingOperationLicense,
+          homestay_certificate: homestayCertificate,
         },
         { transaction },
       );
