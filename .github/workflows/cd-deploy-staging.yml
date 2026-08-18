@@ -87,6 +87,19 @@ jobs:
             # Login to GHCR
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
 
+            # Back up the current uploads volume before restarting, in case the
+            # volume mount is (or becomes) misconfigured. Best-effort: skip if
+            # no backend container is currently running (first-ever deploy).
+            BACKUP_DIR=~/st_rural_tourism_staging/uploads-backups
+            mkdir -p "$BACKUP_DIR"
+            RUNNING_ID=$(docker compose ps -q backend_staging)
+            if [ -n "$RUNNING_ID" ]; then
+              docker cp "$RUNNING_ID:/app/uploads" "$BACKUP_DIR/uploads-$(date +%Y%m%d-%H%M%S)" \
+                || echo "Warning: uploads backup failed (continuing deploy)"
+              # Keep only the 5 most recent backups
+              ls -1dt "$BACKUP_DIR"/uploads-* 2>/dev/null | tail -n +6 | xargs -r rm -rf
+            fi
+
             # Pull develop-tagged backend image
             docker compose pull backend_staging
 
@@ -103,6 +116,17 @@ jobs:
             # Verify health
             sleep 10
             docker compose ps
+
+            # Verify /app/uploads is a real persistent volume mount, not an
+            # ephemeral container layer — fail loudly instead of silently
+            # losing uploaded files on the next redeploy.
+            NEW_ID=$(docker compose ps -q backend_staging)
+            MOUNT_TYPE=$(docker inspect "$NEW_ID" --format '{{ range .Mounts }}{{ if eq .Destination "/app/uploads" }}{{ .Type }}{{ end }}{{ end }}')
+            if [ "$MOUNT_TYPE" != "volume" ]; then
+              echo "ERROR: /app/uploads is not mounted as a persistent Docker volume (found: '${MOUNT_TYPE:-none}'). Uploaded files will be lost on the next redeploy. Fix docker-compose.staging.yml on this server before deploying again."
+              exit 1
+            fi
+            echo "Verified: /app/uploads is mounted as a persistent volume."
 
             # Show migration status
             echo "Current migration status:"
