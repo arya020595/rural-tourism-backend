@@ -5,6 +5,7 @@ const logger = require("morgan");
 const createError = require("http-errors");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const multer = require("multer");
 
 // Load environment variables
 require("dotenv").config();
@@ -40,6 +41,7 @@ const companyRoutes = require("./routes/companyRoutes");
 const productRoutes = require("./routes/productRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
+const healthRoutes = require("./routes/healthRoutes");
 
 const app = express();
 
@@ -70,7 +72,18 @@ app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 app.use(logger("dev"));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    // Uploaded files (logos, license/certificate PDFs) are served directly to
+    // the browser with no auth check. Block content-type sniffing so a file
+    // whose declared mimetype doesn't match its actual bytes can't be
+    // reinterpreted (e.g. rendered as HTML) by the browser.
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
 
 // Routes setup
 app.get("/api/test", (req, res) => {
@@ -78,17 +91,6 @@ app.get("/api/test", (req, res) => {
   res.json({
     message: "Test route is working",
     timestamp: new Date().toISOString(),
-  });
-});
-
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    status: "healthy",
-    environment: process.env.NODE_ENV || "development",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
   });
 });
 
@@ -118,10 +120,12 @@ app.get("/api", (req, res) => {
       notifications: "/api/notifications",
       associations: "/api/associations",
       companies: "/api/companies",
+      health: "/api/health",
     },
   });
 });
 
+app.use("/api/health", healthRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/roles", roleRoutes);
@@ -154,6 +158,14 @@ app.use((req, res, next) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
+
+  if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
+    return res.status(413).json({
+      success: false,
+      message: "File too large. Each file must be 5MB or smaller.",
+    });
+  }
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message,

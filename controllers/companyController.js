@@ -6,6 +6,7 @@ const {
 } = require("../serializers/companySerializer");
 const { extractCompanyUpdateFields } = require("../parsers/companyParser");
 const { successResponse, errorResponse } = require("../utils/helpers");
+const { deleteFileIfManaged } = require("../utils/fileStorage");
 const { ForbiddenError } = require("../services/errors/AppError");
 
 /* ── Controller actions ────────────────────────────────────────── */
@@ -38,14 +39,23 @@ exports.updateCompany = async (req, res) => {
       throw new ForbiddenError("You can only update your own company.");
     }
 
-    const { company: companyFields, user: userFields } =
-      extractCompanyUpdateFields(req.body, req.files);
+    const {
+      company: companyFields,
+      user: userFields,
+      replacedFileFields,
+    } = await extractCompanyUpdateFields(req.body, req.files);
 
     // Update company table
     const updated = await companyService.updateCompany(
       req.params.id,
       companyFields,
     );
+
+    // Clean up the old file on disk for any field that was just replaced,
+    // now that the new path has been persisted successfully.
+    for (const key of replacedFileFields) {
+      if (company[key]) deleteFileIfManaged(company[key]);
+    }
 
     // Update the company owner (operator_admin) if owner fields are present.
     await companyService.updateCompanyOwner(req.params.id, userFields);
