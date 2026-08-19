@@ -72,7 +72,18 @@ app.use(bodyParser.urlencoded({ limit: "10mb", extended: true }));
 app.use(logger("dev"));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    // Uploaded files (logos, license/certificate PDFs) are served directly to
+    // the browser with no auth check. Block content-type sniffing so a file
+    // whose declared mimetype doesn't match its actual bytes can't be
+    // reinterpreted (e.g. rendered as HTML) by the browser.
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+    },
+  }),
+);
 
 // Routes setup
 app.get("/api/test", (req, res) => {

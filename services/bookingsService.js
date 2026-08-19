@@ -13,6 +13,7 @@ const {
   normalizeDateOnly,
 } = require("../utils/normalizers");
 const { buildMeta } = require("../utils/helpers");
+const { readAsBase64DataUri } = require("../utils/fileStorage");
 
 const ALLOWED_STATUSES = [
   "pending",
@@ -1441,7 +1442,7 @@ class BookingsService {
       if (company) {
         operatorEmail = company.email;
         location = company.location;
-        companyLogoBase64 = company.operator_logo_image || null;
+        companyLogoBase64 = readAsBase64DataUri(company.operator_logo_image);
       }
     }
 
@@ -1504,7 +1505,7 @@ class BookingsService {
       if (company) {
         operatorEmail = company.email;
         location = company.location;
-        companyLogoBase64 = company.operator_logo_image || null;
+        companyLogoBase64 = readAsBase64DataUri(company.operator_logo_image);
       }
     }
 
@@ -2079,7 +2080,7 @@ class BookingsService {
             location: company.location || "-",
             contactNo: company.contact_no || "-",
             establishedYear: new Date(company.created_at).getFullYear(),
-            logoBase64: company.operator_logo_image || null,
+            logoBase64: readAsBase64DataUri(company.operator_logo_image),
           }
         : null,
       ownerName,
