@@ -48,6 +48,37 @@ class DashboardValidator {
 
     return new ValidationResult(errors.length === 0, errors);
   }
+
+  validateAssociationStatsQuery(query = {}) {
+    const errors = [];
+    const { from, to } = query;
+    const hasFrom = from !== undefined && from !== null && from !== "";
+    const hasTo = to !== undefined && to !== null && to !== "";
+
+    if (hasFrom !== hasTo) {
+      errors.push("from and to must be provided together");
+    }
+
+    if (hasFrom && !YYYY_MM_DD.test(String(from))) {
+      errors.push("from must be a valid date in YYYY-MM-DD format");
+    }
+
+    if (hasTo && !YYYY_MM_DD.test(String(to))) {
+      errors.push("to must be a valid date in YYYY-MM-DD format");
+    }
+
+    if (
+      hasFrom &&
+      hasTo &&
+      YYYY_MM_DD.test(String(from)) &&
+      YYYY_MM_DD.test(String(to)) &&
+      String(from) > String(to)
+    ) {
+      errors.push("from must not be after to");
+    }
+
+    return new ValidationResult(errors.length === 0, errors);
+  }
 }
 
 module.exports = {

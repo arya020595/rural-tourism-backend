@@ -41,6 +41,12 @@ uploads/receipt_*.pdf
 # SSL certificates (sensitive)
 ssl/
 
+# Legacy migration seed data — generated from a production SQL dump, contains
+# real names/emails/bcrypt password hashes for migrated users. Never commit;
+# copy directly to wherever the migration needs to run (not via git).
+# See docs/LEGACY_DB_MIGRATION_ANALYSIS.md.
+seeders/data/legacy-kiulu-seed-data.js
+
 # Build outputs
 dist/
 build/

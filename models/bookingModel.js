@@ -15,6 +15,12 @@ const Booking = sequelize.define(
       defaultValue: null,
       field: "idempotency_key",
     },
+    legacyReceiptId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      defaultValue: null,
+      field: "legacy_receipt_id",
+    },
     version: {
       type: DataTypes.INTEGER,
       allowNull: false,
