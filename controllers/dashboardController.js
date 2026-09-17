@@ -48,7 +48,17 @@ exports.getAssociationStats = async (req, res) => {
       throw error;
     }
 
-    const result = await dashboardService.getAssociationStats();
+    const validationResult = dashboardValidator.validateAssociationStatsQuery(
+      req.query,
+    );
+    if (!validationResult.isValid) {
+      return res.status(400).json(validationResult.toResponse());
+    }
+
+    const result = await dashboardService.getAssociationStats(
+      req.query.from,
+      req.query.to,
+    );
     return successResponse(
       res,
       result,

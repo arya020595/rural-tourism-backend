@@ -387,6 +387,27 @@ class DashboardService {
     };
   }
 
+  // Day-level range for getAssociationStats — returns null when no filter
+  // is supplied so the all-time query (unfiltered join) still runs
+  // unchanged. Validation (format, from<=to) already happened in
+  // dashboardValidator.validateAssociationStatsQuery before this is called.
+  resolveAssociationStatsRange(fromRaw, toRaw) {
+    if (!fromRaw && !toRaw) return null;
+
+    const fromParts = this.parseYyyyMmDd(fromRaw);
+    const toParts = this.parseYyyyMmDd(toRaw);
+    if (!fromParts || !toParts) {
+      const error = new Error("Invalid from/to date");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const startDate = this.buildUtcDate(fromParts.year, fromParts.month, fromParts.day);
+    const endDate = this.buildUtcDate(toParts.year, toParts.month, toParts.day, true);
+
+    return { startDate, endDate };
+  }
+
   async getTrendDashboard(authUser, fromRaw, toRaw) {
     const actor = await this.resolveActorContext(authUser);
     const companyId = actor.companyId;
@@ -450,8 +471,10 @@ class DashboardService {
    * a single association so bookings are counted once (no join fan-out when an
    * association has several operator users for the same company).
    */
-  async getAssociationStats() {
-    const [statRows, companyRows] = await Promise.all([
+  async getAssociationStats(fromRaw, toRaw) {
+    const dateRange = this.resolveAssociationStatsRange(fromRaw, toRaw);
+
+    const [statRows, staffRows, companyRows] = await Promise.all([
       Booking.sequelize.query(
         `
         SELECT
@@ -468,7 +491,11 @@ class DashboardService {
             ),
             0
           ) AS totalTourists,
-          COALESCE(SUM(b.status = 'cancelled'), 0) AS totalCancelled
+          COALESCE(SUM(b.status = 'cancelled'), 0) AS totalCancelled,
+          COALESCE(
+            SUM(CASE WHEN b.status = 'paid' THEN b.total_price ELSE 0 END),
+            0
+          ) AS totalRevenue
         FROM associations a
         LEFT JOIN (
           SELECT company_id, MIN(association_id) AS association_id
@@ -476,9 +503,36 @@ class DashboardService {
           WHERE company_id IS NOT NULL AND association_id IS NOT NULL
           GROUP BY company_id
         ) ca ON ca.association_id = a.id
-        LEFT JOIN bookings b ON b.company_id = ca.company_id
+        LEFT JOIN bookings b
+          ON b.company_id = ca.company_id
+          ${dateRange ? "AND COALESCE(b.receipt_created_at, b.updated_at, b.created_at) BETWEEN :startDate AND :endDate" : ""}
         GROUP BY a.id, a.name
         ORDER BY a.name
+        `,
+        {
+          type: Booking.sequelize.QueryTypes.SELECT,
+          replacements: dateRange
+            ? { startDate: dateRange.startDate, endDate: dateRange.endDate }
+            : {},
+        },
+      ),
+      // Full-time / part-time staff per association. Kept as its own query:
+      // joining it into the bookings aggregate above would multiply the staff
+      // counts by the number of bookings per company.
+      Booking.sequelize.query(
+        `
+        SELECT
+          ca.association_id AS associationId,
+          COALESCE(SUM(c.total_fulltime_staff), 0) AS totalFulltimeStaff,
+          COALESCE(SUM(c.total_partime_staff), 0)  AS totalParttimeStaff
+        FROM (
+          SELECT company_id, MIN(association_id) AS association_id
+          FROM users
+          WHERE company_id IS NOT NULL AND association_id IS NOT NULL
+          GROUP BY company_id
+        ) ca
+        JOIN companies c ON c.id = ca.company_id
+        GROUP BY ca.association_id
         `,
         { type: Booking.sequelize.QueryTypes.SELECT },
       ),
@@ -502,6 +556,14 @@ class DashboardService {
       ),
     ]);
 
+    const staffByAssoc = new Map();
+    staffRows.forEach((r) => {
+      staffByAssoc.set(Number(r.associationId), {
+        totalFulltimeStaff: Number(r.totalFulltimeStaff) || 0,
+        totalParttimeStaff: Number(r.totalParttimeStaff) || 0,
+      });
+    });
+
     const companiesByAssoc = new Map();
     companyRows.forEach((r) => {
       const key = Number(r.associationId);
@@ -514,6 +576,10 @@ class DashboardService {
 
     const associations = statRows.map((r) => {
       const id = Number(r.associationId);
+      const staff = staffByAssoc.get(id) || {
+        totalFulltimeStaff: 0,
+        totalParttimeStaff: 0,
+      };
       return {
         associationId: id,
         associationName: r.associationName,
@@ -521,6 +587,11 @@ class DashboardService {
         totalReceipts: Number(r.totalReceipts) || 0,
         totalTourists: Number(r.totalTourists) || 0,
         totalCancelled: Number(r.totalCancelled) || 0,
+        // Paid bookings only — consistent with totalReceipts/totalTourists.
+        totalRevenue: Number(r.totalRevenue) || 0,
+        totalFulltimeStaff: staff.totalFulltimeStaff,
+        totalParttimeStaff: staff.totalParttimeStaff,
+        totalStaff: staff.totalFulltimeStaff + staff.totalParttimeStaff,
         companies: companiesByAssoc.get(id) || [],
       };
     });
@@ -531,6 +602,10 @@ class DashboardService {
         acc.totalReceipts += a.totalReceipts;
         acc.totalTourists += a.totalTourists;
         acc.totalCancelled += a.totalCancelled;
+        acc.totalRevenue += a.totalRevenue;
+        acc.totalFulltimeStaff += a.totalFulltimeStaff;
+        acc.totalParttimeStaff += a.totalParttimeStaff;
+        acc.totalStaff += a.totalStaff;
         return acc;
       },
       {
@@ -538,6 +613,10 @@ class DashboardService {
         totalReceipts: 0,
         totalTourists: 0,
         totalCancelled: 0,
+        totalRevenue: 0,
+        totalFulltimeStaff: 0,
+        totalParttimeStaff: 0,
+        totalStaff: 0,
       },
     );
 
