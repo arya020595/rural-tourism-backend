@@ -479,6 +479,12 @@ class BookingsService {
     return {
       id: record.id,
       idempotency_key: record.idempotencyKey,
+      legacy_receipt_id: record.legacyReceiptId,
+      // Migrated bookings show their original PE####### receipt number in
+      // place of the internal id wherever a booking number is displayed;
+      // native bookings (legacy_receipt_id null) show id as before — see
+      // docs/LEGACY_DB_MIGRATION_ANALYSIS.md §8.9.
+      display_receipt_id: record.legacyReceiptId || record.id,
       version: record.version,
       booking_type: record.bookingType,
       customer_type: record.customerType,
@@ -518,6 +524,8 @@ class BookingsService {
     return {
       id: record.id,
       idempotency_key: record.idempotencyKey,
+      legacy_receipt_id: record.legacyReceiptId,
+      display_receipt_id: record.legacyReceiptId || record.id,
       version: record.version,
       booking_type: record.bookingType,
       customer_type: record.customerType,
@@ -1246,6 +1254,9 @@ class BookingsService {
           { userFullname: { [Op.like]: `%${search}%` } },
           { operatorName: { [Op.like]: `%${search}%` } },
           { companyName: { [Op.like]: `%${search}%` } },
+          // Lets operators find a migrated booking by its old PE#######
+          // receipt number — see docs/LEGACY_DB_MIGRATION_ANALYSIS.md §8.9.
+          { legacyReceiptId: { [Op.like]: `%${search}%` } },
         ];
       }
     }
