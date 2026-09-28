@@ -166,6 +166,13 @@ app.use((err, req, res, next) => {
     });
   }
 
+  if (err.message === "Unexpected end of form") {
+    return res.status(400).json({
+      success: false,
+      message: "Upload was interrupted. Please check your connection and try again.",
+    });
+  }
+
   res.status(err.status || 500).json({
     success: false,
     message: err.message,
