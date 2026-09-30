@@ -292,6 +292,30 @@ class UserService {
   }
 
   /**
+   * Resolve the id of the canonical "operator_admin" role.
+   */
+  async getOperatorAdminRoleId() {
+    const adminRole = await Role.findOne({ where: { name: "operator_admin" } });
+    if (!adminRole)
+      throw new BadRequestError("operator_admin role not found. Run seeders.");
+    return adminRole.id;
+  }
+
+  /**
+   * Resolve an operator role id ("operator_admin" or "operator_staff") by
+   * name, rejecting anything else. Used so a non-superadmin caller can only
+   * ever choose between these two roles for their own company — never
+   * superadmin or association roles.
+   */
+  async getOperatorRoleIdByName(roleName) {
+    if (roleName === "operator_admin") return this.getOperatorAdminRoleId();
+    if (roleName === "operator_staff") return this.getOperatorStaffRoleId();
+    throw new BadRequestError(
+      'role must be "operator_admin" or "operator_staff"',
+    );
+  }
+
+  /**
    * Delete a user by ID
    */
   async deleteUser(id) {
@@ -387,6 +411,10 @@ class UserService {
 
     if (updates.company_id !== undefined) {
       fields.company_id = updates.company_id;
+    }
+
+    if (updates.is_active !== undefined) {
+      fields.is_active = Boolean(updates.is_active);
     }
 
     return fields;

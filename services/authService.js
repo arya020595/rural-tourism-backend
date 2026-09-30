@@ -36,7 +36,22 @@ const parsePoscode = (value) => {
 
 class AuthService {
   async assertAccountIsLoginEligible(user, userType) {
-    if (!user || userType !== USER_TYPE_TOURIST) {
+    if (!user) {
+      return;
+    }
+
+    if (userType === USER_TYPE_OPERATOR || userType === USER_TYPE_ASSOCIATION) {
+      if (user.is_active === false) {
+        const error = new Error(
+          "Your account has been deactivated. Please contact your association or admin.",
+        );
+        error.statusCode = 403;
+        throw error;
+      }
+      return;
+    }
+
+    if (userType !== USER_TYPE_TOURIST) {
       return;
     }
 
@@ -322,6 +337,14 @@ class AuthService {
     const passwordOk = await bcrypt.compare(password, user.password);
     if (!passwordOk) {
       return null;
+    }
+
+    if (user.is_active === false) {
+      const error = new Error(
+        "Your account has been deactivated. Please contact your association or admin.",
+      );
+      error.statusCode = 403;
+      throw error;
     }
 
     const role = await this.resolveRole(user.role_id, USER_TYPE_OPERATOR);
