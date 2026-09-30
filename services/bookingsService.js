@@ -1428,6 +1428,22 @@ class BookingsService {
     return this.serialize(record);
   }
 
+  /**
+   * Resolve the email to show as "Issued By" on a receipt/PDF. Prefers the
+   * company's own email; falls back to the booking creator's own login email
+   * when the company has none set (common for companies with incomplete
+   * profile data), so the field isn't left blank.
+   */
+  async resolveOperatorEmail(record, companyEmail) {
+    if (companyEmail) return companyEmail;
+    if (!record.userId) return null;
+
+    const creator = await UnifiedUser.findByPk(record.userId, {
+      attributes: ["email"],
+    });
+    return creator?.email || null;
+  }
+
   async getBookingPdfData(id) {
     const bookingId = normalizeInt(id, null);
     if (bookingId === null) {
@@ -1443,7 +1459,7 @@ class BookingsService {
       throw error;
     }
 
-    let operatorEmail = null;
+    let companyEmail = null;
     let location = null;
     let companyLogoBase64 = null;
     if (record.companyId) {
@@ -1451,11 +1467,12 @@ class BookingsService {
         attributes: ["email", "location", "operator_logo_image"],
       });
       if (company) {
-        operatorEmail = company.email;
+        companyEmail = company.email;
         location = company.location;
         companyLogoBase64 = readAsBase64DataUri(company.operator_logo_image);
       }
     }
+    const operatorEmail = await this.resolveOperatorEmail(record, companyEmail);
 
     const totalPax =
       Number(record.noOfPaxAntarbangsa || 0) +
@@ -1506,7 +1523,7 @@ class BookingsService {
     const record = await Booking.findByPk(bookingId);
     if (!record) throw Object.assign(new Error("Booking not found."), { statusCode: 404 });
 
-    let operatorEmail = null;
+    let companyEmail = null;
     let location = null;
     let companyLogoBase64 = null;
     if (record.companyId) {
@@ -1514,11 +1531,12 @@ class BookingsService {
         attributes: ["email", "location", "operator_logo_image"],
       });
       if (company) {
-        operatorEmail = company.email;
+        companyEmail = company.email;
         location = company.location;
         companyLogoBase64 = readAsBase64DataUri(company.operator_logo_image);
       }
     }
+    const operatorEmail = await this.resolveOperatorEmail(record, companyEmail);
 
     const totalPax =
       Number(record.noOfPaxAntarbangsa || 0) + Number(record.noOfPaxDomestik || 0);

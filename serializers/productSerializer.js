@@ -11,6 +11,7 @@ function serialize(product) {
     id: plain.id,
     name: plain.name,
     product_type: plain.product_type,
+    is_active: plain.is_active,
     company_id: plain.company_id,
     company: plain.company || null,
     created_at: plain.created_at,

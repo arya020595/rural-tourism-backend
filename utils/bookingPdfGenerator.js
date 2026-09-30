@@ -265,6 +265,7 @@ function buildHtml(data) {
     font-size: 18px;
     font-weight: bold;
     color: #111;
+    text-transform: uppercase;
   }
   .full-width {
     grid-column: 1 / -1;
@@ -312,6 +313,18 @@ function buildHtml(data) {
     font-weight: bold;
     color: #111;
     line-height: 1;
+  }
+  .deposit-notice {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #d2d2d2;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #6d6d6d;
+  }
+  .deposit-notice em {
+    font-style: italic;
   }
 </style>
 </head>
@@ -375,6 +388,11 @@ function buildHtml(data) {
       <div class="total-label">JUMLAH/TOTAL(RM)</div>
       <div class="total-value">${totalDepositFormatted}</div>
     </div>
+  </div>
+
+  <div class="deposit-notice">
+    Deposit tempahan adalah TIDAK BOLEH DIPULANGKAN. Tiada bayaran balik untuk pembatalan atau ketidakhadiran.<br>
+    <em>Booking deposit is NON-REFUNDABLE. No refund for cancellations or no-shows.</em>
   </div>
 
 </body>

@@ -51,6 +51,11 @@ const UnifiedUser = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
     deletion_requested_at: {
       type: DataTypes.DATE,
       allowNull: true,

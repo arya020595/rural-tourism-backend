@@ -21,6 +21,11 @@ const Product = sequelize.define(
       type: DataTypes.ENUM("activity", "accommodation"),
       allowNull: false,
     },
+    is_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+    },
   },
   {
     tableName: "products",

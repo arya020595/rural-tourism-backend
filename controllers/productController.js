@@ -54,6 +54,7 @@ exports.getAllProducts = async (req, res) => {
             Number.isInteger(queryCompanyId) && queryCompanyId > 0
               ? queryCompanyId
               : null,
+          includeInactive: true,
         })
       : await productService.getAllProductsByCompany(companyId, {
           where,
@@ -61,6 +62,7 @@ exports.getAllProducts = async (req, res) => {
           search: req.query.search,
           page,
           perPage,
+          includeInactive: true,
         });
 
     return paginatedResponse(

@@ -90,8 +90,13 @@ exports.createUser = async (req, res) => {
 
     const userPolicy = policy("user", req.user);
     if (!userPolicy.isAdmin()) {
-      // Non-admin → auto-assign operator_staff role + caller's own company
-      role_id = await userService.getOperatorStaffRoleId();
+      // Non-admin (operator_admin creating a user for their own company) may
+      // choose either operator role — e.g. adding a co-admin (spouse/partner)
+      // as a succession backup, not just staff. Anything other than these two
+      // names is rejected by getOperatorRoleIdByName, so a non-admin caller
+      // can never grant superadmin/association roles this way.
+      const requestedRole = req.body.role || "operator_staff";
+      role_id = await userService.getOperatorRoleIdByName(requestedRole);
       company_id = req.user.company_id;
       association_id = req.user.association_id || null;
     }
@@ -129,13 +134,37 @@ exports.updateUser = async (req, res) => {
       );
     }
 
-    // Only admins may change role_id
-    if (!userPolicy.isAdmin()) delete req.body.role_id;
+    // Only superadmins may set a raw role_id (could be any role, including
+    // superadmin). Non-admins instead pass `role` by name, resolved to only
+    // operator_admin/operator_staff — e.g. promoting a staff member to
+    // operator_admin as a succession backup (spouse/co-owner), or demoting.
+    if (!userPolicy.isAdmin()) {
+      delete req.body.role_id;
+
+      if (req.body.role !== undefined) {
+        // Nobody can change their own role (would risk locking the company
+        // out of having any admin, same reasoning as blocking self-deactivation).
+        if (String(targetUser.id) === String(req.user.id)) {
+          delete req.body.role;
+        } else {
+          req.body.role_id = await userService.getOperatorRoleIdByName(
+            req.body.role,
+          );
+        }
+      }
+    }
+    delete req.body.role;
 
     // Only superadmins may reassign tenancy-related fields
     if (!userPolicy.isAdmin()) {
       delete req.body.company_id;
       delete req.body.association_id;
+    }
+
+    // Nobody can deactivate their own account (would lock them out with no
+    // one else able to undo it, same reasoning as destroy() blocking self).
+    if (req.body.is_active !== undefined && String(targetUser.id) === String(req.user.id)) {
+      delete req.body.is_active;
     }
 
     // Password confirmation (when provided)
