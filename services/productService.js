@@ -19,7 +19,15 @@ const PRODUCT_INCLUDES = [
 
 class ProductService {
   async getAllProducts(
-    { where = {}, order = [], search, page = 1, perPage = 10, companyId } = {},
+    {
+      where = {},
+      order = [],
+      search,
+      page = 1,
+      perPage = 10,
+      companyId,
+      includeInactive = false,
+    } = {},
   ) {
     if (search) {
       const pattern = `%${search}%`;
@@ -29,6 +37,9 @@ class ProductService {
     const mergedWhere = { ...where };
     if (companyId) {
       mergedWhere.company_id = companyId;
+    }
+    if (!includeInactive) {
+      mergedWhere.is_active = true;
     }
 
     const result = await Product.paginate({
@@ -53,7 +64,14 @@ class ProductService {
    */
   async getAllProductsByCompany(
     companyId,
-    { where = {}, order = [], search, page = 1, perPage = 10 } = {},
+    {
+      where = {},
+      order = [],
+      search,
+      page = 1,
+      perPage = 10,
+      includeInactive = false,
+    } = {},
   ) {
     if (!companyId) {
       throw new BadRequestError("company_id is required");
@@ -65,6 +83,7 @@ class ProductService {
       page,
       perPage,
       companyId,
+      includeInactive,
     });
   }
 
@@ -117,8 +136,13 @@ class ProductService {
       };
     }
 
-    // Merge location filter with other conditions
-    const mergedWhere = { ...where, company_id: { [Op.in]: companyIds } };
+    // Merge location filter with other conditions. Always active-only — this
+    // feeds booking product pickers, never master data management.
+    const mergedWhere = {
+      ...where,
+      company_id: { [Op.in]: companyIds },
+      is_active: true,
+    };
 
     const result = await Product.paginate({
       where: mergedWhere,
@@ -213,6 +237,10 @@ class ProductService {
     // Note: company_id should not be updated after creation
     if (updates.company_id !== undefined) {
       throw new BadRequestError("company_id cannot be updated");
+    }
+
+    if (updates.is_active !== undefined) {
+      fields.is_active = Boolean(updates.is_active);
     }
 
     if (Object.keys(fields).length === 0) {
