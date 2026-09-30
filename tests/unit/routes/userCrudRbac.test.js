@@ -10,6 +10,7 @@ const mockUpdateUser = jest.fn();
 const mockUpdateUserProfile = jest.fn();
 const mockDeleteUser = jest.fn();
 const mockGetOperatorStaffRoleId = jest.fn();
+const mockGetOperatorRoleIdByName = jest.fn();
 
 jest.mock("../../../middleware/uploadLogo", () => ({
   fields: () => (req, res, next) => next(),
@@ -23,6 +24,7 @@ jest.mock("../../../services/userService", () => ({
   updateUserProfile: (...args) => mockUpdateUserProfile(...args),
   deleteUser: (...args) => mockDeleteUser(...args),
   getOperatorStaffRoleId: (...args) => mockGetOperatorStaffRoleId(...args),
+  getOperatorRoleIdByName: (...args) => mockGetOperatorRoleIdByName(...args),
 }));
 
 jest.mock("../../../services/authService", () => ({
@@ -339,7 +341,7 @@ describe("Users API – CRUD & RBAC", () => {
     describe("POST /api/users", () => {
       test("should return 201 and created user", async () => {
         const app = buildApp();
-        mockGetOperatorStaffRoleId.mockResolvedValue(5);
+        mockGetOperatorRoleIdByName.mockResolvedValue(5);
         mockCreateUser.mockResolvedValue(sampleUser);
 
         const res = await request(app)
@@ -365,11 +367,14 @@ describe("Users API – CRUD & RBAC", () => {
           association_id: null,
           company_id: 1,
         });
+        expect(mockGetOperatorRoleIdByName).toHaveBeenCalledWith(
+          "operator_staff",
+        );
       });
 
       test("should return 400 for missing required fields", async () => {
         const app = buildApp();
-        mockGetOperatorStaffRoleId.mockResolvedValue(5);
+        mockGetOperatorRoleIdByName.mockResolvedValue(5);
         const error = new Error(
           "name, username, email, and password are required",
         );
@@ -389,7 +394,7 @@ describe("Users API – CRUD & RBAC", () => {
 
       test("should return 409 for duplicate username/email", async () => {
         const app = buildApp();
-        mockGetOperatorStaffRoleId.mockResolvedValue(5);
+        mockGetOperatorRoleIdByName.mockResolvedValue(5);
         const error = new Error("Username or email already exists");
         error.statusCode = 409;
         mockCreateUser.mockRejectedValue(error);
