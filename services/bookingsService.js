@@ -80,8 +80,17 @@ class BookingsService {
       throw error;
     }
 
-    const start = new Date(`${startDateOnly}T00:00:00.000Z`);
-    const end = new Date(`${endDateOnly}T23:59:59.999Z`);
+    // Built via the local Date constructor (not new Date(isoString), which is
+    // always UTC-anchored for date-only strings) so "today" resolves to this
+    // server's actual local midnight-to-midnight day (Asia/Kuala_Lumpur, UTC+8)
+    // rather than a UTC calendar day. Without this, any booking created between
+    // local midnight and 8am has a UTC timestamp still on the *previous* UTC
+    // date, so it fell outside the intended "today" window entirely — see
+    // docs/DEBUG_LOG_2026-09-30.md for the incident this was found in.
+    const [startYear, startMonth, startDay] = startDateOnly.split("-").map(Number);
+    const [endYear, endMonth, endDay] = endDateOnly.split("-").map(Number);
+    const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+    const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
 
     if (end < start) {
       const error = new Error("end_date must be on or after start_date");
