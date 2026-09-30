@@ -6,6 +6,13 @@ const Notification = require("../models/notificationModel");
 const { BadRequestError } = require("./errors/AppError");
 const NOTIFICATION_TYPES = require("../constants/notificationTypes");
 
+// Malaysia does not observe daylight saving, so this offset is constant
+// year-round — safe to hardcode rather than depend on the server process's
+// own TZ setting (which differs between local dev and staging/production;
+// see docs/DEBUG_LOG_2026-09-30.md for the "today" dashboard bug this same
+// class of issue caused).
+const MALAYSIA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
+
 class BookingReminderService {
   /**
    * Find all bookings happening exactly N days from today.
@@ -14,8 +21,17 @@ class BookingReminderService {
    * so a plain string comparison would never match bookings with a time component.
    */
   async findUpcomingBookings(daysAhead = 3) {
-    const target = new Date();
-    target.setDate(target.getDate() + daysAhead);
+    // Computed from Malaysia-local "today", independent of the server
+    // process's own TZ setting — see MALAYSIA_UTC_OFFSET_MS above for why
+    // new Date()'s local getters/setters can't be used here directly.
+    const malaysiaNow = new Date(Date.now() + MALAYSIA_UTC_OFFSET_MS);
+    const target = new Date(
+      Date.UTC(
+        malaysiaNow.getUTCFullYear(),
+        malaysiaNow.getUTCMonth(),
+        malaysiaNow.getUTCDate() + daysAhead,
+      ),
+    );
     const targetDate = target.toISOString().split("T")[0]; // YYYY-MM-DD
 
     console.log(`[BookingReminderService] Querying bookings for: ${targetDate}`);
