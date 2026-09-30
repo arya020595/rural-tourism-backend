@@ -317,19 +317,27 @@ class DashboardService {
       return { startDate: start, endDate: end, asOfDate: this.formatAsYyyyMmDd(start) };
     }
 
-    const now = new Date();
-    const startDate = new Date(now);
-    startDate.setHours(0, 0, 0, 0);
+    // Malaysia-local "today", computed independent of the server process's
+    // own TZ setting. `new Date()`'s local getFullYear/getMonth/getDate and
+    // setHours all read/write the process's own local clock — local dev
+    // happens to run with TZ=Asia/Kuala_Lumpur, but staging/production run in
+    // UTC, so those calls silently returned UTC calendar values there,
+    // showing "today" as one day behind for anything created between
+    // Malaysia midnight and 8am. Malaysia has no DST, so a flat UTC+8 shift
+    // on the current instant reliably yields the correct Malaysia-local Y/M/D
+    // via UTC getters, regardless of the server's own TZ.
+    const malaysiaNow = new Date(Date.now() + 8 * 60 * 60 * 1000);
+    const year = malaysiaNow.getUTCFullYear();
+    const month = malaysiaNow.getUTCMonth() + 1;
+    const day = malaysiaNow.getUTCDate();
 
-    const endDate = new Date(now);
-    endDate.setHours(23, 59, 59, 999);
+    const startDate = new Date(Date.UTC(year, month - 1, day, -8, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month - 1, day, 15, 59, 59, 999));
 
     return {
       startDate,
       endDate,
-      asOfDate: this.formatAsYyyyMmDd(
-        new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())),
-      ),
+      asOfDate: this.formatAsYyyyMmDd(this.buildUtcDate(year, month, day)),
     };
   }
 

@@ -29,14 +29,14 @@ router.get(
 router.get(
   "/statement/preview",
   authenticate,
-  authorize("booking:read"),
+  authorize("booking:export"),
   asyncHandler(bookingController.getStatementPreview),
 );
 
 router.get(
   "/statement/pdf",
   authenticate,
-  authorize("booking:read"),
+  authorize("booking:export"),
   asyncHandler(bookingController.generateStatementPdf),
 );
 

@@ -28,6 +28,27 @@ const ALLOWED_STATUSES = [
 const ALLOWED_BOOKING_TYPES = ["activity", "accommodation", "package"];
 const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 
+// Malaysia does not observe daylight saving, so this offset is constant
+// year-round — safe to hardcode rather than depend on the server process's
+// own TZ setting (which differs between local dev and staging/production).
+const MALAYSIA_UTC_OFFSET_HOURS = 8;
+
+/**
+ * Builds the UTC instant corresponding to the start or end of a given
+ * Malaysia-local calendar day (YYYY-MM-DD), independent of the server
+ * process's own timezone.
+ */
+function buildMalaysiaDayBoundary(dateOnly, edge) {
+  const [year, month, day] = dateOnly.split("-").map(Number);
+  const hours = edge === "start" ? 0 : 23;
+  const minutes = edge === "start" ? 0 : 59;
+  const seconds = edge === "start" ? 0 : 59;
+  const ms = edge === "start" ? 0 : 999;
+  return new Date(
+    Date.UTC(year, month - 1, day, hours - MALAYSIA_UTC_OFFSET_HOURS, minutes, seconds, ms),
+  );
+}
+
 class BookingsService {
   parseStatusFilter(statusValue) {
     const raw = normalizeString(statusValue);
@@ -80,17 +101,16 @@ class BookingsService {
       throw error;
     }
 
-    // Built via the local Date constructor (not new Date(isoString), which is
-    // always UTC-anchored for date-only strings) so "today" resolves to this
-    // server's actual local midnight-to-midnight day (Asia/Kuala_Lumpur, UTC+8)
-    // rather than a UTC calendar day. Without this, any booking created between
-    // local midnight and 8am has a UTC timestamp still on the *previous* UTC
-    // date, so it fell outside the intended "today" window entirely — see
-    // docs/DEBUG_LOG_2026-09-30.md for the incident this was found in.
-    const [startYear, startMonth, startDay] = startDateOnly.split("-").map(Number);
-    const [endYear, endMonth, endDay] = endDateOnly.split("-").map(Number);
-    const start = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-    const end = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+    // Built using an explicit Malaysia (Asia/Kuala_Lumpur, UTC+8, no DST) offset
+    // rather than the local Date constructor, which depends on the server
+    // process's own TZ setting — local dev happened to run with
+    // TZ=Asia/Kuala_Lumpur, but staging/production run in UTC, so the same
+    // "local midnight" construction silently became a UTC-midnight bug again
+    // there. Without this, any booking created between Malaysia midnight and
+    // 8am has a UTC timestamp still on the *previous* UTC date, so it falls
+    // outside the intended "today" window — see docs/DEBUG_LOG_2026-09-30.md.
+    const start = buildMalaysiaDayBoundary(startDateOnly, "start");
+    const end = buildMalaysiaDayBoundary(endDateOnly, "end");
 
     if (end < start) {
       const error = new Error("end_date must be on or after start_date");
