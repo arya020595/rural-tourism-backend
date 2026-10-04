@@ -9,7 +9,7 @@ const NOTIFICATION_TYPES = require("../constants/notificationTypes");
 // Malaysia does not observe daylight saving, so this offset is constant
 // year-round — safe to hardcode rather than depend on the server process's
 // own TZ setting (which differs between local dev and staging/production;
-// see docs/DEBUG_LOG_2026-09-30.md for the "today" dashboard bug this same
+// see docs/debug/DEBUG_LOG_2026-10-04.md for the "today" dashboard bug this same
 // class of issue caused).
 const MALAYSIA_UTC_OFFSET_MS = 8 * 60 * 60 * 1000;
 

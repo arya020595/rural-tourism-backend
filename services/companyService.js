@@ -2,7 +2,11 @@ const { Op } = require("sequelize");
 const Company = require("../models/companyModel");
 const UnifiedUser = require("../models/unifiedUserModel");
 const Role = require("../models/roleModel");
-const { NotFoundError, BadRequestError } = require("./errors/AppError");
+const {
+  NotFoundError,
+  BadRequestError,
+  ConflictError,
+} = require("./errors/AppError");
 require("../models/associations");
 
 class CompanyService {
@@ -20,23 +24,46 @@ class CompanyService {
   }
 
   /**
-   * Update the company owner's user fields (e.g. name). The owner is the
-   * operator_admin of the company — scope the update to that role so staff
-   * accounts in the same company are never overwritten.
+   * The company owner is its first operator_admin (lowest id). A company can
+   * have several operator_admins (e.g. a co-owner added as backup); only this
+   * one is the "owner" shown on — and editable from — the company profile.
+   * Single source of truth for that rule: display and update both use it.
+   */
+  async getCompanyOwner(companyId) {
+    if (!companyId) return null;
+
+    const adminRole = await Role.findOne({
+      where: { name: "operator_admin" },
+    });
+    if (!adminRole) return null;
+
+    return UnifiedUser.findOne({
+      where: { company_id: companyId, role_id: adminRole.id },
+      order: [["id", "ASC"]],
+    });
+  }
+
+  /**
+   * Update the company owner's user fields (name/email) — that one row only.
+   * A bulk update across all operator_admins would rename every co-admin
+   * and, since email is unique, fail outright with a 500.
    */
   async updateCompanyOwner(companyId, userFields) {
     if (!userFields || Object.keys(userFields).length === 0) return;
 
-    // Sequelize cannot filter by an included association in a bulk update, so
-    // resolve the operator_admin role id and scope by company_id + role_id.
-    const adminRole = await Role.findOne({
-      where: { name: "operator_admin" },
-    });
-    if (!adminRole) return;
+    const owner = await this.getCompanyOwner(companyId);
+    if (!owner) return;
 
-    await UnifiedUser.update(userFields, {
-      where: { company_id: companyId, role_id: adminRole.id },
-    });
+    try {
+      await owner.update(userFields);
+    } catch (err) {
+      if (err?.name === "SequelizeUniqueConstraintError") {
+        throw new ConflictError(
+          "This email is already used by another account.",
+        );
+      }
+      throw err;
+    }
   }
 
   async getAllCompanies() {
