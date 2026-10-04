@@ -120,7 +120,7 @@ function buildHtml(data, pdfUrl) {
     white-space: nowrap;
     font-family: monospace;
   }
-  .receipt-body { padding: 20px 0 10px; }
+  .receipt-body { padding: 0 0 10px; /* the hr above already gives a 22px gap */ }
   .details-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

@@ -119,7 +119,7 @@ function buildHtml(data, pdfUrl) {
     font-family: monospace;
   }
   .receipt-body {
-    padding: 20px 0 10px;
+    padding: 0 0 10px; /* the hr above already gives a 22px gap */
   }
   .details-grid {
     display: grid;

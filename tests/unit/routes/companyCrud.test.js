@@ -6,6 +6,7 @@ const { generateToken } = require("../../../middleware/auth");
 const mockGetCompanyById = jest.fn();
 const mockUpdateCompany = jest.fn();
 const mockUpdateCompanyOwner = jest.fn();
+const mockGetCompanyOwner = jest.fn();
 
 jest.mock("../../../middleware/uploadLogo", () => ({
   fields: () => (req, res, next) => next(),
@@ -15,6 +16,7 @@ jest.mock("../../../services/companyService", () => ({
   getCompanyById: (...args) => mockGetCompanyById(...args),
   updateCompany: (...args) => mockUpdateCompany(...args),
   updateCompanyOwner: (...args) => mockUpdateCompanyOwner(...args),
+  getCompanyOwner: (...args) => mockGetCompanyOwner(...args),
 }));
 
 const companyRoutes = require("../../../routes/companyRoutes");
@@ -259,6 +261,7 @@ describe("Companies API – Read & Update", () => {
     test("should return 200 for operator_admin on own company", async () => {
       mockGetCompanyById.mockResolvedValue(sampleCompany);
       mockUpdateCompany.mockResolvedValue(updatedCompany);
+      mockGetCompanyOwner.mockResolvedValue({ id: 100 });
       const app = buildApp();
 
       const res = await request(app)
@@ -268,6 +271,47 @@ describe("Companies API – Read & Update", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    test("should apply owner name/email when the caller is the company owner", async () => {
+      mockGetCompanyById.mockResolvedValue(sampleCompany);
+      mockUpdateCompany.mockResolvedValue(updatedCompany);
+      mockGetCompanyOwner.mockResolvedValue({ id: 100 });
+      const app = buildApp();
+
+      const res = await request(app)
+        .put("/api/companies/1")
+        .set("Authorization", `Bearer ${OPERATOR_ADMIN_TOKEN}`)
+        .send({ owner_full_name: "New Owner", email: "owner@example.com" });
+
+      expect(res.status).toBe(200);
+      expect(mockUpdateCompanyOwner).toHaveBeenCalledWith("1", {
+        name: "New Owner",
+        email: "owner@example.com",
+      });
+    });
+
+    test("should ignore owner name/email from a co-admin who is not the owner", async () => {
+      mockGetCompanyById.mockResolvedValue(sampleCompany);
+      mockUpdateCompany.mockResolvedValue(updatedCompany);
+      mockGetCompanyOwner.mockResolvedValue({ id: 999 });
+      const app = buildApp();
+
+      const res = await request(app)
+        .put("/api/companies/1")
+        .set("Authorization", `Bearer ${OPERATOR_ADMIN_TOKEN}`)
+        .send({
+          company_name: "Updated Company",
+          owner_full_name: "Hijacked Owner",
+          email: "coadmin@example.com",
+        });
+
+      expect(res.status).toBe(200);
+      expect(mockUpdateCompany).toHaveBeenCalledWith(
+        "1",
+        expect.objectContaining({ company_name: "Updated Company" }),
+      );
+      expect(mockUpdateCompanyOwner).toHaveBeenCalledWith("1", {});
     });
 
     test("should return 403 for operator_staff (read-only)", async () => {

@@ -242,6 +242,10 @@ function buildHtml(data) {
     border-top: 1.5px solid #ddd;
     margin-bottom: 22px;
   }
+  /* Same 16px gap above the footer as the deposit notice has below it. */
+  hr.footer-divider {
+    margin-bottom: 16px;
+  }
 
   /* â”€â”€ Info grid â”€â”€ */
   .grid {
@@ -277,8 +281,6 @@ function buildHtml(data) {
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 24px;
-    padding-top: 16px;
-    margin-top: 4px;
   }
   .issued-label {
     font-size: 11px;
@@ -375,7 +377,7 @@ function buildHtml(data) {
     </div>
   </div>
 
-  <hr>
+  <hr class="footer-divider">
 
   <!-- Footer: issued-by (left) + total (right), matching the payment receipt -->
   <div class="receipt-footer">

@@ -14,6 +14,7 @@ const {
 } = require("../utils/normalizers");
 const { buildMeta } = require("../utils/helpers");
 const { readAsBase64DataUri } = require("../utils/fileStorage");
+const { BadRequestError } = require("./errors/AppError");
 
 const ALLOWED_STATUSES = [
   "pending",
@@ -32,6 +33,12 @@ const ALLOWED_CUSTOMER_TYPES = ["tourist", "company"];
 // year-round — safe to hardcode rather than depend on the server process's
 // own TZ setting (which differs between local dev and staging/production).
 const MALAYSIA_UTC_OFFSET_HOURS = 8;
+
+/** Round a money amount to 2 decimal places (sen); passes null through. */
+function roundMoney(value) {
+  if (value === null || value === undefined) return value;
+  return Math.round(value * 100) / 100;
+}
 
 /**
  * Builds the UTC instant corresponding to the start or end of a given
@@ -108,7 +115,7 @@ class BookingsService {
     // "local midnight" construction silently became a UTC-midnight bug again
     // there. Without this, any booking created between Malaysia midnight and
     // 8am has a UTC timestamp still on the *previous* UTC date, so it falls
-    // outside the intended "today" window — see docs/DEBUG_LOG_2026-09-30.md.
+    // outside the intended "today" window — see docs/debug/DEBUG_LOG_2026-10-04.md.
     const start = buildMalaysiaDayBoundary(startDateOnly, "start");
     const end = buildMalaysiaDayBoundary(endDateOnly, "end");
 
@@ -714,7 +721,7 @@ class BookingsService {
       data.bookingTime ?? data.booking_time,
     );
     const totalPrice = normalizeNumber(data.total_price, null);
-    const totalDeposit = normalizeInt(data.total_deposit, null);
+    const totalDeposit = roundMoney(normalizeNumber(data.total_deposit, null));
     const status = data.status
       ? this.ensureStatusAllowed(data.status)
       : "pending";
@@ -748,7 +755,7 @@ class BookingsService {
       data.total_deposit !== "" &&
       (totalDeposit === null || totalDeposit < 0)
     ) {
-      errors.push("total_deposit must be an integer >= 0");
+      errors.push("total_deposit must be numeric and >= 0");
     }
 
     if (bookingType === "activity") {
@@ -958,13 +965,13 @@ class BookingsService {
     }
 
     if (data.total_deposit !== undefined) {
-      const value = normalizeInt(data.total_deposit, null);
+      const value = roundMoney(normalizeNumber(data.total_deposit, null));
       if (
         data.total_deposit !== null &&
         data.total_deposit !== "" &&
         (value === null || value < 0)
       ) {
-        const error = new Error("total_deposit must be an integer >= 0");
+        const error = new Error("total_deposit must be numeric and >= 0");
         error.statusCode = 400;
         throw error;
       }
@@ -1428,6 +1435,84 @@ class BookingsService {
       })),
       meta: buildMeta(count, page, perPage, totalPages),
     };
+  }
+
+  /**
+   * Malaysia-local dates (YYYY-MM-DD) within [from, to] that have at least one
+   * non-cancelled booking — used to mark dates in the booking-form calendar.
+   * Activity/package bookings count on their activity date; accommodation
+   * bookings count on every day from check-in to check-out.
+   * @param {object} scope – policy scope where clause (e.g. { companyId }).
+   */
+  async getBookedDates(scope = {}, fromRaw, toRaw) {
+    const from = normalizeDateOnly(fromRaw);
+    const to = normalizeDateOnly(toRaw);
+    if (!from || !to) {
+      throw new BadRequestError(
+        "from and to are required in YYYY-MM-DD format",
+      );
+    }
+    if (to < from) {
+      throw new BadRequestError("to must be on or after from");
+    }
+    const DAY_MS = 24 * 60 * 60 * 1000;
+    const spanDays = (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS;
+    if (spanDays > 400) {
+      throw new BadRequestError("Date range must be 400 days or less");
+    }
+
+    const rows = await Booking.findAll({
+      attributes: ["activityDate", "checkInDate", "checkOutDate"],
+      where: {
+        ...scope,
+        status: { [Op.notIn]: ["cancelled", "rejected"] },
+        [Op.or]: [
+          {
+            activityDate: {
+              [Op.between]: [
+                buildMalaysiaDayBoundary(from, "start"),
+                buildMalaysiaDayBoundary(to, "end"),
+              ],
+            },
+          },
+          {
+            checkInDate: { [Op.lte]: to },
+            [Op.or]: [
+              { checkOutDate: { [Op.gte]: from } },
+              { checkOutDate: null, checkInDate: { [Op.gte]: from } },
+            ],
+          },
+        ],
+      },
+      raw: true,
+    });
+
+    const dates = new Set();
+    const MALAYSIA_OFFSET_MS = MALAYSIA_UTC_OFFSET_HOURS * 60 * 60 * 1000;
+
+    for (const row of rows) {
+      if (row.activityDate) {
+        const day = new Date(new Date(row.activityDate).getTime() + MALAYSIA_OFFSET_MS)
+          .toISOString()
+          .slice(0, 10);
+        if (day >= from && day <= to) dates.add(day);
+      }
+
+      if (row.checkInDate) {
+        const start = row.checkInDate > from ? row.checkInDate : from;
+        const stayEnd = row.checkOutDate || row.checkInDate;
+        const end = stayEnd < to ? stayEnd : to;
+        for (
+          let t = Date.parse(`${start}T00:00:00Z`);
+          t <= Date.parse(`${end}T00:00:00Z`);
+          t += DAY_MS
+        ) {
+          dates.add(new Date(t).toISOString().slice(0, 10));
+        }
+      }
+    }
+
+    return [...dates].sort();
   }
 
   async getBookingById(id) {
