@@ -20,6 +20,13 @@ router.get(
 );
 
 router.get(
+  "/booked-dates",
+  authenticate,
+  authorize("booking:read"),
+  asyncHandler(bookingController.getBookedDates),
+);
+
+router.get(
   "/packages",
   authenticate,
   authorize("booking:read"),

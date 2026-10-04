@@ -70,6 +70,20 @@ exports.getBookings = async (req, res) => {
   }
 };
 
+// GET /api/bookings/booked-dates?from=YYYY-MM-DD&to=YYYY-MM-DD
+exports.getBookedDates = async (req, res) => {
+  try {
+    const dates = await bookingsService.getBookedDates(
+      policyScope("booking", req.user),
+      req.query.from,
+      req.query.to,
+    );
+    return successResponse(res, { dates }, "Booked dates fetched successfully");
+  } catch (error) {
+    return errorResponse(res, error);
+  }
+};
+
 exports.getPackageBookings = async (req, res) => {
   try {
     const result = await bookingsService.getPackageBookings(

@@ -95,9 +95,9 @@ class BookingValidator {
       data.total_deposit !== null &&
       data.total_deposit !== ""
     ) {
-      const totalDeposit = normalizeInt(data.total_deposit);
+      const totalDeposit = normalizeNumber(data.total_deposit);
       if (totalDeposit === null || totalDeposit < 0) {
-        errors.push("total_deposit must be an integer >= 0");
+        errors.push("total_deposit must be numeric and >= 0");
       }
     }
 
@@ -228,9 +228,9 @@ class BookingValidator {
       data.total_deposit !== null &&
       data.total_deposit !== ""
     ) {
-      const value = normalizeInt(data.total_deposit);
+      const value = normalizeNumber(data.total_deposit);
       if (value === null || value < 0) {
-        errors.push("total_deposit must be an integer >= 0");
+        errors.push("total_deposit must be numeric and >= 0");
       }
     }
 

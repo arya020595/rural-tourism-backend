@@ -35,15 +35,28 @@ exports.updateCompany = async (req, res) => {
   try {
     const company = await companyService.getCompanyById(req.params.id);
 
-    if (!policy("company", req.user, company).update()) {
+    const companyPolicy = policy("company", req.user, company);
+    if (!companyPolicy.update()) {
       throw new ForbiddenError("You can only update your own company.");
     }
 
     const {
       company: companyFields,
-      user: userFields,
+      user: initialUserFields,
       replacedFileFields,
     } = await extractCompanyUpdateFields(req.body, req.files);
+
+    // Owner name/email belong to the company owner's own account. Only the
+    // owner (or a superadmin) may change them — a co-admin can still edit the
+    // company details, but their owner fields are ignored.
+    let userFields = initialUserFields;
+    if (!companyPolicy.isAdmin()) {
+      const owner = await companyService.getCompanyOwner(company.id);
+      const callerId = req.user.unified_user_id ?? req.user.id;
+      if (!owner || String(owner.id) !== String(callerId)) {
+        userFields = {};
+      }
+    }
 
     // Update company table
     const updated = await companyService.updateCompany(

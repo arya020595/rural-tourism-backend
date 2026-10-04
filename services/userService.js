@@ -4,6 +4,7 @@ const UnifiedUser = require("../models/unifiedUserModel");
 const Association = require("../models/associationModel");
 const Company = require("../models/companyModel");
 const Role = require("../models/roleModel");
+const companyService = require("./companyService");
 const {
   NotFoundError,
   ConflictError,
@@ -108,12 +109,14 @@ class UserService {
     });
     if (!user) throw new NotFoundError("User not found");
 
-    // The company owner is the operator_admin of the user's company, not the
-    // logged-in user. Attach it so staff accounts see the real owner name.
-    user.setDataValue(
-      "owner_full_name",
-      await this.resolveCompanyOwnerName(user.company_id),
-    );
+    // The company owner is the company's first operator_admin, not necessarily
+    // the logged-in user (staff and co-admins). Attach the owner's details so
+    // the profile shows the real owner, and owner_user_id so the frontend can
+    // lock the owner fields for anyone who isn't the owner.
+    const owner = await companyService.getCompanyOwner(user.company_id);
+    user.setDataValue("owner_user_id", owner ? owner.id : null);
+    user.setDataValue("owner_full_name", owner ? owner.name : null);
+    user.setDataValue("owner_email", owner ? owner.email : null);
 
     return user;
   }
@@ -149,29 +152,6 @@ class UserService {
       trading_operation_license: company?.trading_operation_license || null,
       homestay_certificate: company?.homestay_certificate || null,
     };
-  }
-
-  /**
-   * Resolve the owner (operator_admin) full name for a company.
-   * Returns null when the company has no operator_admin.
-   */
-  async resolveCompanyOwnerName(companyId) {
-    if (!companyId) return null;
-
-    const owner = await UnifiedUser.findOne({
-      where: { company_id: companyId },
-      include: [
-        {
-          model: Role,
-          as: "role",
-          required: true,
-          where: { name: "operator_admin" },
-        },
-      ],
-      order: [["id", "ASC"]],
-    });
-
-    return owner ? owner.name : null;
   }
 
   /**
