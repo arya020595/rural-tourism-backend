@@ -213,6 +213,10 @@ class UserService {
     if (!user) throw new NotFoundError("User not found");
 
     const fields = await this._buildUserFields(id, updates);
+    if (fields.password) {
+      // An admin-set password logs the user out on all their devices.
+      fields.token_version = (user.token_version ?? 0) + 1;
+    }
     await user.update(fields);
     return this.getUserById(id);
   }

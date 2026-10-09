@@ -59,6 +59,18 @@ class ServiceUnavailableError extends AppError {
   }
 }
 
+/**
+ * The login token is valid but the session must end (account deactivated,
+ * user removed, or password changed elsewhere). `code` tells the app which
+ * message to show before logging the user out.
+ */
+class SessionInvalidError extends AppError {
+  constructor(message = "Session is no longer valid. Please login again.", code = "SESSION_INVALID") {
+    super(message, 401, code);
+    this.name = "SessionInvalidError";
+  }
+}
+
 module.exports = {
   AppError,
   BadRequestError,
@@ -68,4 +80,5 @@ module.exports = {
   ForbiddenError,
   TokenExpiredError,
   ServiceUnavailableError,
+  SessionInvalidError,
 };
