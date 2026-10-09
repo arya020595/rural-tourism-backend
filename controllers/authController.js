@@ -111,11 +111,22 @@ exports.me = async (req, res) => {
     email: user.email ?? null,
   };
 
+  // Keeps active users logged in: a token close to expiry is swapped for a
+  // fresh one (the app stores data.token when present).
+  let renewedToken = null;
+  try {
+    renewedToken = await authService.renewTokenIfNeeded(req.user || {});
+  } catch (error) {
+    // Renewal is best-effort — the current token is still valid.
+    console.error("[auth/me] token renewal failed:", error.message);
+  }
+
   return res.status(200).json({
     success: true,
     message: "Authenticated user fetched successfully",
     data: {
       user: normalizedUser,
+      ...(renewedToken ? { token: renewedToken } : {}),
     },
   });
 };
@@ -124,15 +135,18 @@ exports.changePassword = async (req, res) => {
   try {
     const { current_password, new_password } = req.body;
 
-    await authService.changePassword({
+    const result = await authService.changePassword({
       user: req.user,
       currentPassword: current_password,
       newPassword: new_password,
     });
 
+    // Other devices are logged out by the password change; this device keeps
+    // working with the fresh token.
     return res.status(200).json({
       success: true,
       message: "Password changed successfully.",
+      data: { token: result.token },
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;

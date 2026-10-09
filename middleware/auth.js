@@ -37,36 +37,70 @@ const normalizeDecodedPayload = (decoded = {}) => {
 };
 
 /**
- * Authentication middleware to protect routes
+ * Authentication middleware to protect routes.
+ *
+ * Login tokens last 30 days, so tokens that record which table their user
+ * lives in (`src` claim) are re-checked against the database on every
+ * request: a deactivated/removed user or a password changed elsewhere ends
+ * the session (401 with a `code` the app uses to pick its message), and the
+ * current role, permissions and company replace what the token said at login.
+ * Tokens without `src` were issued before this check existed and keep the old
+ * token-only behaviour until they expire.
  */
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
+  let decoded;
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
+        code: "NO_TOKEN",
         message: "Access denied. No token provided.",
       });
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, JWT_SECRET);
-
-    req.user = normalizeDecodedPayload(decoded);
-    next();
+    decoded = jwt.verify(token, JWT_SECRET);
   } catch (error) {
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
+        code: "TOKEN_EXPIRED",
         message: "Token expired. Please login again.",
       });
     }
     return res.status(401).json({
       success: false,
+      code: "INVALID_TOKEN",
       message: "Invalid token.",
     });
   }
+
+  if (!decoded.src) {
+    req.user = normalizeDecodedPayload(decoded);
+    return next();
+  }
+
+  let currentState;
+  try {
+    // Lazy require: the session service pulls in models/services that
+    // themselves import this module (generateToken).
+    const { sessionService } = require("../services/sessionService");
+    currentState = await sessionService.loadCurrentState(decoded);
+  } catch (error) {
+    if (error.name === "SessionInvalidError") {
+      return res.status(401).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
+    }
+    return next(error);
+  }
+
+  req.user = normalizeDecodedPayload({ ...decoded, ...(currentState || {}) });
+  return next();
 };
 
 /**
@@ -88,6 +122,9 @@ const optionalAuth = (req, res, next) => {
   }
 };
 
+/** Login token lifetime; renewed by GET /api/auth/me while in use. */
+const getTokenTtl = () => process.env.JWT_EXPIRES_IN || "30d";
+
 /**
  * Generate JWT token
  */
@@ -99,5 +136,6 @@ module.exports = {
   authenticate,
   optionalAuth,
   generateToken,
+  getTokenTtl,
   JWT_SECRET,
 };

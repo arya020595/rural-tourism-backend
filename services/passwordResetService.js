@@ -105,6 +105,8 @@ class PasswordResetService {
     user.confirm_password = hashedPassword;
     user.reset_token = null;
     user.reset_token_expires = null;
+    // Logs the account out on every device that was signed in.
+    user.token_version = (user.token_version ?? 0) + 1;
     await user.save();
   }
 }

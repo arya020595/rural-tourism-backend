@@ -11,6 +11,7 @@ jest.mock("bcrypt");
 // generateToken produces a real JWT – stub it to return a predictable string
 jest.mock("../../../middleware/auth", () => ({
   generateToken: () => "mock-token",
+  getTokenTtl: () => "30d",
 }));
 
 // Service is a singleton – import after mocks are declared
