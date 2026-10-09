@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
-const { generateToken } = require("../middleware/auth");
+const { generateToken, getTokenTtl } = require("../middleware/auth");
+const { TOKEN_SOURCE } = require("./sessionService");
 const TouristUser = require("../models/touristModel");
 const AssociationUser = require("../models/associationUserModel");
 const UnifiedUser = require("../models/unifiedUserModel");
@@ -14,6 +15,11 @@ require("../models/associations");
 const USER_TYPE_OPERATOR = "operator";
 const USER_TYPE_TOURIST = "tourist";
 const USER_TYPE_ASSOCIATION = "association";
+
+// A token is renewed by GET /api/auth/me once it has less than this left, so
+// anyone who uses the app online at least once per token lifetime stays
+// logged in.
+const RENEW_WITHIN_MS = 7 * 24 * 60 * 60 * 1000;
 
 const DEFAULT_ROLE_BY_USER_TYPE = {
   [USER_TYPE_OPERATOR]: "operator_admin",
@@ -122,6 +128,7 @@ class AuthService {
     const resolvers = [
       {
         userType: USER_TYPE_TOURIST,
+        source: TOKEN_SOURCE.TOURIST,
         enabled: !allowedSet || allowedSet.has(USER_TYPE_TOURIST),
         findUser: () =>
           TouristUser.findOne({
@@ -147,6 +154,7 @@ class AuthService {
       },
       {
         userType: USER_TYPE_ASSOCIATION,
+        source: TOKEN_SOURCE.ASSOCIATION,
         enabled: !allowedSet || allowedSet.has(USER_TYPE_ASSOCIATION),
         findUser: () =>
           AssociationUser.findOne({
@@ -216,6 +224,7 @@ class AuthService {
         username: identity.username,
         role: role.name,
         permissions,
+        src: resolver.source,
       };
 
       if (identity.company_id) {
@@ -226,10 +235,7 @@ class AuthService {
         tokenPayload.association_id = identity.association_id;
       }
 
-      const token = generateToken(
-        tokenPayload,
-        process.env.JWT_EXPIRES_IN || "24h",
-      );
+      const token = generateToken(tokenPayload, getTokenTtl());
 
       let powerBiUrl = null;
       const canViewBiDashboard = this.hasBiDashboardPermission(
@@ -374,6 +380,8 @@ class AuthService {
       username: user.username,
       role: role.name,
       permissions,
+      src: TOKEN_SOURCE.USERS,
+      tv: user.token_version ?? 0,
     };
 
     if (resolvedUserType !== USER_TYPE_OPERATOR) {
@@ -388,10 +396,7 @@ class AuthService {
       tokenPayload.association_id = user.association_id;
     }
 
-    const token = generateToken(
-      tokenPayload,
-      process.env.JWT_EXPIRES_IN || "24h",
-    );
+    const token = generateToken(tokenPayload, getTokenTtl());
 
     let powerBiUrl = null;
     const canViewBiDashboard = this.hasBiDashboardPermission(
@@ -858,9 +863,81 @@ class AuthService {
     const passwordHash = await bcrypt.hash(String(newPassword), 10);
     dbUser.password = passwordHash;
     dbUser.confirm_password = passwordHash;
+    // Logs the user out on every other device (their tokens carry the old
+    // version); this device gets a fresh token below.
+    dbUser.token_version = (dbUser.token_version ?? 0) + 1;
     await dbUser.save();
 
-    return { success: true };
+    const token = this.buildTokenFromClaims(user, {
+      src: TOKEN_SOURCE.USERS,
+      tv: dbUser.token_version,
+    });
+
+    return { success: true, token };
+  }
+
+  /**
+   * Signs a fresh login token from an authenticated request's claims
+   * (req.user — already refreshed from the database by the authenticate
+   * middleware), keeping only identity/authorization claims.
+   */
+  buildTokenFromClaims(claims = {}, overrides = {}) {
+    const merged = { ...claims, ...overrides };
+    const payload = {
+      sub: merged.sub,
+      id: merged.id,
+      unified_user_id: merged.unified_user_id,
+      user_type: merged.user_type,
+      username: merged.username,
+      role: merged.role,
+      permissions: Array.isArray(merged.permissions) ? merged.permissions : [],
+    };
+
+    if (merged.user_type !== USER_TYPE_OPERATOR && merged.legacy_user_id != null) {
+      payload.legacy_user_id = merged.legacy_user_id;
+    }
+    if (merged.company_id) payload.company_id = merged.company_id;
+    if (merged.association_id) payload.association_id = merged.association_id;
+    if (merged.src) payload.src = merged.src;
+    if (merged.tv !== undefined && merged.tv !== null) payload.tv = merged.tv;
+
+    return generateToken(payload, getTokenTtl());
+  }
+
+  /**
+   * Called by GET /api/auth/me: returns a new token when the current one has
+   * less than RENEW_WITHIN_MS left, otherwise null. Operator tokens issued
+   * before the `src` claim existed are upgraded (after checking the account
+   * is still active) so nobody is logged out by the deploy.
+   */
+  async renewTokenIfNeeded(claims = {}) {
+    const expiresAtMs = Number(claims.exp) * 1000;
+    if (!expiresAtMs || expiresAtMs - Date.now() > RENEW_WITHIN_MS) {
+      return null;
+    }
+
+    if (claims.src) {
+      return this.buildTokenFromClaims(claims);
+    }
+
+    // Pre-`src` token: only operator tokens can be traced to a table
+    // (users.id); tourist/association ones just expire and log in again.
+    if (claims.user_type !== USER_TYPE_OPERATOR) {
+      return null;
+    }
+
+    const dbUser = await UnifiedUser.findByPk(
+      claims.unified_user_id ?? claims.id,
+      { attributes: ["id", "is_active", "token_version"] },
+    );
+    if (!dbUser || dbUser.is_active === false) {
+      return null;
+    }
+
+    return this.buildTokenFromClaims(claims, {
+      src: TOKEN_SOURCE.USERS,
+      tv: dbUser.token_version ?? 0,
+    });
   }
 }
 

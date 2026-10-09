@@ -56,6 +56,13 @@ const UnifiedUser = sequelize.define(
       allowNull: false,
       defaultValue: true,
     },
+    // Bumped on every password change; tokens with an older version are
+    // rejected by the authenticate middleware (logs out other devices).
+    token_version: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
     deletion_requested_at: {
       type: DataTypes.DATE,
       allowNull: true,
