@@ -482,7 +482,7 @@ module.exports = {
       "name": "francisca dauni",
       "username": "francisca dauni",
       "email": "watukokoluton@gmail.com",
-      "password": "$2b$10$.TE7Rc6C7l07FFRwfxb8vuLc104pLGMipoogX5I9tS1ECkMDe/J6m",
+      "password": "$2b$10$6k1a6AoKdH1gA23fzngES.gTdDqBRoqtf0r2gmymA9DrMv3D2rDQC",
       "company_legacy_key": "eko pelancongan watu kokoluton hill talantang kiulu",
       "role": "operator_admin"
     },
@@ -873,6 +873,12 @@ module.exports = {
       "company_legacy_key": "outreach borneo"
     },
     {
+      "legacyProductId": "act_00984870",
+      "legacyProductType": "activity",
+      "name": "yuran masuk",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
+    },
+    {
       "legacyProductId": "act_01038831",
       "legacyProductType": "activity",
       "name": "Pakej A (Hiking)",
@@ -913,6 +919,12 @@ module.exports = {
       "legacyProductType": "activity",
       "name": "hiking",
       "company_legacy_key": "monggiland waterfall"
+    },
+    {
+      "legacyProductId": "act_01297223",
+      "legacyProductType": "activity",
+      "name": "Sukan Menyumpit",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
     },
     {
       "legacyProductId": "act_01386953",
@@ -1107,6 +1119,12 @@ module.exports = {
       "company_legacy_key": "pusat reakriasi bambangan"
     },
     {
+      "legacyProductId": "act_02480504",
+      "legacyProductType": "activity",
+      "name": "Tree climbing",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
+    },
+    {
       "legacyProductId": "act_02494970",
       "legacyProductType": "activity",
       "name": "Entrance fee",
@@ -1275,6 +1293,12 @@ module.exports = {
       "company_legacy_key": "murug turug eco tourism"
     },
     {
+      "legacyProductId": "act_03358611",
+      "legacyProductType": "activity",
+      "name": "Memutog Getah",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
+    },
+    {
       "legacyProductId": "act_03360157",
       "legacyProductType": "activity",
       "name": "Kayaking",
@@ -1393,6 +1417,12 @@ module.exports = {
       "legacyProductType": "activity",
       "name": "membuat bosou",
       "company_legacy_key": "kiharo"
+    },
+    {
+      "legacyProductId": "act_04368428",
+      "legacyProductType": "activity",
+      "name": "bowling kelapa",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
     },
     {
       "legacyProductId": "act_04381985",
@@ -1689,6 +1719,12 @@ module.exports = {
       "company_legacy_key": "steph travel tour sabah kiulu"
     },
     {
+      "legacyProductId": "act_06159024",
+      "legacyProductType": "activity",
+      "name": "Sukan Tradisi bujak pokok pisang",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
+    },
+    {
       "legacyProductId": "act_06172848",
       "legacyProductType": "activity",
       "name": "pakej b",
@@ -1819,6 +1855,18 @@ module.exports = {
       "legacyProductType": "activity",
       "name": "TMYM Real Borneo",
       "company_legacy_key": "outreach borneo"
+    },
+    {
+      "legacyProductId": "act_06756571",
+      "legacyProductType": "activity",
+      "name": "sijil",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
+    },
+    {
+      "legacyProductId": "act_06897432",
+      "legacyProductType": "activity",
+      "name": "Team building",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
     },
     {
       "legacyProductId": "act_07073992",
@@ -2001,6 +2049,12 @@ module.exports = {
       "company_legacy_key": "murug turug eco tourism"
     },
     {
+      "legacyProductId": "act_08266572",
+      "legacyProductType": "activity",
+      "name": "Membajak sawah/Tanam padi",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
+    },
+    {
       "legacyProductId": "act_08282885",
       "legacyProductType": "activity",
       "name": "santai santai olundus",
@@ -2125,6 +2179,12 @@ module.exports = {
       "legacyProductType": "activity",
       "name": "Hiking",
       "company_legacy_key": "murug turug eco tourism"
+    },
+    {
+      "legacyProductId": "act_08856550",
+      "legacyProductType": "activity",
+      "name": "Sukan Melastik",
+      "company_legacy_key": "dapako hill - lingga eco tourism"
     },
     {
       "legacyProductId": "act_08882683",
@@ -2851,6 +2911,23 @@ module.exports = {
       "date": "2025-11-12",
       "createdAt": "2025-11-12 13:36:52",
       "issuer": "",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE0018808",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_01491309",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 18,
+      "productName": "Pakej C (Hiking)",
+      "totalRm": "893",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-11",
+      "createdAt": "2026-10-11 05:31:39",
+      "issuer": "Bibiana Dianus",
       "packageLegs": null
     },
     {
@@ -4137,6 +4214,23 @@ module.exports = {
       "date": "2025-09-07",
       "createdAt": "2025-09-07 07:33:20",
       "issuer": "Bibiana Dianus",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE0318767",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_04749737",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 7,
+      "productName": "walai Dapako",
+      "totalRm": "960",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-13",
+      "createdAt": "2026-09-14 14:04:37",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -6458,6 +6552,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE0935444",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_00583249",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 30,
+      "productName": "picnic",
+      "totalRm": "150",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-04",
+      "createdAt": "2026-10-06 01:22:35",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE0938056",
       "bookingType": "accommodation",
       "legacyUserId": "U09982246",
@@ -6937,6 +7048,23 @@ module.exports = {
       "date": "2025-05-11",
       "createdAt": "2025-05-11 22:20:39",
       "issuer": "Dodi",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE1059490",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_04186006",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 14,
+      "productName": "Team building",
+      "totalRm": "250",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-23",
+      "createdAt": "2026-09-23 00:40:40",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -8675,6 +8803,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE1570108",
+      "bookingType": "accommodation",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "acc_00508827",
+      "legacyProductKind": "accommodation",
+      "citizenship": "Warganegara",
+      "pax": 10,
+      "productName": "chalet",
+      "totalRm": "226",
+      "totalNight": "1",
+      "status": "Active",
+      "date": "2026-10-03",
+      "createdAt": "2026-10-04 00:13:33",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE1591929",
       "bookingType": "activity",
       "legacyUserId": "U09900016",
@@ -9205,6 +9350,23 @@ module.exports = {
       "date": "2025-06-27",
       "createdAt": "2025-07-13 01:22:48",
       "issuer": "Chupia",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE1720896",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_09212604",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 23,
+      "productName": "katering makanan",
+      "totalRm": "667",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-13",
+      "createdAt": "2026-09-15 07:45:54",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -12857,6 +13019,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE2637555",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_07188914",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 84,
+      "productName": "piknik",
+      "totalRm": "1503",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-27",
+      "createdAt": "2026-09-28 05:36:34",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE2641956",
       "bookingType": "activity",
       "legacyUserId": "U01481674",
@@ -13407,6 +13586,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE2762313",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_04186006",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 15,
+      "productName": "Team building",
+      "totalRm": "200",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-23",
+      "createdAt": "2026-09-26 02:39:23",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE2764709",
       "bookingType": "package",
       "legacyUserId": "U07206686",
@@ -13551,6 +13747,23 @@ module.exports = {
       "date": null,
       "createdAt": "2025-04-01 01:30:33",
       "issuer": "Kait Lansangan",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE2788661",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_07188914",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 4,
+      "productName": "piknik",
+      "totalRm": "20",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-19",
+      "createdAt": "2026-09-19 12:18:24",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -13737,6 +13950,23 @@ module.exports = {
       "status": "Active",
       "date": "2026-06-07",
       "createdAt": "2026-06-14 02:11:22",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE2847985",
+      "bookingType": "accommodation",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "acc_00508827",
+      "legacyProductKind": "accommodation",
+      "citizenship": "Warganegara",
+      "pax": 18,
+      "productName": "chalet",
+      "totalRm": "1450",
+      "totalNight": "2",
+      "status": "Active",
+      "date": "2026-09-18",
+      "createdAt": "2026-09-18 09:45:58",
       "issuer": "",
       "packageLegs": null
     },
@@ -15807,6 +16037,23 @@ module.exports = {
       "date": "2025-09-13",
       "createdAt": "2025-09-13 05:20:58",
       "issuer": "ailin yubi",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE3400460",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_07188914",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 7,
+      "productName": "piknik",
+      "totalRm": "86",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-16",
+      "createdAt": "2026-09-19 12:12:33",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -20506,6 +20753,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE4669789",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_02857955",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 21,
+      "productName": "Flyingfox",
+      "totalRm": "735",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-12",
+      "createdAt": "2026-09-14 14:02:55",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE4670569",
       "bookingType": "activity",
       "legacyUserId": "U01481674",
@@ -21962,6 +22226,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE5064621",
+      "bookingType": "accommodation",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "acc_00508827",
+      "legacyProductKind": "accommodation",
+      "citizenship": "Warganegara",
+      "pax": 7,
+      "productName": "chalet",
+      "totalRm": "155",
+      "totalNight": "1",
+      "status": "Active",
+      "date": "2026-09-19",
+      "createdAt": "2026-09-19 12:17:29",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE5064754",
       "bookingType": "accommodation",
       "legacyUserId": "U06574678",
@@ -22647,6 +22928,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE5210842",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_03533761",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 28,
+      "productName": "perkhemahan",
+      "totalRm": "394",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-19",
+      "createdAt": "2026-09-19 12:16:09",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE5214039",
       "bookingType": "activity",
       "legacyUserId": "U06574678",
@@ -22871,6 +23169,23 @@ module.exports = {
       "date": "2025-08-02",
       "createdAt": "2025-08-04 05:06:23",
       "issuer": "",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE5283368",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_01086305",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 70,
+      "productName": "Pakej B (Hiking)",
+      "totalRm": "1403",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-11",
+      "createdAt": "2026-10-11 05:31:06",
+      "issuer": "Bibiana Dianus",
       "packageLegs": null
     },
     {
@@ -23419,6 +23734,23 @@ module.exports = {
       "status": "Active",
       "date": "2025-09-15",
       "createdAt": "2025-09-15 07:04:32",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE5404371",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_04318206",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 12,
+      "productName": "Sijil",
+      "totalRm": "60",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-04",
+      "createdAt": "2026-10-06 01:24:33",
       "issuer": "",
       "packageLegs": null
     },
@@ -28556,6 +28888,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE6740095",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_00984870",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 15,
+      "productName": "yuran masuk",
+      "totalRm": "300",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-12",
+      "createdAt": "2026-09-14 14:09:32",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE6741317",
       "bookingType": "accommodation",
       "legacyUserId": "U06574678",
@@ -29757,6 +30106,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE7000400",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_05200240",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 6,
+      "productName": "Pakej A (Hiking)",
+      "totalRm": "122",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-20",
+      "createdAt": "2026-09-20 03:47:02",
+      "issuer": "Bibiana Dianus",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE7021258",
       "bookingType": "activity",
       "legacyUserId": "U09982246",
@@ -30417,6 +30783,23 @@ module.exports = {
       "date": "2025-11-01",
       "createdAt": "2025-11-01 06:59:31",
       "issuer": null,
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE7134624",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_01491309",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 12,
+      "productName": "Pakej C (Hiking)",
+      "totalRm": "567",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-20",
+      "createdAt": "2026-09-20 03:47:52",
+      "issuer": "Bibiana Dianus",
       "packageLegs": null
     },
     {
@@ -32110,6 +32493,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE7543408",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_05200240",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 2,
+      "productName": "Pakej A (Hiking)",
+      "totalRm": "52",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-11",
+      "createdAt": "2026-10-11 05:30:40",
+      "issuer": "Bibiana Dianus",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE7546342",
       "bookingType": "accommodation",
       "legacyUserId": "U09982246",
@@ -32164,6 +32564,23 @@ module.exports = {
       "date": "2025-04-27",
       "createdAt": "2025-04-27 03:38:11",
       "issuer": "ailin yubi",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE7554590",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_01248411",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 12,
+      "productName": "Hiking",
+      "totalRm": "420",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-04",
+      "createdAt": "2026-10-06 01:21:31",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -32618,6 +33035,23 @@ module.exports = {
       "date": null,
       "createdAt": "2025-01-23 05:36:31",
       "issuer": "Eileen",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE7651353",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_01086305",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 49,
+      "productName": "Pakej B (Hiking)",
+      "totalRm": "1029",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-20",
+      "createdAt": "2026-09-20 03:47:29",
+      "issuer": "Bibiana Dianus",
       "packageLegs": null
     },
     {
@@ -33162,6 +33596,23 @@ module.exports = {
       "date": "2025-10-08",
       "createdAt": "2025-11-04 23:23:22",
       "issuer": "Kait Lansangan",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE7822655",
+      "bookingType": "activity",
+      "legacyUserId": "U05630893",
+      "legacyProductId": "act_09188274",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 10,
+      "productName": "Pakej Ultra (Hiking)",
+      "totalRm": "520",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-10-11",
+      "createdAt": "2026-10-11 05:32:01",
+      "issuer": "Bibiana Dianus",
       "packageLegs": null
     },
     {
@@ -36884,6 +37335,23 @@ module.exports = {
       "packageLegs": null
     },
     {
+      "legacyReceiptId": "PE8720687",
+      "bookingType": "activity",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "act_07188914",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 9,
+      "productName": "piknik",
+      "totalRm": "83",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-25",
+      "createdAt": "2026-09-26 02:37:22",
+      "issuer": "",
+      "packageLegs": null
+    },
+    {
       "legacyReceiptId": "PE8721808",
       "bookingType": "activity",
       "legacyUserId": "U06574678",
@@ -37873,6 +38341,23 @@ module.exports = {
       "date": "2026-03-28",
       "createdAt": "2026-03-28 05:17:11",
       "issuer": "Bibiana Dianus",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE9016775",
+      "bookingType": "activity",
+      "legacyUserId": "U09900016",
+      "legacyProductId": "act_03062145",
+      "legacyProductKind": "activity",
+      "citizenship": "Warganegara",
+      "pax": 17,
+      "productName": "Tent/khemah",
+      "totalRm": "175",
+      "totalNight": "",
+      "status": "Active",
+      "date": "2026-09-13",
+      "createdAt": "2026-09-14 14:06:50",
+      "issuer": "",
       "packageLegs": null
     },
     {
@@ -40627,6 +41112,23 @@ module.exports = {
       "date": null,
       "createdAt": "2025-03-06 20:02:44",
       "issuer": "Kait Lansangan",
+      "packageLegs": null
+    },
+    {
+      "legacyReceiptId": "PE9738074",
+      "bookingType": "accommodation",
+      "legacyUserId": "U09982246",
+      "legacyProductId": "acc_00508827",
+      "legacyProductKind": "accommodation",
+      "citizenship": "Warganegara",
+      "pax": 18,
+      "productName": "chalet",
+      "totalRm": "1470",
+      "totalNight": "2",
+      "status": "Active",
+      "date": "2026-09-18",
+      "createdAt": "2026-09-19 12:13:28",
+      "issuer": "",
       "packageLegs": null
     },
     {

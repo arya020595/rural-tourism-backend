@@ -16,7 +16,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const DEFAULT_DUMP_PATH = "dump-rural_tourism-202609141032.sql";
+// Batch 2 (2026-10-20): the old system's final export — a superset of the
+// first dump (202609141032). Seeders skip everything already migrated.
+const DEFAULT_DUMP_PATH = "dump-rural_tourism-202610200931.sql";
 
 // --- Decisions from docs/LEGACY_DB_MIGRATION_ANALYSIS.md -------------------
 
@@ -37,6 +39,15 @@ const EXCLUDED_DUMMY_COMPANY_USERS = new Set([
   "U08056368", // joslenny84 — Revelation Resources (§8.11)
   "U02275515", // SOBO — Sobo Hiking (§8.11)
   "U03277513", // sobo hiking — Sobo Hiking (§8.11)
+]);
+
+// Batch 2 (2026-10-20) — accounts created in the old system after the first
+// migration whose business already registered directly in the new system.
+// Migrating them would create a duplicate company. Excluded with their
+// products (they have no receipts).
+const EXCLUDED_ALREADY_IN_NEW_SYSTEM = new Set([
+  "U09023898", // Enstine — "Sinopian Campsite" = "Sinopian RC" (prod company
+  //              109, Dodibitius Bangin, same Camping/Picnic/Rafting products)
 ]);
 
 // §8.6 — orphaned users (no rt_user row) whose products/receipts are
@@ -196,6 +207,7 @@ function main() {
   const excludedUserIds = new Set([
     ...EXCLUDED_TEST_ACCOUNTS,
     ...EXCLUDED_DUMMY_COMPANY_USERS,
+    ...EXCLUDED_ALREADY_IN_NEW_SYSTEM,
   ]);
 
   const keptRtUsers = rtUserRows.filter((r) => !excludedUserIds.has(r[0]));
@@ -443,6 +455,7 @@ function main() {
     keptUsers: users.length,
     excludedTestAccounts: EXCLUDED_TEST_ACCOUNTS.size,
     excludedDummyCompanyUsers: EXCLUDED_DUMMY_COMPANY_USERS.size,
+    excludedAlreadyInNewSystem: EXCLUDED_ALREADY_IN_NEW_SYSTEM.size,
     companies: companies.length,
     products: products.length,
     sourceFormResponseRows: formResponseRows.length,
