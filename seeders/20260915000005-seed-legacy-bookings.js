@@ -94,7 +94,20 @@ module.exports = {
               "product",
               booking.legacyProductId,
             );
-            if (productId) {
+            // Skip products deleted since the migration (e.g. Kondis Point's
+            // "White Water Rafting", product 478): deleting a product sets
+            // its bookings' product_id to NULL, legacy_id_map still points at
+            // the old id, and re-linking would violate bookings_product_id_fk
+            // (found when re-running for batch 2). Bookings keep product_name.
+            const productStillExists = productId
+              ? (
+                  await queryInterface.sequelize.query(
+                    "SELECT id FROM products WHERE id = :productId LIMIT 1",
+                    { type: SELECT, replacements: { productId }, transaction },
+                  )
+                ).length > 0
+              : false;
+            if (productStillExists) {
               // A raw UPDATE via sequelize.query() returns
               // [metadata, metadata] (both elements the same MySQL
               // result-set object) — NOT [rows, affectedCount]. The actual

@@ -15,16 +15,24 @@ const sequelize = require("../config/db");
 // revenue (RM 972,497.99 vs the correct RM 946,992.99 — a real RM 25,505
 // discrepancy traced directly against the live dashboard and confirmed to
 // the cent). Corrected here; §6 should be corrected to match.
+// Batch 2 (2026-10-20, seeders/20261020120000-seed-legacy-kiulu-batch-2.js)
+// added 26 paid activity/accommodation receipts — +26 bookings, +518 pax,
+// +RM 13,890.00 — and no companies, users or packages. Batch 1 alone was
+// 2210 / 2077 / 133 / 32078 / RM 890,749.99 / RM 56,243.00 / RM 946,992.99.
+// companies: 37 migrated, but the 2026-10-08 merge of company 110 "Pusat
+// Reakriasi Bambangan" into 128 "Pusat Rekreasi Bambangan Lama" (see
+// docs/SQL_OPERATIONS_2026-10-08.md) left both legacy keys mapped to 128, so
+// 36 distinct companies.
 const TARGETS = {
-  companies: 37,
+  companies: 36,
   users: 54,
-  bookings: 2210,
-  paidBookings: 2077,
+  bookings: 2236,
+  paidBookings: 2103,
   cancelledBookings: 133,
-  totalPaxPaid: 32078,
-  nonPackagePaidRevenue: 890749.99,
+  totalPaxPaid: 32596,
+  nonPackagePaidRevenue: 904639.99,
   packagePaidRevenue: 56243.0,
-  combinedPaidRevenue: 946992.99,
+  combinedPaidRevenue: 960882.99,
 };
 
 const EXCLUDED_TEST_ACCOUNT_LEGACY_IDS = [
@@ -42,6 +50,10 @@ const EXCLUDED_DUMMY_COMPANY_LEGACY_IDS = [
   "U02275515",
   "U03277513",
 ];
+
+// Batch 2: already registered directly in the new system (Enstine /
+// "Sinopian Campsite" = "Sinopian RC") — must not be migrated.
+const EXCLUDED_ALREADY_IN_NEW_SYSTEM_LEGACY_IDS = ["U09023898"];
 
 const SELECT = sequelize.QueryTypes.SELECT;
 
@@ -188,13 +200,26 @@ const run = async () => {
      WHERE c.id IS NULL AND u.id IS NULL AND p.id IS NULL AND b.id IS NULL`,
     { type: SELECT },
   );
-  check("dangling_legacy_id_map_rows", danglingRows.length, 0);
+  // Products deleted in production after the migration keep their mapping
+  // (so a re-run doesn't re-create them); their bookings keep product_name.
+  const KNOWN_DELETED_PRODUCTS = new Set([
+    "act_05144319", // "camping" — Tibabar Riverside Ecotourism (product 399)
+    "act_09513982", // "White Water Rafting(Kondis Point)" (product 478)
+  ]);
+  const unexpectedDangling = danglingRows.filter(
+    (r) => !(r.entity === "product" && KNOWN_DELETED_PRODUCTS.has(r.legacy_id)),
+  );
+  report.info.known_deleted_products = danglingRows
+    .filter((r) => r.entity === "product" && KNOWN_DELETED_PRODUCTS.has(r.legacy_id))
+    .map((r) => r.legacy_id);
+  check("dangling_legacy_id_map_rows", unexpectedDangling.length, 0);
 
   // --- Exclusion spot-checks: nothing landed for excluded legacy users --
 
   const allExcluded = [
     ...EXCLUDED_TEST_ACCOUNT_LEGACY_IDS,
     ...EXCLUDED_DUMMY_COMPANY_LEGACY_IDS,
+    ...EXCLUDED_ALREADY_IN_NEW_SYSTEM_LEGACY_IDS,
   ];
   const excludedStillMapped = await sequelize.query(
     `SELECT legacy_id FROM legacy_id_map WHERE entity = 'user' AND legacy_id IN (:allExcluded)`,

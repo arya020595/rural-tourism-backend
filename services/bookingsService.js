@@ -10,6 +10,7 @@ const {
   normalizeInt,
   normalizeNumber,
   normalizeNullableDate,
+  normalizeWallClockDate,
   normalizeDateOnly,
 } = require("../utils/normalizers");
 const { buildMeta } = require("../utils/helpers");
@@ -208,6 +209,12 @@ class BookingsService {
     };
   }
 
+  /**
+   * activity_date is the Malaysia date/time as the operator picked it, stored
+   * "as typed" in the UTC fields (see normalizeWallClockDate) — the same on
+   * every server, whatever its timezone. Readers must take the date/time
+   * from the value directly, never convert it to Malaysia time again.
+   */
   normalizeActivityDateTime(activityDateValue, bookingTimeValue) {
     const normalizedActivityDate = normalizeString(activityDateValue);
     if (!normalizedActivityDate) {
@@ -215,12 +222,12 @@ class BookingsService {
     }
 
     if (/[T\s]\d{1,2}:\d{2}/.test(normalizedActivityDate)) {
-      return normalizeNullableDate(normalizedActivityDate);
+      return normalizeWallClockDate(normalizedActivityDate);
     }
 
     const normalizedTime = normalizeString(bookingTimeValue);
     if (!normalizedTime) {
-      return normalizeNullableDate(normalizedActivityDate);
+      return normalizeWallClockDate(normalizedActivityDate);
     }
 
     const dateOnly = normalizeDateOnly(normalizedActivityDate);
@@ -241,7 +248,7 @@ class BookingsService {
       ? String(Number(timeMatch[3])).padStart(2, "0")
       : "00";
 
-    return normalizeNullableDate(`${dateOnly}T${hours}:${minutes}:${seconds}`);
+    return normalizeWallClockDate(`${dateOnly}T${hours}:${minutes}:${seconds}`);
   }
 
   computeNightDiff(checkInDate, checkOutDate) {
@@ -1468,10 +1475,12 @@ class BookingsService {
         status: { [Op.notIn]: ["cancelled", "rejected"] },
         [Op.or]: [
           {
+            // activity_date is stored "as typed" (wall-clock in the UTC
+            // fields), so its calendar day is the UTC day — no +8h shift.
             activityDate: {
               [Op.between]: [
-                buildMalaysiaDayBoundary(from, "start"),
-                buildMalaysiaDayBoundary(to, "end"),
+                new Date(`${from}T00:00:00.000Z`),
+                new Date(`${to}T23:59:59.999Z`),
               ],
             },
           },
@@ -1488,13 +1497,10 @@ class BookingsService {
     });
 
     const dates = new Set();
-    const MALAYSIA_OFFSET_MS = MALAYSIA_UTC_OFFSET_HOURS * 60 * 60 * 1000;
 
     for (const row of rows) {
       if (row.activityDate) {
-        const day = new Date(new Date(row.activityDate).getTime() + MALAYSIA_OFFSET_MS)
-          .toISOString()
-          .slice(0, 10);
+        const day = new Date(row.activityDate).toISOString().slice(0, 10);
         if (day >= from && day <= to) dates.add(day);
       }
 

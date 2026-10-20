@@ -15,3 +15,6 @@ jest.unit.config.js
 uploads/logos/*
 uploads/*.pdf
 !uploads/.gitkeep
+
+# Database dumps (production/customer data)
+dump-*.sql
