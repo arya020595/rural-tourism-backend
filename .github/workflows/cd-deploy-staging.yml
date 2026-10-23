@@ -16,6 +16,9 @@ jobs:
   deploy-staging:
     runs-on: ubuntu-latest
     if: github.event.workflow_run.conclusion == 'success'
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
     environment: staging
     permissions:
       packages: read
