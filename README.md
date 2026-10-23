@@ -18,34 +18,52 @@ A RESTful API backend built with **Node.js**, **Express.js**, and **Sequelize OR
 
 ### Prerequisites
 
-- Node.js >= 18.x
-- MySQL >= 5.7
-- npm
+- Node.js 24.22.1 (see `.nvmrc`; only needed when running outside Docker)
+- MySQL >= 5.7 (only needed when running outside Docker)
+- npm (included with Node.js; only needed when running outside Docker)
+- Docker Desktop with Linux containers (for the Docker setup below)
 
 ### Installation
 
 ```bash
-# 1. Clone and install dependencies
+# 1. Clone the repository
 git clone <repository-url>
 cd rural-tourism-backend
-npm install
 
-# 2. Setup environment variables
-cp .env.example .env
-# Edit .env with your configuration (see Environment Setup below)
-
-# 3. Setup database
-npx sequelize-cli db:create
-npx sequelize-cli db:migrate
-
-# 4. (Optional) Seed database with sample data
-npx sequelize-cli db:seed:all
-
-# 5. Start development server (auto-restarts on file changes)
-npm run dev
+# 2. Create .env from the example, then set your local values
 ```
 
-Server will be running at: `http://localhost:3000/api`
+```powershell
+Copy-Item .env.example .env
+```
+
+```bash
+# 3. Start the containerized MySQL database
+docker compose up -d db
+
+# 4. Build the Node.js 24.22.1 backend image and run database migrations
+docker compose run --build --rm backend npm run db:migrate
+
+# 5. Build and start the backend
+docker compose up -d --build backend
+```
+
+The API is available at `http://localhost:3000/api`. The Docker image pins Node.js to 24.22.1. Compose connects the backend to its MySQL container; the database is exposed on port `3307` so it can coexist with a local MySQL server on port `3306`.
+
+To check the containers and backend logs:
+
+```bash
+docker compose ps
+docker compose logs -f backend
+```
+
+To stop the containers while keeping database and upload data:
+
+```bash
+docker compose down
+```
+
+For local development without Docker, install dependencies with `npm install`, configure `.env` to connect to a local MySQL server, then run `npm run dev`.
 
 > **Tip**: `npm run dev` uses **nodemon** to automatically restart the server whenever you change files in `routes/`, `controllers/`, `models/`, `middleware/`, `config/`, or `utils/`. No manual restart needed during development.
 
@@ -306,7 +324,7 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 
 | Category       | Technology                  |
 | -------------- | --------------------------- |
-| Runtime        | Node.js >= 18               |
+| Runtime        | Node.js 24.22.1             |
 | Framework      | Express.js 4.x              |
 | ORM            | Sequelize 6.x + MySQL2      |
 | Authentication | JWT (jsonwebtoken) + bcrypt |
