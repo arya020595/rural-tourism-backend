@@ -3,7 +3,7 @@
 # ============================================
 # Multi-stage build: build native deps → slim runtime
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=24.22.1
 FROM node:${NODE_VERSION}-slim AS builder
 
 WORKDIR /app
