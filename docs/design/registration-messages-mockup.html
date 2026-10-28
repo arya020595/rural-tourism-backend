@@ -1,0 +1,82 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Roboto, Arial, Helvetica, sans-serif; background: #2b2f2c; color: #1a1a1a; }
+  .topbar { height: 64px; background: #2b2f2c; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; color: #fff; font-size: 26px; }
+  .page { background: #fff; margin: 0 6px; border-radius: 26px 26px 0 0; min-height: 820px; padding: 34px 0 60px; position: relative; }
+  .wrap { width: 1200px; margin: 0 auto; }
+  .logos { text-align: center; margin-bottom: 18px; }
+  .logos span { display: inline-block; padding: 18px 26px; border: 1px dashed #ccc; border-radius: 8px; color: #999; font-size: 12px; }
+  h1 { font-size: 44px; font-weight: 800; color: #04552f; margin-bottom: 10px; }
+  h1 em { font-style: italic; }
+  .mock { position: absolute; top: 12px; right: 24px; color: #9aa; font-size: 11px; }
+  hr.sep { border: none; border-top: 1px solid #ddd; margin: 10px 0 22px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 8px; padding: 12px 22px; font-weight: 700; font-size: 16px; color: #fff; }
+  .btn.green { background: #0b5d33; } .btn.red { background: #d32020; } .btn.grey { background: #e6e6e6; color: #333; }
+  .btn.off { background: #cfd8d2; color: #6b7a70; }
+  .chip { display: inline-block; padding: 5px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .chip.pending { background: #ffe0b2; color: #a65c00; } .chip.approved { background: #a7dbb8; color: #0b5d33; } .chip.rejected { background: #f8d7da; color: #8a1c24; }
+  .search { height: 46px; border: 1px solid #d0d0d0; border-radius: 8px; padding: 0 14px; font-size: 15px; color: #888; display: flex; align-items: center; margin-bottom: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tabs > span { padding: 9px 18px; border-radius: 999px; border: 1px solid #cfdcd3; font-size: 14px; font-weight: 700; color: #04552f; }
+  .tabs > span.on { background: #04552f; color: #fff; border-color: #04552f; }
+  .badge { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #d32020; color: #fff; font-size: 12px; margin-left: 6px; text-align: center; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  thead th { background: #015c2f; color: #fff; font-size: 15px; font-weight: 700; padding: 14px 10px; text-align: center; }
+  thead th:first-child { border-radius: 10px 0 0 10px; } thead th:last-child { border-radius: 0 10px 10px 0; }
+  tbody td { padding: 15px 10px; border-bottom: 1px solid #d6d6d6; font-size: 14.5px; text-align: center; vertical-align: middle; }
+  td.left { text-align: left; } td b { display: block; } td small { color: #777; font-size: 12.5px; }
+  .wait { color: #a65c00; font-weight: 700; }
+  .pencil { width: 42px; height: 42px; border-radius: 10px; background: #0b5d33; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+  .note { margin-top: 18px; font-size: 12px; color: #666; line-height: 1.6; }
+
+  body { background: #e9eeea; padding: 26px; position: relative; }
+  .title { font-size: 13px; color: #556; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  .panel { background: #fff; border-radius: 16px; padding: 22px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .alert { border-radius: 14px; padding: 22px; text-align: center; border: 1px solid #ddd; }
+  .alert .ico { font-size: 40px; margin-bottom: 8px; }
+  .alert h3 { font-size: 20px; margin-bottom: 8px; } .alert p { font-size: 14px; color: #444; line-height: 1.55; }
+  .alert .btn { margin-top: 14px; }
+  .login { border: 1px solid #ddd; border-radius: 14px; padding: 18px; }
+  .login .field { height: 44px; background: #f2f2f2; border: 1px solid #d0d0d0; margin-bottom: 10px; display: flex; align-items: center; padding: 0 12px; color: #555; font-size: 14px; }
+  .err { border-radius: 10px; padding: 12px 14px; font-size: 13.5px; line-height: 1.5; margin-top: 6px; }
+  .err.pending { background: #fff4e5; border: 1px solid #ffcc80; color: #7a4300; }
+  .err.rejected { background: #fdecea; border: 1px solid #f5b5b0; color: #7f1d1d; }
+  .bell { border: 1px solid #ddd; border-radius: 12px; overflow: hidden; }
+  .bell .hd { background: #04552f; color: #fff; font-weight: 700; padding: 10px 14px; font-size: 14px; }
+  .bell .it { padding: 12px 14px; border-bottom: 1px solid #eee; font-size: 13.5px; } .bell .it.unread { background: #f1f8f3; }
+  .bell .it b { display: block; margin-bottom: 2px; } .bell .it small { color: #888; }
+  .stat { border-radius: 14px; background: #ff9500; color: #111; padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .stat .n { font-size: 40px; font-weight: 800; } .stat .l { font-weight: 800; font-size: 15px; } .stat .go { font-weight: 700; font-size: 13px; text-decoration: underline; }
+</style></head><body>
+  <div class="mock" style="top:6px">CONTOH / MOCKUP</div>
+  <div class="grid">
+    <div class="panel"><div class="title">1. Selepas daftar / After registering</div>
+      <div class="alert" style="border-color:#b9d6c3;background:#f5fbf7">
+        <div class="ico">⏳</div>
+        <h3>Pendaftaran Dihantar / Registration Submitted</h3>
+        <p>Akaun anda akan aktif selepas diluluskan oleh persatuan anda. Anda akan menerima emel apabila ia diluluskan.<br><br>Your account will be active once your association approves it. You'll get an email when it's approved.</p>
+        <button class="btn green">OK</button>
+      </div>
+    </div>
+    <div class="panel"><div class="title">2. Log masuk ditolak / Login refused</div>
+      <div class="login">
+        <div class="field">jessica_bukitindah</div><div class="field">••••••••</div>
+        <div class="err pending"><b>Menunggu kelulusan / Awaiting approval</b><br>Pendaftaran anda sedang menunggu kelulusan persatuan. / Your registration is awaiting approval from your association.</div>
+        <div class="err rejected"><b>Pendaftaran ditolak / Registration rejected</b><br>Sebab / Reason: Lesen MOTAC tidak sah.<br>Sila hubungi persatuan anda. / Please contact your association.</div>
+      </div>
+    </div>
+    <div class="panel"><div class="title">3. Loceng (persatuan &amp; superadmin) / Bell (association &amp; superadmin)</div>
+      <div class="bell">
+        <div class="hd">Notifikasi / Notifications</div>
+        <div class="it unread"><b>Pendaftaran baharu menunggu kelulusan / New registration awaiting approval</b>Sinar Pagi Campsite — Agnes Gimbang<br><small>Hari ini, 10:42 AM · ketik untuk buka senarai / tap to open the list</small></div>
+        <div class="it unread"><b>Pendaftaran baharu menunggu kelulusan / New registration awaiting approval</b>Kiulu River Rafting Enterprise — Mohd Faiz bin Ahmad<br><small>Semalam / Yesterday, 04:05 PM</small></div>
+        <div class="it"><b>Pendaftaran diluluskan / Registration approved</b>Homestay Tambatuon — oleh/by Puan Rosnah<br><small>25-10-2026</small></div>
+      </div>
+    </div>
+    <div class="panel"><div class="title">4. Papan pemuka persatuan / Association dashboard</div>
+      <div class="stat"><div><div class="l">PENDAFTARAN MENUNGGU<br>PENDING REGISTRATIONS</div><div class="go">Semak sekarang / Review now ›</div></div><div class="n">3</div></div>
+      <p style="font-size:12px;color:#666;margin-top:10px">Kad kecil di atas papan pemuka persatuan, pautan ke halaman Kelulusan Pendaftaran. / Small card on the association dashboard linking to Registration Approvals.</p>
+    </div>
+  </div>
+</body></html>
