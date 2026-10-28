@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { getBrowser } = require("./puppeteerBrowser");
+const { packageItemTypeLabel, packageItemWhen } = require("./packageItemFormat");
 
 const EXPLORE_SABAH_BASE64 = (() => {
   try {
@@ -39,10 +40,6 @@ const MONTHS_MY = [
   "NOVEMBER",
   "DISEMBER",
 ];
-
-function formatBookingId(id) {
-  return `BA_${String(id).padStart(3, "0")}`;
-}
 
 function formatHeaderDate(dateStr) {
   if (!dateStr) return "-";
@@ -88,7 +85,6 @@ function buildHtml(data) {
   } = data;
 
   const isAccommodation = bookingType === "accommodation";
-  const bookingId = escapeHtml(formatBookingId(id));
   const headerDate = escapeHtml(formatHeaderDate(createdAt));
 
   const companyLogoSrc = companyLogoBase64
@@ -107,7 +103,6 @@ function buildHtml(data) {
   const totalNightsDisplay = escapeHtml(`${totalOfNight || 0} MALAM/NIGHTS`);
   const totalPaxDisplay = escapeHtml(`${totalPax || 0} ORANG`);
   const totalPriceFormatted = escapeHtml(Number(totalPrice || 0).toFixed(2));
-  // The deposit receipt shows the deposit amount under the TOTAL label.
   const totalDepositFormatted = escapeHtml(Number(totalDeposit || 0).toFixed(2));
   const safeTouristFullName = escapeHtml(touristFullName) || "-";
   const safeCompanyName = escapeHtml(companyName) || "-";
@@ -142,6 +137,53 @@ function buildHtml(data) {
 
   const productValueHtml = isPackage ? packageItemsHtml : safeProductName;
 
+  // Package: an itinerary table (what, when) replaces the plain list, and the
+  // footer shows package total, deposit paid and balance. Item prices are not
+  // shown — how the total is split between companies stays internal.
+  const packageTableHtml =
+    isPackage && Array.isArray(packageItems) && packageItems.length
+      ? `
+  <div class="pkg-section">
+    <div class="field-label">PAKEJ/<em>PACKAGE</em></div>
+    <table class="pkg-table">
+      <thead>
+        <tr>
+          <th class="pkg-no">NO</th>
+          <th>AKTIVITI / PENGINAPAN<br><em>ACTIVITY / ACCOMMODATION</em></th>
+          <th class="pkg-when">TARIKH / MASA<br><em>DATE / TIME</em></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${packageItems
+          .map(
+            (item, i) => `
+        <tr>
+          <td class="pkg-no">${i + 1}</td>
+          <td>
+            <div class="pkg-name">${escapeHtml(String(item.description || "-"))}</div>
+            ${packageItemTypeLabel(item) ? `<div class="pkg-sub">${escapeHtml(packageItemTypeLabel(item))}</div>` : ""}
+          </td>
+          <td class="pkg-when">${escapeHtml(packageItemWhen(item).main)}${packageItemWhen(item).sub ? `<br><span class="pkg-sub">(${escapeHtml(packageItemWhen(item).sub)})</span>` : ""}</td>
+        </tr>`,
+          )
+          .join("")}
+      </tbody>
+    </table>
+  </div>`
+      : "";
+
+  // Every booking type: total, deposit paid and the balance still to pay.
+  const balance = Math.max(0, Number(totalPrice || 0) - Number(totalDeposit || 0));
+  const totalLabel = isPackage
+    ? "JUMLAH PAKEJ/<em>PACKAGE TOTAL</em>"
+    : "JUMLAH/<em>TOTAL</em>";
+  const totalsHtml = `
+    <div class="total-block">
+      <div class="amount-row"><span>${totalLabel} (RM)</span><span>${totalPriceFormatted}</span></div>
+      <div class="amount-row"><span>DEPOSIT DIBAYAR/<em>DEPOSIT PAID</em> (RM)</span><span>${totalDepositFormatted}</span></div>
+      <div class="amount-row amount-balance"><span>BAKI/<em>BALANCE</em> (RM)</span><span>${escapeHtml(balance.toFixed(2))}</span></div>
+    </div>`;
+
   // Date rows differ per booking type.
   const dateRows = isAccommodation
     ? `
@@ -159,8 +201,8 @@ function buildHtml(data) {
     </div>`
     : `
     <div>
-      <div class="field-label">TARIKH/<em>${isPackage ? "DATE" : "ACTIVITY DATE"}</em></div>
-      <div class="field-value">${activityDateFormatted}</div>
+      <div class="field-label">${isPackage ? "TARIKH TEMPAHAN DIBUAT/<em>DATE BOOKING MADE</em>" : "TARIKH &amp; MASA/<em>ACTIVITY DATE &amp; TIME</em>"}</div>
+      <div class="field-value">${isPackage ? activityDateFormatted : escapeHtml(packageItemWhen({ productType: "activity", activityDate }).main)}</div>
     </div>`;
 
   return `<!DOCTYPE html>
@@ -318,6 +360,75 @@ function buildHtml(data) {
     color: #111;
     line-height: 1;
   }
+  /* Package itinerary table + amounts */
+  .pkg-section {
+    margin-bottom: 22px;
+  }
+  .pkg-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6px;
+  }
+  .pkg-table th {
+    font-size: 9px;
+    font-weight: bold;
+    color: #555;
+    text-align: left;
+    letter-spacing: 0.3px;
+    padding: 6px 8px;
+    background: #f1f6f2;
+    border-bottom: 1px solid #cfdcd3;
+  }
+  .pkg-table th em {
+    font-style: italic;
+    font-weight: normal;
+  }
+  .pkg-table td {
+    font-size: 13px;
+    color: #111;
+    padding: 8px;
+    border-bottom: 1px solid #e3e3e3;
+    vertical-align: top;
+  }
+  .pkg-table .pkg-no {
+    width: 28px;
+    text-align: center;
+  }
+  .pkg-table .pkg-when {
+    width: 38%;
+  }
+  .pkg-name {
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  .pkg-sub {
+    font-size: 10px;
+    color: #777;
+  }
+  .amount-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    font-size: 12px;
+    color: #333;
+    padding: 2px 0;
+  }
+  .amount-row span:last-child {
+    font-weight: bold;
+    color: #111;
+  }
+  .amount-row em {
+    font-style: italic;
+  }
+  .amount-balance {
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid #cfcfcf;
+    font-size: 14px;
+  }
+  .amount-balance span:last-child {
+    font-size: 20px;
+  }
   .deposit-notice {
     margin-top: 16px;
     padding-top: 16px;
@@ -342,12 +453,11 @@ function buildHtml(data) {
       ${companyLogoHtml}
     </div>
     <div class="booking-id-area">
-      <div class="id">BOOKING ID: ${bookingId}</div>
       <div>${headerDate}</div>
     </div>
   </div>
 
-  <div class="title">BOOKING DEPOSIT RECEIPT</div>
+  <div class="title">BUTIRAN TEMPAHAN / BOOKING DETAILS</div>
   <hr>
 
   <!-- Info grid -->
@@ -360,10 +470,10 @@ function buildHtml(data) {
       <div class="field-label">NAMA PERNIAGAAN/<em>BUSINESS NAME</em></div>
       <div class="field-value">${safeCompanyName}</div>
     </div>
-    <div>
+    ${isPackage ? "" : `<div>
       <div class="field-label">${productLabel}</div>
       <div class="field-value">${productValueHtml}</div>
-    </div>
+    </div>`}
     <div>
       <div class="field-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
       <div class="field-value">${totalPaxDisplay}</div>
@@ -373,11 +483,12 @@ function buildHtml(data) {
       <div class="field-value">${safeLocation}</div>
     </div>
     ${dateRows}
-    <div class="full-width">
+    <div class="${isPackage ? "" : "full-width"}">
       <div class="field-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>
       <div class="field-value">${safeStatus}</div>
     </div>
   </div>
+${packageTableHtml}
 
   <hr class="footer-divider">
 
@@ -388,10 +499,7 @@ function buildHtml(data) {
       <div class="issued-name">${safeOperatorName}</div>
       <div class="issued-email">${safeOperatorEmail}</div>
     </div>
-    <div class="total-block">
-      <div class="total-label">JUMLAH/TOTAL(RM)</div>
-      <div class="total-value">${totalDepositFormatted}</div>
-    </div>
+    ${totalsHtml}
   </div>
 
   <div class="deposit-notice">

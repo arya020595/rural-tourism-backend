@@ -4,6 +4,10 @@ const { Op } = require("sequelize");
 const UnifiedUser = require("../models/unifiedUserModel");
 const { emailService } = require("./emailService");
 const { ValidationError, TokenExpiredError } = require("./errors/AppError");
+const {
+  MIN_PASSWORD_LENGTH,
+  passwordTooShortMessage,
+} = require("../utils/passwordPolicy");
 
 class PasswordResetService {
   async findUserByEmail(email) {
@@ -82,8 +86,8 @@ class PasswordResetService {
       throw new ValidationError("Token is required");
     }
 
-    if (newPassword.length < 6) {
-      throw new ValidationError("Password must be at least 6 characters");
+    if (newPassword.length < MIN_PASSWORD_LENGTH) {
+      throw new ValidationError(passwordTooShortMessage());
     }
 
     const hashedToken = this.hashToken(rawToken);
