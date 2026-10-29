@@ -10,6 +10,7 @@ const {
   ConflictError,
   BadRequestError,
 } = require("./errors/AppError");
+const { assertPasswordLength } = require("../utils/passwordPolicy");
 require("../models/associations");
 
 const SALT_ROUNDS = 10;
@@ -175,6 +176,8 @@ class UserService {
         "name, username, email, and password are required",
       );
     }
+
+    assertPasswordLength(password);
 
     const existingUser = await UnifiedUser.findOne({
       where: {
@@ -377,6 +380,7 @@ class UserService {
     }
 
     if (updates.password) {
+      assertPasswordLength(updates.password);
       fields.password = await bcrypt.hash(updates.password, SALT_ROUNDS);
       fields.confirm_password = fields.password;
     }

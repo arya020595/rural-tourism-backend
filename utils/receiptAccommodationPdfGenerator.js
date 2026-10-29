@@ -50,6 +50,7 @@ function buildHtml(data, pdfUrl) {
     checkInDate, checkOutDate, totalNight, totalRooms,
     status, operatorName, operatorEmail, totalPrice,
     createdAt, companyLogoBase64,
+    location,
   } = data;
 
   // "Issued By" uses the operator who created the booking, falling back to the
@@ -111,6 +112,16 @@ function buildHtml(data, pdfUrl) {
     margin-bottom: 14px;
   }
   hr { border: none; border-top: 1.5px solid #ddd; margin-bottom: 22px; }
+  .receipt-meta {
+    text-align: right;
+  }
+  .receipt-no {
+    font-size: 12px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
   .receipt-date {
     font-size: 18px;
     font-weight: 600;
@@ -170,7 +181,10 @@ function buildHtml(data, pdfUrl) {
         <div class="logo-divider"></div>
         ${companyLogoHtml}
       </div>
-      <div class="receipt-date">${dateStr}</div>
+      <div class="receipt-meta">
+        <div class="receipt-no">NO RESIT / RECEIPT NO : ${escapeHtml(String(data.receiptNo ?? data.id ?? "-"))}</div>
+        <div class="receipt-date">${dateStr}</div>
+      </div>
     </div>
 
     <div class="title">RESIT PEMBAYARAN / PAYMENT RECEIPT</div>
@@ -204,7 +218,11 @@ function buildHtml(data, pdfUrl) {
         </div>
         <div class="receipt-row">
           <div class="row-label">JUMLAH BILANGAN ORANG/<em>TOTAL NO. OF PAX</em></div>
-          <div class="row-value">${escapeHtml(String(totalRooms || 0))} ORANG/PAX</div>
+          <div class="row-value">${escapeHtml(String(totalRooms || 0))} ORANG</div>
+        </div>
+        <div class="receipt-row">
+          <div class="row-label">LOKASI/<em>LOCATION</em></div>
+          <div class="row-value">${escapeHtml(location) || "-"}</div>
         </div>
         <div class="receipt-row">
           <div class="row-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>

@@ -10,6 +10,7 @@ const Association = require("../models/associationModel");
 const Role = require("../models/roleModel");
 const Permission = require("../models/permissionModel");
 const { saveUploadedFile } = require("../utils/fileStorage");
+const { assertPasswordLength } = require("../utils/passwordPolicy");
 require("../models/associations");
 
 const USER_TYPE_OPERATOR = "operator";
@@ -534,6 +535,8 @@ class AuthService {
       throw error;
     }
 
+    assertPasswordLength(password);
+
     if (confirmedPassword && password !== confirmedPassword) {
       const error = new Error("Password and confirm password do not match.");
       error.statusCode = 400;
@@ -701,6 +704,8 @@ class AuthService {
       throw error;
     }
 
+    assertPasswordLength(password);
+
     if (confirmPassword && password !== confirmPassword) {
       const error = new Error("Password and confirm password do not match.");
       error.statusCode = 400;
@@ -838,13 +843,7 @@ class AuthService {
       throw error;
     }
 
-    if (String(newPassword).length < 8) {
-      const error = new Error(
-        "New password must be at least 8 characters long.",
-      );
-      error.statusCode = 400;
-      throw error;
-    }
+    assertPasswordLength(newPassword, "New password");
 
     const dbUser = await UnifiedUser.findByPk(userId);
     if (!dbUser) {

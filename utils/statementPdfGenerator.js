@@ -1,4 +1,4 @@
-const { getBrowser } = require("./browserHelper");
+const { getBrowser } = require("./puppeteerBrowser");
 
 
 function escapeHtml(str) {
@@ -12,7 +12,7 @@ function escapeHtml(str) {
 }
 
 function buildHtml(data) {
-  const { company, ownerName, year, transactions, createdAt, fromDate, toDate, summary, overallTotal } = data;
+  const { company, ownerName, year, typeLabel, transactions, monthGroups, createdAt, fromDate, toDate, summary, overallTotal } = data;
 
   const rawLogo = company?.logoBase64 || null;
   const logoSrc = rawLogo
@@ -22,23 +22,40 @@ function buildHtml(data) {
     ? `<img class="company-logo" src="${logoSrc}" alt="Company Logo" />`
     : `<div class="company-logo-placeholder">${escapeHtml(company?.name || "")}</div>`;
 
-  const transactionRows = transactions
-    .map(
-      (t) => `
+  const rowHtml = (t) => `
     <tr>
-      <td>${escapeHtml(String(t.year))}</td>
-      <td>${escapeHtml(t.month)}</td>
-      <td>${escapeHtml(t.type)}</td>
-      <td class="name-cell">${escapeHtml(t.name)}</td>
+      <td class="nowrap date-cell">
+        <div>${escapeHtml(t.receiptDate || t.receiptDateTime || "-")}</div>
+        ${t.receiptTime ? `<div class="sub">${escapeHtml(t.receiptTime)}</div>` : ""}
+      </td>
+      <td class="desc-cell">
+        <div class="desc-title">${escapeHtml(t.title || `${t.type} — ${t.name}`)}</div>
+        ${(t.details || []).map((line) => `<div class="desc-line">${escapeHtml(line)}</div>`).join("")}
+      </td>
       <td class="center">${escapeHtml(String(t.noOfPax))}</td>
-      <td class="right">RM ${escapeHtml(t.totalPrice)}</td>
-    </tr>`,
+      <td class="right amount-cell">${escapeHtml(Number(t.totalPrice || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
+    </tr>`;
+
+  // Grouped by receipt month: month heading, its receipts, its subtotal.
+  const groups = Array.isArray(monthGroups) && monthGroups.length
+    ? monthGroups
+    : (transactions.length ? [{ label: "", rows: transactions }] : []);
+  const transactionRows = groups
+    .map(
+      (g) => `
+    ${g.label ? `<tr class="month-row"><td colspan="4">${escapeHtml(g.label)}</td></tr>` : ""}
+    ${g.rows.map(rowHtml).join("")}
+    ${g.label ? `<tr class="month-subtotal">
+      <td colspan="2" class="right">Jumlah/<em>Subtotal</em> ${escapeHtml(g.label)}</td>
+      <td class="center">${escapeHtml(String(g.totalPax ?? 0))}</td>
+      <td class="right">${escapeHtml(Number(g.totalRevenue || 0).toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</td>
+    </tr>` : ""}`,
     )
     .join("");
 
   const emptyRow =
     transactions.length === 0
-      ? `<tr><td colspan="6" class="empty-row">No transactions found for ${escapeHtml(String(year))}</td></tr>`
+      ? `<tr><td colspan="4" class="empty-row">No transactions found for ${escapeHtml(String(year))}</td></tr>`
       : "";
 
   const summaryRows = (summary || [])
@@ -170,6 +187,25 @@ function buildHtml(data) {
   .transaction-table tbody td.center { text-align: center; }
   .transaction-table tbody td.right  { text-align: right; }
   .transaction-table tbody td.name-cell { max-width: 200px; word-wrap: break-word; }
+  .transaction-table tbody tr.month-row td {
+    background: #e7f1ea;
+    color: #1a5c38;
+    font-weight: bold;
+    font-size: 12px;
+    padding: 7px 12px;
+    border-top: 1px solid #c9dccf;
+  }
+  .transaction-table tbody tr.month-subtotal td {
+    background: #f3f7f4;
+    font-weight: bold;
+    color: #1a5c38;
+    border-bottom: 2px solid #c9dccf;
+  }
+  .transaction-table tbody tr.month-subtotal em { font-weight: normal; }
+  .transaction-table td.date-cell .sub { font-size: 10px; color: #777; }
+  .transaction-table td.desc-cell .desc-title { font-weight: bold; color: #1a1a1a; margin-bottom: 3px; }
+  .transaction-table td.desc-cell .desc-line { font-size: 10.5px; color: #555; line-height: 1.45; }
+  .transaction-table td.amount-cell { font-weight: bold; white-space: nowrap; }
   .empty-row {
     text-align: center;
     color: #999;
@@ -188,6 +224,8 @@ function buildHtml(data) {
     font-weight: bold;
     padding: 9px 16px;
     margin-top: 20px;
+    /* Gap above the table's green header row (same as the other sections). */
+    margin-bottom: 8px;
   }
   .date-range {
     text-align: right;
@@ -196,6 +234,29 @@ function buildHtml(data) {
     font-style: italic;
     margin-bottom: 8px;
     margin-top: 4px;
+  }
+
+  .transaction-table td.nowrap { white-space: nowrap; }
+
+  /* ── Document title block ── */
+  .doc-title-block {
+    text-align: center;
+    margin: 14px 0 18px;
+    padding: 12px 0;
+    border-top: 2px solid #1a5c38;
+    border-bottom: 2px solid #1a5c38;
+  }
+  .doc-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #1a5c38;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .doc-meta {
+    font-size: 11px;
+    color: #444;
+    line-height: 1.6;
   }
 
   /* ── Summary total row ── */
@@ -216,7 +277,15 @@ function buildHtml(data) {
   <!-- Company name + established year -->
   <div class="company-info">
     <div class="company-name">${escapeHtml(company?.name || "-")}</div>
-    <div class="company-est">Est. ${escapeHtml(String(company?.establishedYear || year))}</div>
+  </div>
+
+  <!-- What this document is -->
+  <div class="doc-title-block">
+    <div class="doc-title">PENYATA AKAUN / ACCOUNT STATEMENT</div>
+    <div class="doc-meta">
+      Tempoh/<em>Period</em>: <strong>${escapeHtml(fromDate)} – ${escapeHtml(toDate)}</strong>
+    </div>
+    <div class="doc-meta">Dijana/<em>Generated</em>: ${escapeHtml(createdAt)}</div>
   </div>
 
   <!-- Business Details -->
@@ -244,23 +313,19 @@ function buildHtml(data) {
     </tr>
   </table>
 
-  <!-- Account Statement header + date range -->
+  <!-- Transaction list (period/type/date are in the title block above) -->
   <div class="account-header">
-    <span>Penyata Akaun/Account Statement</span>
-    <span>Created at: ${escapeHtml(createdAt)}</span>
+    <span>Senarai Transaksi/Transaction List</span>
   </div>
-  <div class="date-range">From ${escapeHtml(fromDate)} to ${escapeHtml(toDate)}</div>
 
   <!-- Transaction List -->
   <table class="transaction-table">
     <thead>
       <tr>
-        <th>Year</th>
-        <th>Month</th>
-        <th>Type</th>
-        <th>Name</th>
-        <th class="center">No. of Pax</th>
-        <th class="right">Total Price (RM)</th>
+        <th style="width:96px">Tarikh<br>Date</th>
+        <th>Butiran Transaksi<br>Transaction Description</th>
+        <th class="center" style="width:60px">Pax</th>
+        <th class="right" style="width:120px">Amaun<br>Amount (RM)</th>
       </tr>
     </thead>
     <tbody>
@@ -283,7 +348,7 @@ function buildHtml(data) {
     <tbody>
       ${summaryRows}
       <tr class="summary-total">
-        <td colspan="3">Overall Total</td>
+        <td colspan="3" style="text-align:right">Overall Total</td>
         <td class="center">${escapeHtml(String(overallTotal?.totalPax ?? 0))}</td>
         <td class="right">RM ${escapeHtml(String(overallTotal?.totalRevenue ?? "0.00"))}</td>
       </tr>

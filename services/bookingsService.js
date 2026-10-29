@@ -1,6 +1,11 @@
 const { Op } = require("sequelize");
 const Booking = require("../models/bookingModel");
 const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
+const {
+  PACKAGE_ITEM_RECEIPT_ATTRIBUTES,
+  toReceiptPackageItem,
+  packageItemWhen,
+} = require("../utils/packageItemFormat");
 const Product = require("../models/productModel");
 const UnifiedUser = require("../models/unifiedUserModel");
 const Company = require("../models/companyModel");
@@ -509,6 +514,10 @@ class BookingsService {
       referee_company: record.refereeCompany,
       description: record.description,
       per_price: record.perPrice,
+      product_type: record.productType ?? null,
+      activity_date: record.activityDate ?? null,
+      check_in_date: record.checkInDate ?? null,
+      check_out_date: record.checkOutDate ?? null,
       created_at: record.created_at,
       updated_at: record.updated_at,
     };
@@ -606,6 +615,51 @@ class BookingsService {
     };
   }
 
+  /**
+   * Type and dates of one package item. All optional — app versions before
+   * 1.0.9 send none (the app itself requires them) — but whatever is sent
+   * must be valid and fit the type.
+   */
+  normalizePackageItemDates(item = {}) {
+    const badRequest = (message) =>
+      Object.assign(new Error(message), { statusCode: 400 });
+
+    const typeRaw = normalizeString(item?.product_type ?? item?.productType);
+    const productType = typeRaw ? typeRaw.toLowerCase() : null;
+    if (productType && !["activity", "accommodation"].includes(productType)) {
+      throw badRequest("product_type must be 'activity' or 'accommodation'.");
+    }
+
+    const activityRaw = item?.activity_date ?? item?.activityDate;
+    const activityDate = activityRaw
+      ? this.normalizeActivityDateTime(activityRaw, item?.activity_time ?? item?.activityTime)
+      : null;
+    if (activityRaw && !activityDate) {
+      throw badRequest("Package item activity_date is not a valid date.");
+    }
+
+    const checkInRaw = item?.check_in_date ?? item?.checkInDate;
+    const checkOutRaw = item?.check_out_date ?? item?.checkOutDate;
+    const checkInDate = checkInRaw ? normalizeDateOnly(checkInRaw) : null;
+    const checkOutDate = checkOutRaw ? normalizeDateOnly(checkOutRaw) : null;
+    if ((checkInRaw && !checkInDate) || (checkOutRaw && !checkOutDate)) {
+      throw badRequest("Package item check-in/check-out date is not a valid date.");
+    }
+    // A stay is at least one night.
+    if (checkInDate && checkOutDate && checkOutDate <= checkInDate) {
+      throw badRequest("Package item check_out_date must be after check_in_date.");
+    }
+
+    // Keep only the dates that belong to the item's type.
+    if (productType === "activity") {
+      return { productType, activityDate, checkInDate: null, checkOutDate: null };
+    }
+    if (productType === "accommodation") {
+      return { productType, activityDate: null, checkInDate, checkOutDate };
+    }
+    return { productType: null, activityDate, checkInDate, checkOutDate };
+  }
+
   async normalizePackageCompanies(rawItems = [], transaction = null) {
     const items = Array.isArray(rawItems) ? rawItems : [];
     if (items.length === 0) return [];
@@ -687,6 +741,8 @@ class BookingsService {
           throw error;
         }
 
+        const itemDates = this.normalizePackageItemDates(item);
+
         return {
           referrerId,
           referralCompany:
@@ -698,6 +754,7 @@ class BookingsService {
             normalizeString(refereeCompany.company_name),
           description: serviceName,
           perPrice,
+          ...itemDates,
           associationId: referrerAssociationId,
         };
       }),
@@ -1216,6 +1273,10 @@ class BookingsService {
           description: item.description,
           perPrice: item.perPrice,
           associationId: item.associationId ?? null,
+          productType: item.productType,
+          activityDate: item.activityDate,
+          checkInDate: item.checkInDate,
+          checkOutDate: item.checkOutDate,
         }));
 
         await BookingPackageCompany.bulkCreate(rows, { transaction });
@@ -1468,33 +1529,92 @@ class BookingsService {
       throw new BadRequestError("Date range must be 400 days or less");
     }
 
-    const rows = await Booking.findAll({
-      attributes: ["activityDate", "checkInDate", "checkOutDate"],
+    // Same date window for bookings and package items: activity_date is
+    // stored "as typed" (wall-clock in the UTC fields), so its calendar day is
+    // the UTC day — no +8h shift; stays overlap the window.
+    const inWindow = () => ({
+      [Op.or]: [
+        {
+          activityDate: {
+            [Op.between]: [
+              new Date(`${from}T00:00:00.000Z`),
+              new Date(`${to}T23:59:59.999Z`),
+            ],
+          },
+        },
+        {
+          checkInDate: { [Op.lte]: to },
+          [Op.or]: [
+            { checkOutDate: { [Op.gte]: from } },
+            { checkOutDate: null, checkInDate: { [Op.gte]: from } },
+          ],
+        },
+      ],
+    });
+
+    const bookingRows = await Booking.findAll({
+      attributes: ["id", "bookingType", "activityDate", "checkInDate", "checkOutDate"],
       where: {
         ...scope,
         status: { [Op.notIn]: ["cancelled", "rejected"] },
-        [Op.or]: [
-          {
-            // activity_date is stored "as typed" (wall-clock in the UTC
-            // fields), so its calendar day is the UTC day — no +8h shift.
-            activityDate: {
-              [Op.between]: [
-                new Date(`${from}T00:00:00.000Z`),
-                new Date(`${to}T23:59:59.999Z`),
-              ],
-            },
-          },
-          {
-            checkInDate: { [Op.lte]: to },
-            [Op.or]: [
-              { checkOutDate: { [Op.gte]: from } },
-              { checkOutDate: null, checkInDate: { [Op.gte]: from } },
-            ],
-          },
-        ],
+        ...inWindow(),
       },
       raw: true,
     });
+
+    // A package whose items have their own dates is shown on those dates
+    // (below), not on the package's booking date. Older packages without
+    // item dates keep using the package's date.
+    const packageIds = bookingRows
+      .filter((row) => row.bookingType === "package")
+      .map((row) => row.id);
+    const datedPackageIds = new Set(
+      packageIds.length
+        ? (
+            await BookingPackageCompany.findAll({
+              attributes: ["bookingPackageId"],
+              where: {
+                bookingPackageId: packageIds,
+                [Op.or]: [
+                  { activityDate: { [Op.ne]: null } },
+                  { checkInDate: { [Op.ne]: null } },
+                ],
+              },
+              raw: true,
+            })
+          ).map((row) => row.bookingPackageId)
+        : [],
+    );
+    const rows = bookingRows.filter((row) => !datedPackageIds.has(row.id));
+
+    // Package items this company provides (its own items, and items other
+    // companies referred to it). Superadmin (empty scope) sees all items.
+    const scopeCompanyId =
+      scope && Object.prototype.hasOwnProperty.call(scope, "companyId")
+        ? scope.companyId
+        : undefined;
+    const includeItems =
+      Object.keys(scope || {}).length === 0 || scopeCompanyId != null;
+    if (includeItems) {
+      const itemRows = await BookingPackageCompany.findAll({
+        attributes: ["activityDate", "checkInDate", "checkOutDate"],
+        where: {
+          ...(scopeCompanyId != null ? { refereeId: scopeCompanyId } : {}),
+          ...inWindow(),
+        },
+        include: [
+          {
+            model: Booking,
+            as: "booking_package",
+            attributes: [],
+            required: true,
+            where: { status: { [Op.notIn]: ["cancelled", "rejected"] } },
+          },
+        ],
+        raw: true,
+      });
+      rows.push(...itemRows);
+    }
 
     const dates = new Set();
 
@@ -1505,9 +1625,17 @@ class BookingsService {
       }
 
       if (row.checkInDate) {
+        // Mark the nights only: check-in up to the night before check-out.
+        // The check-out day itself is free for a new guest (same as the
+        // calendar view). No check-out, or same-day → the check-in day.
         const start = row.checkInDate > from ? row.checkInDate : from;
-        const stayEnd = row.checkOutDate || row.checkInDate;
-        const end = stayEnd < to ? stayEnd : to;
+        const lastNight =
+          row.checkOutDate && row.checkOutDate > row.checkInDate
+            ? new Date(Date.parse(`${row.checkOutDate}T00:00:00Z`) - DAY_MS)
+                .toISOString()
+                .slice(0, 10)
+            : row.checkInDate;
+        const end = lastNight < to ? lastNight : to;
         for (
           let t = Date.parse(`${start}T00:00:00Z`);
           t <= Date.parse(`${end}T00:00:00Z`);
@@ -1604,12 +1732,10 @@ class BookingsService {
     if (String(record.bookingType || "").toLowerCase() === "package") {
       const items = await BookingPackageCompany.findAll({
         where: { bookingPackageId: bookingId },
-        attributes: ["description", "perPrice"],
+        attributes: PACKAGE_ITEM_RECEIPT_ATTRIBUTES,
+        order: [["id", "ASC"]],
       });
-      packageItems = items.map((p) => ({
-        description: p.description,
-        perPrice: Number(p.perPrice || 0),
-      }));
+      packageItems = items.map(toReceiptPackageItem);
     }
 
     return {
@@ -1665,6 +1791,11 @@ class BookingsService {
 
     const base = {
       id: record.id,
+      // Shown as "No Resit / Receipt No": the old system's receipt number for
+      // migrated bookings, otherwise "BA_" + booking number — the same number
+      // the booking deposit receipt has always printed (BA_2745).
+      receiptNo:
+        record.legacyReceiptId || `BA_${String(record.id).padStart(3, "0")}`,
       bookingType,
       touristFullName: record.touristFullName,
       companyName: record.companyName,
@@ -1693,20 +1824,20 @@ class BookingsService {
         checkOutDate: record.checkOutDate,
         totalNight: Number(record.totalOfNight || 0),
         totalRooms: totalPax,
+        location,
       };
     }
 
     if (bookingType === "package") {
       const packageItems = await BookingPackageCompany.findAll({
         where: { bookingPackageId: bookingId },
-        attributes: ["description", "perPrice"],
+        attributes: PACKAGE_ITEM_RECEIPT_ATTRIBUTES,
+        order: [["id", "ASC"]],
       });
       return {
         ...base,
-        packageItems: packageItems.map((p) => ({
-          description: p.description,
-          perPrice: Number(p.perPrice || 0),
-        })),
+        packageItems: packageItems.map(toReceiptPackageItem),
+        location,
       };
     }
 
@@ -1714,6 +1845,7 @@ class BookingsService {
     return {
       ...base,
       activityName: record.productName,
+      activityDate: record.activityDate,
       location,
     };
   }
@@ -1944,6 +2076,10 @@ class BookingsService {
               description: item.description,
               perPrice: item.perPrice,
               associationId: item.associationId ?? null,
+              productType: item.productType,
+              activityDate: item.activityDate,
+              checkInDate: item.checkInDate,
+              checkOutDate: item.checkOutDate,
             })),
             { transaction },
           );
@@ -2106,9 +2242,20 @@ class BookingsService {
     const endMonth  = parsedTo === 12 ? 1 : parsedTo + 1;
     const endDate   = new Date(`${endYear}-${String(endMonth).padStart(2, "0")}-01T00:00:00.000Z`);
 
-    const bookingWhere = {
-      created_at: { [Op.gte]: startDate, [Op.lt]: endDate },
-    };
+    // Paid money only, in the month it was received: paid/completed
+    // bookings whose receipt falls in the period (older records without a
+    // receipt date fall back to when the booking was made).
+    const paidInPeriod = () => ({
+      status: { [Op.in]: ["paid", "completed"] },
+      [Op.or]: [
+        { receiptCreatedAt: { [Op.gte]: startDate, [Op.lt]: endDate } },
+        {
+          receiptCreatedAt: null,
+          created_at: { [Op.gte]: startDate, [Op.lt]: endDate },
+        },
+      ],
+    });
+    const bookingWhere = paidInPeriod();
     if (companyId !== null) {
       bookingWhere.companyId = companyId;
     }
@@ -2138,61 +2285,204 @@ class BookingsService {
       }
     }
 
-    // Fetch bookings for the year
-    const bookings = await Booking.findAll({
-      where: bookingWhere,
+    // A company's statement shows its own share only. Activity and
+    // accommodation bookings are its own; for packages (ones it created AND
+    // ones other companies referred to it) only the items it provides count —
+    // their names and the sum of their prices — never the other companies'
+    // items. Superadmin (no company) sees whole packages.
+    const companyScoped = companyId !== null;
+    // Company + "package" type: packages come only from its items below.
+    const skipBookings = companyScoped && normalizedType === "package";
+    const bookings = skipBookings ? [] : await Booking.findAll({
+      where: companyScoped
+        ? {
+            ...bookingWhere,
+            bookingType:
+              normalizedType === "all"
+                ? { [Op.ne]: "package" }
+                : normalizedType,
+          }
+        : bookingWhere,
       include: [
         {
           model: BookingPackageCompany,
           as: "package_companies",
           required: false,
-          attributes: ["description"],
+          attributes: ["description", "perPrice", "productType", "activityDate", "checkInDate", "checkOutDate"],
         },
       ],
       order: [["created_at", "ASC"]],
     });
+
+    // This company's package items, grouped by package booking.
+    const packageShares = [];
+    if (companyScoped && (normalizedType === "all" || normalizedType === "package")) {
+      const items = await BookingPackageCompany.findAll({
+        where: { refereeId: companyId },
+        attributes: ["bookingPackageId", ...["description", "perPrice", "productType", "activityDate", "checkInDate", "checkOutDate"]],
+        include: [
+          {
+            model: Booking,
+            as: "booking_package",
+            required: true,
+            where: {
+              bookingType: "package",
+              ...paidInPeriod(),
+            },
+          },
+        ],
+        order: [["id", "ASC"]],
+      });
+      const byBooking = new Map();
+      for (const item of items) {
+        const booking = item.booking_package;
+        if (!byBooking.has(booking.id)) {
+          byBooking.set(booking.id, { booking, items: [], price: 0 });
+        }
+        const share = byBooking.get(booking.id);
+        share.items.push(toReceiptPackageItem(item));
+        share.price += Number(item.perPrice || 0);
+      }
+      packageShares.push(...byBooking.values());
+    }
 
     const MONTH_NAMES = [
       "January", "February", "March", "April", "May", "June",
       "July", "August", "September", "October", "November", "December",
     ];
 
-    const transactions = bookings.map((b) => {
-      const date = new Date(b.created_at);
-      let name = b.productName || "-";
+    // Receipt date & time in Malaysia time (timestamps are real UTC),
+    // e.g. "14-10-2026, 04:25 PM".
+    const formatReceiptDateTime = (value) => {
+      const t = new Date(value);
+      if (Number.isNaN(t.getTime())) return "-";
+      const my = new Date(t.getTime() + 8 * 60 * 60 * 1000);
+      const dd = String(my.getUTCDate()).padStart(2, "0");
+      const mm = String(my.getUTCMonth() + 1).padStart(2, "0");
+      const h = my.getUTCHours();
+      const min = String(my.getUTCMinutes()).padStart(2, "0");
+      return `${dd}-${mm}-${my.getUTCFullYear()}, ${String(h % 12 || 12).padStart(2, "0")}:${min} ${h >= 12 ? "PM" : "AM"}`;
+    };
 
-      if (
-        b.bookingType === "package" &&
-        Array.isArray(b.package_companies) &&
-        b.package_companies.length > 0
-      ) {
-        const descriptions = b.package_companies
-          .map((pc) => pc.description)
-          .filter(Boolean);
-        if (descriptions.length > 0) name = descriptions.join(", ");
+    // Booking date (when it was made), e.g. "14-10-2026", Malaysia time.
+    const formatBookingDate = (value) => {
+      const text = formatReceiptDateTime(value);
+      return text === "-" ? "-" : text.split(",")[0];
+    };
+
+    // One statement line per receipt, bank-statement style: date (+ time),
+    // a description (title + booking details), pax and amount. `items` are
+    // the package items to list (this company's own only, when scoped).
+    const TYPE_TITLES = {
+      activity: "ACTIVITY",
+      accommodation: "ACCOMMODATION",
+      package: "PACKAGE",
+    };
+    // The statement description is English only ("1 malam/night" → "1 night").
+    const englishNights = (text) => String(text || "").replace(/malam\//g, "");
+    const toRow = (b, price, items = []) => {
+      const paidAt = b.receiptCreatedAt || b.created_at;
+      // Month in Malaysia time, so a receipt just after midnight on the 1st
+      // isn't counted in the previous month.
+      const myTime = new Date(new Date(paidAt).getTime() + 8 * 60 * 60 * 1000);
+      const rawType = String(b.bookingType || "activity").toLowerCase();
+      const receiptDateTime = formatReceiptDateTime(paidAt);
+      const [receiptDate, receiptTime = ""] = receiptDateTime.split(", ");
+
+      const details = [
+        `Receipt No: ${b.legacyReceiptId || `BA_${String(b.id).padStart(3, "0")}`}`,
+        `Customer: ${b.touristFullName || "-"}`,
+        `Booked: ${formatBookingDate(b.created_at)}`,
+      ];
+      let name = b.productName || "-";
+      if (rawType === "activity" && b.activityDate) {
+        details.push(
+          `Activity Date: ${packageItemWhen({ productType: "activity", activityDate: b.activityDate }).main}`,
+        );
+      } else if (rawType === "accommodation" && b.checkInDate) {
+        const stay = packageItemWhen({
+          productType: "accommodation",
+          checkInDate: b.checkInDate,
+          checkOutDate: b.checkOutDate,
+        });
+        details.push(`Stay: ${stay.main}${stay.sub ? ` (${englishNights(stay.sub)})` : ""}`);
+      } else if (rawType === "package") {
+        const names = items.map((it) => it.description).filter(Boolean);
+        name = names.join(", ") || "-";
+        items.forEach((it) => {
+          const when = packageItemWhen(it);
+          details.push(
+            `• ${it.description || "-"}${when.main !== "-" ? ` — ${when.main}` : ""}${when.sub ? ` (${englishNights(when.sub)})` : ""}`,
+          );
+        });
       }
 
-      const rawType = b.bookingType || "activity";
-      const type_label = rawType.charAt(0).toUpperCase() + rawType.slice(1);
-
       return {
-        year: parsedYear,
-        month: MONTH_NAMES[date.getMonth()],
-        type: type_label,
+        year: myTime.getUTCFullYear(),
+        month: MONTH_NAMES[myTime.getUTCMonth()],
+        receiptDate,
+        receiptTime,
+        receiptDateTime,
+        bookingDate: formatBookingDate(b.created_at),
+        title:
+          rawType === "package"
+            ? TYPE_TITLES.package
+            : `${TYPE_TITLES[rawType] || rawType.toUpperCase()} — ${String(name).toUpperCase()}`,
+        details,
+        // Listed in receipt order, oldest first.
+        sortTime: new Date(paidAt).getTime() || 0,
+        // Kept for the summary table (grouped by name + type).
+        type: rawType.charAt(0).toUpperCase() + rawType.slice(1),
         name,
         noOfPax:
           Number(b.noOfPaxAntarbangsa || 0) + Number(b.noOfPaxDomestik || 0),
-        totalPrice: Number(b.totalPrice || 0).toFixed(2),
+        totalPrice: Number(price || 0).toFixed(2),
       };
+    };
+
+    const transactions = [
+      ...bookings.map((b) =>
+        toRow(
+          b,
+          b.totalPrice,
+          (b.package_companies || []).map(toReceiptPackageItem),
+        ),
+      ),
+      ...packageShares.map((share) =>
+        toRow(share.booking, share.price, share.items),
+      ),
+    ]
+      .sort((a, b) => a.sortTime - b.sortTime)
+      .map(({ sortTime, ...row }) => row);
+
+    // Transaction table grouped by receipt month (rows are already in receipt
+    // order), each with its own subtotal.
+    const monthGroups = [];
+    for (const row of transactions) {
+      const label = `${row.month} ${row.year}`;
+      let group = monthGroups[monthGroups.length - 1];
+      if (!group || group.label !== label) {
+        group = { label, rows: [], totalPax: 0, totalRevenue: 0 };
+        monthGroups.push(group);
+      }
+      group.rows.push(row);
+      group.totalPax += Number(row.noOfPax || 0);
+      group.totalRevenue += Number(row.totalPrice || 0);
+    }
+    monthGroups.forEach((g) => {
+      g.totalRevenue = g.totalRevenue.toFixed(2);
     });
 
-    // Date range from first/last transaction
-    const fromDate = transactions.length
-      ? `${transactions[0].month} ${transactions[0].year}`
-      : `January ${parsedYear}`;
-    const toDate = transactions.length
-      ? `${transactions[transactions.length - 1].month} ${transactions[transactions.length - 1].year}`
-      : `December ${parsedYear}`;
+    // Period = the months asked for (not the first/last transaction found,
+    // which hid empty months at either end).
+    const fromDate = `${MONTH_NAMES[parsedFrom - 1]} ${parsedYear}`;
+    const toDate = `${MONTH_NAMES[parsedTo - 1]} ${parsedYear}`;
+    const typeLabel = {
+      all: "Semua/All",
+      activity: "Aktiviti/Activity",
+      accommodation: "Penginapan/Accommodation",
+      package: "Pakej/Package",
+    }[normalizedType] || normalizedType;
 
     // Created at date
     const now = new Date();
@@ -2235,10 +2525,12 @@ class BookingsService {
       ownerName,
       year: parsedYear,
       type: normalizedType,
+      typeLabel,
       createdAt,
       fromDate,
       toDate,
       transactions,
+      monthGroups,
       summary,
       overallTotal,
     };

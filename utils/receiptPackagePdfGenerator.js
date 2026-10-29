@@ -1,6 +1,7 @@
 ﻿const fs = require("fs");
 const path = require("path");
 const { getBrowser } = require("./puppeteerBrowser");
+const { packageItemTypeLabel, packageItemWhen } = require("./packageItemFormat");
 
 const EXPLORE_SABAH_BASE64 = (() => {
   try {
@@ -38,7 +39,7 @@ function formatDate(dateStr) {
 function buildHtml(data, pdfUrl) {
   const {
     id, touristFullName, companyName, totalPax, customerType,
-    packageItems, status, operatorName, operatorEmail,
+    packageItems, status, operatorName, operatorEmail, location,
     totalPrice, createdAt, companyLogoBase64,
   } = data;
 
@@ -64,11 +65,38 @@ function buildHtml(data, pdfUrl) {
 
   const dateStr = escapeHtml(formatDate(createdAt));
 
-  const packageItemsHtml = Array.isArray(packageItems) && packageItems.length > 0
-    ? packageItems.map((item, i) =>
-        `<div>${i + 1}. ${escapeHtml(item.description)}</div>`
-      ).join("")
-    : "-";
+  // Itinerary table (what, when) — same as the deposit receipt. No item
+  // prices: how the total is split between companies stays internal.
+  const packageTableHtml = Array.isArray(packageItems) && packageItems.length > 0
+    ? `
+      <div class="pkg-section">
+        <div class="row-label">PAKEJ/<em>PACKAGE</em></div>
+        <table class="pkg-table">
+          <thead>
+            <tr>
+              <th class="pkg-no">NO</th>
+              <th>AKTIVITI / PENGINAPAN<br><em>ACTIVITY / ACCOMMODATION</em></th>
+              <th class="pkg-when">TARIKH / MASA<br><em>DATE / TIME</em></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${packageItems.map((item, i) => {
+              const when = packageItemWhen(item);
+              const type = packageItemTypeLabel(item);
+              return `
+            <tr>
+              <td class="pkg-no">${i + 1}</td>
+              <td>
+                <div class="pkg-name">${escapeHtml(item.description) || "-"}</div>
+                ${type ? `<div class="pkg-sub">${escapeHtml(type)}</div>` : ""}
+              </td>
+              <td class="pkg-when">${escapeHtml(when.main)}${when.sub ? `<div class="pkg-sub">(${escapeHtml(when.sub)})</div>` : ""}</td>
+            </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>`
+    : "";
 
   return `<!DOCTYPE html>
 <html>
@@ -102,6 +130,16 @@ function buildHtml(data, pdfUrl) {
     margin-bottom: 14px;
   }
   hr { border: none; border-top: 1.5px solid #ddd; margin-bottom: 22px; }
+  .receipt-meta {
+    text-align: right;
+  }
+  .receipt-no {
+    font-size: 12px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 4px;
+    white-space: nowrap;
+  }
   .receipt-date {
     font-size: 18px;
     font-weight: 600;
@@ -140,6 +178,15 @@ function buildHtml(data, pdfUrl) {
   .total-block { text-align: right; }
   .total-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #333; }
   .total-amount { font-size: 26px; font-weight: 700; color: #1a1a1a; line-height: 1; }
+  .pkg-section { margin-top: 22px; }
+  .pkg-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .pkg-table th { font-size: 10px; font-weight: 700; color: #4f4f4f; text-align: left; letter-spacing: 0.3px; padding: 7px 10px; background: #f1f6f2; border-bottom: 1px solid #cfdcd3; }
+  .pkg-table th em { font-weight: 400; }
+  .pkg-table td { font-size: 14px; color: #141414; padding: 9px 10px; border-bottom: 1px solid #e3e3e3; vertical-align: top; }
+  .pkg-table .pkg-no { width: 30px; text-align: center; }
+  .pkg-table .pkg-when { width: 38%; }
+  .pkg-name { font-weight: 700; text-transform: uppercase; }
+  .pkg-sub { font-size: 11px; color: #777; }
 </style>
 </head>
 <body>
@@ -150,7 +197,10 @@ function buildHtml(data, pdfUrl) {
         <div class="logo-divider"></div>
         ${companyLogoHtml}
       </div>
-      <div class="receipt-date">${dateStr}</div>
+      <div class="receipt-meta">
+        <div class="receipt-no">NO RESIT / RECEIPT NO : ${escapeHtml(String(data.receiptNo ?? data.id ?? "-"))}</div>
+        <div class="receipt-date">${dateStr}</div>
+      </div>
     </div>
 
     <div class="title">RESIT PEMBAYARAN / PAYMENT RECEIPT</div>
@@ -167,18 +217,19 @@ function buildHtml(data, pdfUrl) {
           <div class="row-value">${escapeHtml(companyName) || "-"}</div>
         </div>
         <div class="receipt-row">
-          <div class="row-label">PAKEJ/<em>PACKAGE</em></div>
-          <div class="package-value">${packageItemsHtml}</div>
+          <div class="row-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
+          <div class="row-value">${escapeHtml(String(totalPax || 0))} ORANG</div>
         </div>
         <div class="receipt-row">
-          <div class="row-label">BILANGAN ORANG/<em>TOTAL PAX</em></div>
-          <div class="row-value">${escapeHtml(String(totalPax || 0))} ORANG/PEOPLE</div>
+          <div class="row-label">LOKASI/<em>LOCATION</em></div>
+          <div class="row-value">${escapeHtml(location) || "-"}</div>
         </div>
         <div class="receipt-row">
           <div class="row-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>
           <div class="row-value">${escapeHtml((status || "paid").toUpperCase())}</div>
         </div>
       </div>
+      ${packageTableHtml}
     </div>
 
     <div class="receipt-footer">
