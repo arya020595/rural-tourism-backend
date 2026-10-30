@@ -151,6 +151,16 @@ class BookingValidator {
       errors.push("receipt_created_at must be a valid timestamp");
     }
 
+    // Optional: the quotation this booking is converted from.
+    if (
+      data.quotation_id !== undefined &&
+      data.quotation_id !== null &&
+      data.quotation_id !== "" &&
+      !(normalizeInt(data.quotation_id, null) > 0)
+    ) {
+      errors.push("quotation_id must be a positive integer");
+    }
+
     return new ValidationResult(errors.length === 0, errors);
   }
 

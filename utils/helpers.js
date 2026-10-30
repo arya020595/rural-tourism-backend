@@ -113,12 +113,15 @@ const paginatedResponse = (
   data,
   message = "Success",
   { total, page, perPage, pages },
+  extra = {},
 ) => {
   return res.status(200).json({
     success: true,
     message,
     data,
     meta: buildMeta(total, page, perPage, pages),
+    // Optional extra top-level fields, e.g. per-status counts for filter chips.
+    ...extra,
   });
 };
 

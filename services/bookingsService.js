@@ -1209,6 +1209,16 @@ class BookingsService {
       payload.idempotencyKey = idempotencyKey;
       payload.version = 0;
 
+      // Made from a quotation (Convert to Booking / Receipt): lock it and
+      // check it can still be converted; it is marked accepted below, in this
+      // same transaction. A retried sync never reaches here (idempotency
+      // early-return above). Lazy require: quotationService uses this service.
+      const quotationId = normalizeInt(data.quotation_id, null);
+      const quotationService = quotationId !== null ? require("./quotationService") : null;
+      const quotation = quotationService
+        ? await quotationService.lockForConversion(quotationId, actorContext, transaction)
+        : null;
+
       // E-receipt bookings are created directly as "paid" (the booking-page
       // flow instead transitions to paid later, stamping receipt_created_at in
       // updateBooking). Stamp it here too so the receipt date is consistent
@@ -1280,6 +1290,10 @@ class BookingsService {
         }));
 
         await BookingPackageCompany.bulkCreate(rows, { transaction });
+      }
+
+      if (quotation) {
+        await quotationService.markAccepted(quotation, created.id, transaction);
       }
 
       await transaction.commit();
