@@ -150,7 +150,7 @@ function buildHtml(data) {
         <tr>
           <th class="pkg-no">NO</th>
           <th>AKTIVITI / PENGINAPAN<br><em>ACTIVITY / ACCOMMODATION</em></th>
-          <th class="pkg-when">TARIKH / MASA<br><em>DATE / TIME</em></th>
+          <th class="pkg-when">TARIKH / MASA ITINERARI<br><em>ITINERARY DATE / TIME</em></th>
         </tr>
       </thead>
       <tbody>
@@ -457,7 +457,7 @@ function buildHtml(data) {
     </div>
   </div>
 
-  <div class="title">BUTIRAN TEMPAHAN / BOOKING DETAILS</div>
+  <div class="title">PENGESAHAN TEMPAHAN / BOOKING CONFIRMATION</div>
   <hr>
 
   <!-- Info grid -->

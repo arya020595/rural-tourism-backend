@@ -1,0 +1,58 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Roboto, Arial, Helvetica, sans-serif; background: #2b2f2c; color: #1a1a1a; }
+  .topbar { height: 64px; background: #2b2f2c; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; color: #fff; font-size: 26px; }
+  .page { background: #fff; margin: 0 6px; border-radius: 26px 26px 0 0; min-height: 820px; padding: 34px 0 60px; position: relative; }
+  .wrap { width: 1200px; margin: 0 auto; }
+  .logos { text-align: center; margin-bottom: 18px; }
+  .logos span { display: inline-block; padding: 18px 26px; border: 1px dashed #ccc; border-radius: 8px; color: #999; font-size: 12px; }
+  h1 { font-size: 44px; font-weight: 800; color: #04552f; margin-bottom: 10px; }
+  h1 em { font-style: italic; }
+  .mock { position: absolute; top: 12px; right: 24px; color: #9aa; font-size: 11px; }
+  hr.sep { border: none; border-top: 1px solid #ddd; margin: 10px 0 22px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 8px; padding: 12px 22px; font-weight: 700; font-size: 16px; color: #fff; }
+  .btn.green { background: #0b5d33; } .btn.red { background: #d32020; } .btn.grey { background: #e6e6e6; color: #333; }
+  .btn.off { background: #cfd8d2; color: #6b7a70; }
+  .chip { display: inline-block; padding: 5px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .chip.pending { background: #ffe0b2; color: #a65c00; } .chip.approved { background: #a7dbb8; color: #0b5d33; } .chip.rejected { background: #f8d7da; color: #8a1c24; }
+  .search { height: 46px; border: 1px solid #d0d0d0; border-radius: 8px; padding: 0 14px; font-size: 15px; color: #888; display: flex; align-items: center; margin-bottom: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tabs > span { padding: 9px 18px; border-radius: 999px; border: 1px solid #cfdcd3; font-size: 14px; font-weight: 700; color: #04552f; }
+  .tabs > span.on { background: #04552f; color: #fff; border-color: #04552f; }
+  .badge { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #d32020; color: #fff; font-size: 12px; margin-left: 6px; text-align: center; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  thead th { background: #015c2f; color: #fff; font-size: 15px; font-weight: 700; padding: 14px 10px; text-align: center; }
+  thead th:first-child { border-radius: 10px 0 0 10px; } thead th:last-child { border-radius: 0 10px 10px 0; }
+  tbody td { padding: 15px 10px; border-bottom: 1px solid #d6d6d6; font-size: 14.5px; text-align: center; vertical-align: middle; }
+  td.left { text-align: left; } td b { display: block; } td small { color: #777; font-size: 12.5px; }
+  .wait { color: #a65c00; font-weight: 700; }
+  .pencil { width: 42px; height: 42px; border-radius: 10px; background: #0b5d33; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+  .note { margin-top: 18px; font-size: 12px; color: #666; line-height: 1.6; }
+
+  td.reason { text-align: left; color: #8a1c24; font-size: 13.5px; max-width: 240px; }
+</style></head><body>
+  <div class="topbar"><span>☰</span><span>⟳ &nbsp; 🔔</span></div><div class="page"><div class="mock">CONTOH / MOCKUP</div><div class="wrap">
+    <div class="logos"><span>[ Logo persatuan | Explore Sabah ]</span></div>
+    <h1>Kelulusan Pendaftaran/ <em>Registration Approvals</em></h1><hr class="sep">
+    <div class="search">🔍 &nbsp;Cari syarikat, pemilik atau emel / Search company, owner or email</div><div class="tabs"><span class="">Menunggu/Pending<span class="badge">3</span></span><span class="">Diluluskan/Approved (24)</span><span class="on">Ditolak/Rejected (2)</span></div>
+    <table>
+      <thead><tr><th>Syarikat<br>Company</th><th>Pemilik<br>Owner</th><th>Tarikh Daftar<br>Submitted</th><th>Keputusan<br>Decided</th><th>Sebab<br>Reason</th><th>Status</th><th>Tindakan<br>Action</th></tr></thead>
+      <tbody><tr>
+        <td class="left"><b>Kopi Kampung Tamu</b></td>
+        <td class="left"><b>Ronald Sipaun</b><small>ronald.kk@example.com</small></td>
+        <td>20-10-2026</td>
+        <td>22-10-2026<br><small>oleh/by Puan Rosnah</small></td>
+        <td class="reason">Lesen MOTAC tidak sah / MOTAC licence not valid</td>
+        <td><span class="chip rejected">Ditolak/Rejected</span></td><td><span class="pencil">✎</span></td>
+      </tr><tr>
+        <td class="left"><b>Pondok Rehat Sungai Kiulu</b></td>
+        <td class="left"><b>Linda Majinal</b><small>linda.pr@example.com</small></td>
+        <td>18-10-2026</td>
+        <td>19-10-2026<br><small>oleh/by Superadmin</small></td>
+        <td class="reason">Butiran syarikat tidak lengkap / Company details incomplete</td>
+        <td><span class="chip rejected">Ditolak/Rejected</span></td><td><span class="pencil">✎</span></td>
+      </tr></tbody>
+    </table>
+    <div class="note">Tab Diluluskan sama, tanpa lajur Sebab. ✎ boleh tukar keputusan semula (cth. Ditolak → Diluluskan selepas pengendali menghubungi persatuan).<br>
+    The Approved tab looks the same without the Reason column. ✎ can change the decision back (e.g. Rejected → Approved after the operator contacts the association).</div>
+  </div></div></body></html>

@@ -12,6 +12,8 @@ const RolePermission = require("./rolePermissionModel");
 const Product = require("./productModel");
 const Booking = require("./bookingModel");
 const BookingPackageCompany = require("./bookingPackageCompanyModel");
+const Quotation = require("./quotationModel");
+const QuotationItem = require("./quotationItemModel");
 
 // User <-> OperatorActivity associations
 UnifiedUser.hasMany(OperatorActivity, {
@@ -187,4 +189,26 @@ Company.hasMany(BookingPackageCompany, {
 BookingPackageCompany.belongsTo(Company, {
   foreignKey: "refereeId",
   as: "referee_company",
+});
+
+// Quotation <-> QuotationItem / Company / Booking associations
+Quotation.hasMany(QuotationItem, {
+  foreignKey: "quotationId",
+  as: "items",
+  onDelete: "CASCADE",
+});
+
+QuotationItem.belongsTo(Quotation, {
+  foreignKey: "quotationId",
+  as: "quotation",
+});
+
+Quotation.belongsTo(Company, {
+  foreignKey: "companyId",
+  as: "company",
+});
+
+Quotation.belongsTo(Booking, {
+  foreignKey: "bookingId",
+  as: "booking",
 });

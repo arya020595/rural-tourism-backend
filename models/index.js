@@ -11,6 +11,8 @@ const RolePermission = require("./rolePermissionModel");
 const Booking = require("./bookingModel");
 const BookingPackageCompany = require("./bookingPackageCompanyModel");
 const Product = require("./productModel");
+const Quotation = require("./quotationModel");
+const QuotationItem = require("./quotationItemModel");
 
 // ======================
 // Export Models
@@ -32,5 +34,7 @@ db.RolePermission = RolePermission;
 db.Booking = Booking;
 db.BookingPackageCompany = BookingPackageCompany;
 db.Product = Product;
+db.Quotation = Quotation;
+db.QuotationItem = QuotationItem;
 
 module.exports = db;
