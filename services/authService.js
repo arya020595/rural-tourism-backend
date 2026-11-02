@@ -11,6 +11,7 @@ const Role = require("../models/roleModel");
 const Permission = require("../models/permissionModel");
 const { saveUploadedFile } = require("../utils/fileStorage");
 const { assertPasswordLength } = require("../utils/passwordPolicy");
+const { registrationBlock } = require("../utils/registrationHelpers");
 require("../models/associations");
 
 const USER_TYPE_OPERATOR = "operator";
@@ -354,6 +355,20 @@ class AuthService {
       throw error;
     }
 
+    // Operator companies must be approved by their association first.
+    if (user.company_id) {
+      const company = await Company.findByPk(user.company_id, {
+        attributes: ["id", "registration_status", "registration_rejection_reason"],
+      });
+      const block = registrationBlock(company);
+      if (block) {
+        const error = new Error(block.message);
+        error.statusCode = 403;
+        error.meta = { code: block.code, reason: block.reason };
+        throw error;
+      }
+    }
+
     const role = await this.resolveRole(user.role_id, USER_TYPE_OPERATOR);
     const resolvedUserType = this.inferUserTypeFromRole(role.name);
 
@@ -567,6 +582,15 @@ class AuthService {
       throw error;
     }
 
+    // The association approves the registration, so it must be chosen.
+    if (parsedAssociationId === null) {
+      const error = new Error(
+        "Sila pilih persatuan anda / Please choose your association.",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
     if (parsedAssociationId !== null) {
       const association = await Association.findByPk(parsedAssociationId);
       if (!association) {
@@ -580,18 +604,14 @@ class AuthService {
       where: { username },
     });
     if (existingUserByUsername) {
-      const error = new Error("Username already exists.");
-      error.statusCode = 409;
-      throw error;
+      throw await this.duplicateRegistrationError(existingUserByUsername, "Username already exists.");
     }
 
     const existingUserByEmail = await UnifiedUser.findOne({
       where: { email: userEmail },
     });
     if (existingUserByEmail) {
-      const error = new Error("Email address already exists.");
-      error.statusCode = 409;
-      throw error;
+      throw await this.duplicateRegistrationError(existingUserByEmail, "Email address already exists.");
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -640,6 +660,9 @@ class AuthService {
           motac_license_file: motacLicenseFile,
           trading_operation_license: tradingOperationLicense,
           homestay_certificate: homestayCertificate,
+          // Waits for the association to approve it (no login until then).
+          registration_status: "pending",
+          registration_submitted_at: new Date(),
         },
         { transaction },
       );
@@ -660,7 +683,17 @@ class AuthService {
 
       await transaction.commit();
 
+      // Bell notification for the association's users and superadmins. Never
+      // fails the registration (it is already saved). Lazy require: the
+      // registration service uses this service.
+      try {
+        await require("./registrationService").notifyApprovers(company, user);
+      } catch (notifyError) {
+        console.error("[registerOperator] approver notification failed:", notifyError?.message);
+      }
+
       return {
+        registration_status: "pending",
         user: {
           id: user.id,
           username: user.username,
@@ -678,6 +711,30 @@ class AuthService {
       await transaction.rollback();
       throw dbError;
     }
+  }
+
+  /**
+   * 409 for a username / email that is taken. If it belongs to a registration
+   * still waiting or rejected, say so — the operator must contact their
+   * association instead of registering again.
+   */
+  async duplicateRegistrationError(existingUser, defaultMessage) {
+    let message = defaultMessage;
+    if (existingUser.company_id) {
+      const company = await Company.findByPk(existingUser.company_id, {
+        attributes: ["registration_status"],
+      });
+      if (company?.registration_status === "pending") {
+        message =
+          "Pendaftaran ini sedang menunggu kelulusan persatuan. / This registration is already waiting for your association's approval.";
+      } else if (company?.registration_status === "rejected") {
+        message =
+          "Akaun ini tidak aktif. Sila hubungi persatuan anda. / This account is inactive. Please contact your association.";
+      }
+    }
+    const error = new Error(message);
+    error.statusCode = 409;
+    return error;
   }
 
   async registerTourist(payload = {}) {

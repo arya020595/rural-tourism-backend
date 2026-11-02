@@ -419,7 +419,7 @@ class QuotationService {
     const companyIds = [...new Set(parsed.map((item) => item.companyId))];
     const companies = await Company.findAll({
       where: { id: companyIds },
-      attributes: ["id", "company_name"],
+      attributes: ["id", "company_name", "registration_status"],
       transaction,
     });
     const companyById = new Map(companies.map((company) => [company.id, company]));
@@ -455,6 +455,9 @@ class QuotationService {
       const label = `Item ${index + 1}`;
       const company = companyById.get(item.companyId);
       if (!company) throw new BadRequestError(`${label}: company not found.`);
+      if (company.registration_status && company.registration_status !== "approved") {
+        throw new BadRequestError(`${label}: ${company.company_name} is not an approved company.`);
+      }
       const product = productById.get(item.productId);
       if (!product || Number(product.company_id) !== item.companyId) {
         throw new BadRequestError(`${label}: service not found for this company.`);
