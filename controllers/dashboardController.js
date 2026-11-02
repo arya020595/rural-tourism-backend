@@ -1,6 +1,9 @@
 const dashboardService = require("../services/dashboardService");
 const { dashboardValidator } = require("../validators/dashboardValidator");
+const { serialize: serializeMember } = require("../serializers/associationMemberSerializer");
+const { policy } = require("../policies");
 const { successResponse, errorResponse } = require("../utils/helpers");
+const { ForbiddenError } = require("../services/errors/AppError");
 
 exports.getTodayDashboard = async (req, res) => {
   try {
@@ -64,6 +67,40 @@ exports.getAssociationStats = async (req, res) => {
       result,
       "Association stats fetched successfully",
     );
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// Association statistics page: the user's own association + member companies.
+exports.getMyAssociationStats = async (req, res) => {
+  try {
+    const validationResult = dashboardValidator.validateAssociationStatsQuery(
+      req.query,
+    );
+    if (!validationResult.isValid) {
+      return res.status(400).json(validationResult.toResponse());
+    }
+
+    const result = await dashboardService.getMyAssociationStats(
+      req.user,
+      req.query.from,
+      req.query.to,
+    );
+    return successResponse(res, result, "Association stats fetched successfully");
+  } catch (err) {
+    return errorResponse(res, err);
+  }
+};
+
+// GET /api/dashboard/my-association-members/:companyId
+exports.getAssociationMember = async (req, res) => {
+  try {
+    const entry = await dashboardService.getAssociationMember(req.params.companyId);
+    if (!policy("associationMember", req.user, entry).show()) {
+      throw new ForbiddenError("This company is not a member of your association.");
+    }
+    return successResponse(res, serializeMember(entry), "Member profile fetched successfully");
   } catch (err) {
     return errorResponse(res, err);
   }

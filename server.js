@@ -41,6 +41,7 @@ const companyRoutes = require("./routes/companyRoutes");
 const productRoutes = require("./routes/productRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
 const quotationRoutes = require("./routes/quotationRoutes");
+const registrationRoutes = require("./routes/registrationRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 
@@ -133,6 +134,7 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/quotations", quotationRoutes);
+app.use("/api/registrations", registrationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/form", formRoutes);
 app.use("/api/receipts", receiptRoutes);

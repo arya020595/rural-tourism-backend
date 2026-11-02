@@ -66,8 +66,13 @@ class CompanyService {
     }
   }
 
+  /**
+   * Companies shown to others (package / quotation company pickers):
+   * registrations still pending or rejected are hidden.
+   */
   async getAllCompanies() {
     return Company.findAll({
+      where: { registration_status: "approved" },
       order: [
         ["company_name", "ASC"],
         ["id", "ASC"],
@@ -104,7 +109,7 @@ class CompanyService {
     }
 
     return Company.findAll({
-      where: { id: companyIds },
+      where: { id: companyIds, registration_status: "approved" },
       order: [
         ["company_name", "ASC"],
         ["id", "ASC"],

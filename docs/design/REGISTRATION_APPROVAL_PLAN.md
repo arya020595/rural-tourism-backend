@@ -2,6 +2,11 @@
 
 Status: **proposal for review** (2026-10-28). Decisions agreed — see the end.
 
+> **Built 2026-11-02, with changes. For what actually exists, read
+> `docs/REGISTRATION_APPROVAL.md`, not this plan.** Differences: the tabs are
+> Pending / Active / Inactive, with Deactivate / Activate actions; there is no
+> dashboard card; there is no "Waiting" column.
+
 Mockups in `docs/design/` (sample data; HTML source next to each):
 - `registration-approvals-list-mockup.png` — Pending tab, ✎ button per row
 - `registration-approvals-decided-mockup.png` — Rejected tab (Approved is the same without Reason), ✎ to change back

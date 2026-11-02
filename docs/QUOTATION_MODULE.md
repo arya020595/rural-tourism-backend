@@ -190,7 +190,11 @@ Conversion reuses the **one booking path**; nothing writes bookings a second way
    - 2+ items → `package` with `package_companies[]` (`referrer_id` = owner,
      `referee_id` = item company, `per_price` = amount, item type and dates);
    - `operator_name` = the quotation's `prepared_by_name`; deposit left empty;
-   - `status` = `booked` (booking) or `paid` (receipt).
+   - `status` = `booked` (booking) or `paid` (receipt). `booked` is an open
+     deposit booking, the same as `pending` for the app. The frontend booking
+     detail page only recognised `pending` until 2026-11-02, so converted
+     bookings showed as cancelled; that was fixed in the frontend (frontend
+     `DEBUG_LOG_2026-11-02.md` §8). No backend change.
 2. The operator checks the pre-filled Add Booking / E-Receipt form and submits.
    The app sends the normal `POST /api/bookings` (through the offline queue)
    with **`quotation_id`**.

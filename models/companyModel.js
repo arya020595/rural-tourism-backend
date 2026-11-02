@@ -63,6 +63,29 @@ const Company = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    // Registration approval (migration 20261030130000). New operator
+    // companies start "pending"; existing ones were set "approved".
+    registration_status: {
+      type: DataTypes.ENUM("pending", "approved", "rejected"),
+      allowNull: false,
+      defaultValue: "approved",
+    },
+    registration_submitted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    registration_reviewed_by: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+    },
+    registration_reviewed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    registration_rejection_reason: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
   },
   {
     tableName: "companies",

@@ -2,6 +2,13 @@ const { Op, fn, col, literal, where } = require("sequelize");
 const Booking = require("../models/bookingModel");
 const BookingPackageCompany = require("../models/bookingPackageCompanyModel");
 const bookingsService = require("./bookingsService");
+const Company = require("../models/companyModel");
+const registrationService = require("./registrationService");
+const {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+} = require("./errors/AppError");
 
 const FINAL_STATUSES = ["paid", "completed"];
 const TYPE_KEYS = ["activity", "accommodation", "package"];
@@ -480,14 +487,21 @@ class DashboardService {
    *                     for bookings not paid in full yet, plus non-refundable
    *                     deposits kept from cancellations. Paid bookings are
    *                     left out: their deposit is part of totalRevenue.
+   *  - totalDepositPending / totalDepositCancelled : the two parts of
+   *                     totalDeposit (pending + cancelled = totalDeposit).
    *
    * A company's association comes from its operator's `users.association_id`
    * (companies has no association_id). The subquery collapses each company to
    * a single association so bookings are counted once (no join fan-out when an
    * association has several operator users for the same company).
+   *
+   * `associationId` limits everything to one association (the association
+   * statistics page); omitted = all associations (superadmin page).
    */
-  async getAssociationStats(fromRaw, toRaw) {
+  async getAssociationStats(fromRaw, toRaw, { associationId = null } = {}) {
     const dateRange = this.resolveAssociationStatsRange(fromRaw, toRaw);
+    const onlyAssociation = associationId != null;
+    const scopeReplacements = onlyAssociation ? { associationId } : {};
 
     const [statRows, staffRows, companyRows] = await Promise.all([
       Booking.sequelize.query(
@@ -513,6 +527,14 @@ class DashboardService {
             0
           ) AS totalDeposit,
           COALESCE(
+            SUM(CASE WHEN b.status NOT IN ('paid', 'cancelled') THEN COALESCE(b.total_deposit, 0) ELSE 0 END),
+            0
+          ) AS totalDepositPending,
+          COALESCE(
+            SUM(CASE WHEN b.status = 'cancelled' THEN COALESCE(b.total_deposit, 0) ELSE 0 END),
+            0
+          ) AS totalDepositCancelled,
+          COALESCE(
             SUM(CASE WHEN b.status = 'paid' THEN b.total_price ELSE 0 END),
             0
           ) AS totalRevenue
@@ -526,14 +548,16 @@ class DashboardService {
         LEFT JOIN bookings b
           ON b.company_id = ca.company_id
           ${dateRange ? "AND COALESCE(b.receipt_created_at, b.updated_at, b.created_at) BETWEEN :startDate AND :endDate" : ""}
+        ${onlyAssociation ? "WHERE a.id = :associationId" : ""}
         GROUP BY a.id, a.name
         ORDER BY a.name
         `,
         {
           type: Booking.sequelize.QueryTypes.SELECT,
-          replacements: dateRange
-            ? { startDate: dateRange.startDate, endDate: dateRange.endDate }
-            : {},
+          replacements: {
+            ...scopeReplacements,
+            ...(dateRange ? { startDate: dateRange.startDate, endDate: dateRange.endDate } : {}),
+          },
         },
       ),
       // Full-time / part-time staff per association. Kept as its own query:
@@ -552,9 +576,11 @@ class DashboardService {
           GROUP BY company_id
         ) ca
         JOIN companies c ON c.id = ca.company_id
+          AND c.registration_status = 'approved'
+        ${onlyAssociation ? "WHERE ca.association_id = :associationId" : ""}
         GROUP BY ca.association_id
         `,
-        { type: Booking.sequelize.QueryTypes.SELECT },
+        { type: Booking.sequelize.QueryTypes.SELECT, replacements: scopeReplacements },
       ),
       // Companies per association (operator's association_id).
       Booking.sequelize.query(
@@ -570,9 +596,11 @@ class DashboardService {
           GROUP BY company_id
         ) ca
         JOIN companies c ON c.id = ca.company_id
+          AND c.registration_status = 'approved'
+        ${onlyAssociation ? "WHERE ca.association_id = :associationId" : ""}
         ORDER BY ca.association_id, c.company_name
         `,
-        { type: Booking.sequelize.QueryTypes.SELECT },
+        { type: Booking.sequelize.QueryTypes.SELECT, replacements: scopeReplacements },
       ),
     ]);
 
@@ -609,6 +637,10 @@ class DashboardService {
         totalCancelled: Number(r.totalCancelled) || 0,
         totalPending: Number(r.totalPending) || 0,
         totalDeposit: Number(r.totalDeposit) || 0,
+        // The two parts of totalDeposit: held for bookings not paid in full
+        // yet, and kept from cancelled bookings.
+        totalDepositPending: Number(r.totalDepositPending) || 0,
+        totalDepositCancelled: Number(r.totalDepositCancelled) || 0,
         // Paid bookings only — consistent with totalReceipts/totalTourists.
         totalRevenue: Number(r.totalRevenue) || 0,
         totalFulltimeStaff: staff.totalFulltimeStaff,
@@ -626,6 +658,8 @@ class DashboardService {
         acc.totalCancelled += a.totalCancelled;
         acc.totalPending += a.totalPending;
         acc.totalDeposit += a.totalDeposit;
+        acc.totalDepositPending += a.totalDepositPending;
+        acc.totalDepositCancelled += a.totalDepositCancelled;
         acc.totalRevenue += a.totalRevenue;
         acc.totalFulltimeStaff += a.totalFulltimeStaff;
         acc.totalParttimeStaff += a.totalParttimeStaff;
@@ -639,6 +673,8 @@ class DashboardService {
         totalCancelled: 0,
         totalPending: 0,
         totalDeposit: 0,
+        totalDepositPending: 0,
+        totalDepositCancelled: 0,
         totalRevenue: 0,
         totalFulltimeStaff: 0,
         totalParttimeStaff: 0,
@@ -647,6 +683,117 @@ class DashboardService {
     );
 
     return { associations, totals };
+  }
+
+  /**
+   * Association statistics page: the same figures as the superadmin page for
+   * the user's own association, plus its member companies with each one's
+   * tourists over the same date range.
+   */
+  async getMyAssociationStats(authUser, fromRaw, toRaw) {
+    const associationId = Number(authUser?.association_id) || null;
+    if (!associationId) {
+      throw new ForbiddenError("Your account is not linked to an association.");
+    }
+
+    const [{ associations, totals }, members] = await Promise.all([
+      this.getAssociationStats(fromRaw, toRaw, { associationId }),
+      this.getAssociationMembers(associationId, fromRaw, toRaw),
+    ]);
+    const association = associations[0];
+    if (!association) throw new NotFoundError("Association not found.");
+
+    return {
+      association: { id: association.associationId, name: association.associationName },
+      totals,
+      members,
+    };
+  }
+
+  /**
+   * Approved companies of one association, with each one's tourists (pax of
+   * paid bookings — same rule as totalTourists) over the date range.
+   */
+  async getAssociationMembers(associationId, fromRaw, toRaw) {
+    const dateRange = this.resolveAssociationStatsRange(fromRaw, toRaw);
+    const rows = await Booking.sequelize.query(
+      `
+      SELECT
+        c.id                   AS companyId,
+        c.company_name         AS companyName,
+        c.location             AS location,
+        c.contact_no           AS contactNo,
+        c.email                AS email,
+        c.total_fulltime_staff AS fulltimeStaff,
+        c.total_partime_staff  AS parttimeStaff,
+        COALESCE(c.registration_reviewed_at, c.created_at) AS joinedAt,
+        (
+          SELECT COALESCE(u.name, u.username)
+          FROM users u
+          LEFT JOIN roles r ON r.id = u.role_id
+          WHERE u.company_id = c.id
+          ORDER BY (r.name = 'operator_admin') DESC, u.id ASC
+          LIMIT 1
+        ) AS ownerName,
+        COALESCE(
+          SUM(
+            CASE WHEN b.status = 'paid'
+              THEN COALESCE(b.no_of_pax_antarbangsa, 0) + COALESCE(b.no_of_pax_domestik, 0)
+              ELSE 0
+            END
+          ),
+          0
+        ) AS totalTourists
+      FROM (
+        SELECT company_id, MIN(association_id) AS association_id
+        FROM users
+        WHERE company_id IS NOT NULL AND association_id IS NOT NULL
+        GROUP BY company_id
+      ) ca
+      JOIN companies c ON c.id = ca.company_id
+        AND c.registration_status = 'approved'
+      LEFT JOIN bookings b
+        ON b.company_id = c.id
+        ${dateRange ? "AND COALESCE(b.receipt_created_at, b.updated_at, b.created_at) BETWEEN :startDate AND :endDate" : ""}
+      WHERE ca.association_id = :associationId
+      GROUP BY c.id
+      ORDER BY c.company_name
+      `,
+      {
+        type: Booking.sequelize.QueryTypes.SELECT,
+        replacements: {
+          associationId,
+          ...(dateRange ? { startDate: dateRange.startDate, endDate: dateRange.endDate } : {}),
+        },
+      },
+    );
+
+    return rows.map((r) => ({
+      companyId: Number(r.companyId),
+      companyName: r.companyName || "",
+      ownerName: r.ownerName || null,
+      location: r.location || null,
+      contactNo: r.contactNo || null,
+      email: r.email || null,
+      fulltimeStaff: Number(r.fulltimeStaff) || 0,
+      parttimeStaff: Number(r.parttimeStaff) || 0,
+      joinedAt: r.joinedAt || null,
+      totalTourists: Number(r.totalTourists) || 0,
+    }));
+  }
+
+  /**
+   * One member company's profile for the association ("i" button): the
+   * company, its owner and its association. The controller checks it belongs
+   * to the viewer's association.
+   */
+  async getAssociationMember(companyId) {
+    const id = Number(companyId);
+    if (!Number.isInteger(id) || id <= 0) throw new BadRequestError("Invalid company id");
+    const company = await Company.findByPk(id);
+    if (!company) throw new NotFoundError("Company not found.");
+    const [entry] = await registrationService.withOwners([company]);
+    return entry;
   }
 }
 

@@ -194,7 +194,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"identifier\": \"association_seed\",\n  \"password\": \"association123\"\n}"
+              "raw": "{\n  \"identifier\": \"kta\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/auth/login",
