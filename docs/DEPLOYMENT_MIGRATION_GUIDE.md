@@ -210,7 +210,13 @@ curl http://localhost:3000/health
 
 ### Emergency Procedures
 
-1. **Database backup** - Always maintain recent backups
+1. **Database backup** - Automatic since 2026-11-03: a nightly backup (also copied
+   encrypted to Cloudflare R2) and one **before every production deploy** (the
+   deploy stops if it fails). How it works: [`DATABASE_BACKUP.md`](DATABASE_BACKUP.md);
+   how to restore: [`DATABASE_BACKUP_SETUP_STEPS.md`](DATABASE_BACKUP_SETUP_STEPS.md)
+   ("Restoring"). The pre-deploy
+   copy is the quickest way back from a bad migration:
+   `~/st_rural_tourism/rutec-backup/db/predeploy/`
 2. **Migration testing** - Test migrations in staging environment first
 3. **Gradual rollout** - Deploy to staging → production sequentially
 4. **Monitor logs** - Check migration output during deployment

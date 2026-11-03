@@ -25,7 +25,7 @@ Related contracts:
 ## 1) Pre-Deployment Checklist
 
 1. Confirm current deploy revision and environment (`dev` / `staging` / `prod`).
-2. Ensure a fresh database backup exists.
+2. Ensure a fresh database backup exists (production takes one automatically before each deploy, in `rutec-backup/db/predeploy/`; see `DATABASE_BACKUP.md`).
 3. Confirm `JWT_SECRET` and DB credentials are set for target environment.
 4. Confirm app image/build includes RBAC files:
    - `middleware/authorize.js`

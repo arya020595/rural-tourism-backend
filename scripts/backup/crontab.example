@@ -1,0 +1,10 @@
+# Install with:  crontab -e   (as stadmin, the user that is in the docker group)
+# The server clock is UTC (timedatectl). Malaysia is UTC+8, so:
+#   19:00 UTC = 03:00 Malaysia time (next day)
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# 19:00 UTC (03:00 MYT) every day: back up the database into ~/st_rural_tourism/rutec-backup/db
+0 19 * * *  /home/stadmin/st_rural_tourism/rutec-backup/scripts/backup-db.sh >> /home/stadmin/st_rural_tourism/rutec-backup/logs/backup.log 2>&1
+
+# 19:30 UTC (03:30 MYT) every day: delete backups older than 7 days
+30 19 * * * /home/stadmin/st_rural_tourism/rutec-backup/scripts/cleanup-old-backups.sh >> /home/stadmin/st_rural_tourism/rutec-backup/logs/cleanup.log 2>&1
