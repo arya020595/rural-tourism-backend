@@ -226,6 +226,8 @@ docker inspect <backend_container_id> --format '{{ json .Mounts }}' | jq
 
 Revisit this if the deployment ever moves to multiple replicas/instances, or if off-site durability becomes a hard requirement.
 
+**Update 2026-11-03:** off-site backups were added for the **database** only (nightly, encrypted, to Cloudflare R2; see [`DATABASE_BACKUP.md`](DATABASE_BACKUP.md)), using the approach suggested above (a periodic `rclone` step, no application changes). **Uploaded files are still only copied to `uploads-backups/` on the same server**; copying them to R2 too is listed under "Not done yet" there.
+
 ---
 
 ## 6. Verification performed

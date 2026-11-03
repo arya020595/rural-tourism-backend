@@ -353,6 +353,8 @@ docker compose exec db mysql -u rt_user -p rural_tourism -e "
 For detailed guides on specific topics:
 
 - **[DEPLOYMENT_MIGRATION_GUIDE.md](docs/DEPLOYMENT_MIGRATION_GUIDE.md)** - Migration workflows, CI/CD deployment, rollback strategies
+- **[DATABASE_BACKUP.md](docs/DATABASE_BACKUP.md)** - Database backup: nightly + pre-deploy + encrypted Cloudflare R2 copy (why, how, decisions, open items)
+- **[DATABASE_BACKUP_SETUP_STEPS.md](docs/DATABASE_BACKUP_SETUP_STEPS.md)** - Backup setup step by step, and how to restore
 - **[RBAC_ROUTE_PERMISSION_MATRIX.md](docs/RBAC_ROUTE_PERMISSION_MATRIX.md)** - Frozen endpoint-to-permission contract
 - **[RBAC_LEGACY_LOGIN_DEPRECATION.md](docs/RBAC_LEGACY_LOGIN_DEPRECATION.md)** - Legacy login deprecation timeline and compatibility details
 - **[RBAC_ADMIN_BOOTSTRAP.md](docs/RBAC_ADMIN_BOOTSTRAP.md)** - Procedure for assigning initial admin role
