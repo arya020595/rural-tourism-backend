@@ -5,8 +5,9 @@ As-built reference for operator registration approval (branch
 the frontend repo at `docs/REGISTRATION_APPROVAL_FRONTEND.md`; the change log is
 `docs/debug/DEBUG_LOG_2026-11-02.md`.
 
-This replaces the original plan in `docs/design/REGISTRATION_APPROVAL_PLAN.md`.
-The plan's mockups show Approved / Rejected tabs and a dashboard card. What was
+This replaces the original plan (`docs/design/REGISTRATION_APPROVAL_PLAN.md`,
+removed 2026-11-03; still in git history at commit `634db62`). The plan's
+mockups show Approved / Rejected tabs and a dashboard card. What was
 built uses **Pending / Active / Inactive** tabs, has a Deactivate action, and
 has no dashboard card.
 
@@ -232,5 +233,3 @@ CORS_ORIGIN=https://<the real site>
 - A decision only records the **last** reviewer, time and reason. There is no
   history table.
 - `waiting_days` is still in the API but not shown.
-- `docs/design/REGISTRATION_APPROVAL_PLAN.md` and its mockups describe the
-  original design (§ top). They can be removed, as the quotation mockups were.
