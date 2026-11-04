@@ -61,8 +61,15 @@ removed from the response on request.
 | `GET /my-association-stats?from&to` | `authorize("association:read")` | `{ association: {id,name}, totals, members[] }`. 403 "Your account is not linked to an association." if the token has no `association_id` (e.g. superadmin) |
 | `GET /my-association-members/:companyId` | `authorize("association:read")` + `associationMember` policy | member profile via `serializers/associationMemberSerializer.js`: company fields, `joined_at`, `association`, `owner {name, username, email}`, `documents`. 403 for another association's company or a company that isn't approved; 400 for a non-numeric id |
 
-- `association:read` already belongs to the association role, so there's no
-  migration and no re-login.
+- `association:read` is given to the association role by migration
+  `20261104000000-grant-association-read-to-association-role.js`. It was assumed
+  to be there already (true on local databases), but seeder
+  `20260423000003-update-association-role-permissions.js` had cut the role down to
+  `bi_dashboard:read` on staging/production, so the menu item was hidden there.
+  It can also be ticked by hand in *Role Management* (that is how staging was
+  fixed); the migration then does nothing. Association users must **log out and in
+  again** afterwards to see the page (the menu reads the permissions from the login
+  response).
 - The association is always taken from the token, never from the request, so
   a user can't ask for another association's figures.
 

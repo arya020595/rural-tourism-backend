@@ -3,7 +3,7 @@
 /**
  * Registration approval: a new operator company starts as "pending" and can
  * only log in once its association (or a superadmin) approves it. See
-the w * docs/REGISTRATION_APPROVAL.md.
+ * docs/REGISTRATION_APPROVAL.md.
  *
  * companies.registration_status          pending | approved | rejected
  *                                        (default approved — every existing
