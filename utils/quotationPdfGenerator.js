@@ -182,7 +182,7 @@ function buildHtml(data) {
   <div class="totals">
     <div class="grand"><span>JUMLAH / TOTAL</span><span>RM ${money(data.totalAmount)}</span></div>
   </div>
-  ${notes.length ? `<div class="notes"><h4>Nota &amp; Terma / Notes &amp; Terms</h4>${notes.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
+  ${notes.length ? `<div class="notes"><h4>Terma &amp; Syarat / Terms &amp; Conditions</h4>${notes.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
   <div class="footer">
     <b>INI BUKAN RESIT / THIS IS NOT A RECEIPT</b><br>
     Sebut harga ini dijana oleh komputer, tiada tandatangan diperlukan. / This is a computer-generated quotation, no signature required.<br>

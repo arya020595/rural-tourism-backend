@@ -34,7 +34,7 @@ exports.list = async (req, res) => {
   }
 };
 
-// GET /api/quotations/terms — the company's default notes & terms
+// GET /api/quotations/terms — the company's default terms & conditions
 exports.getTerms = async (req, res) => {
   try {
     const data = await quotationService.getCompanyTerms(req.user);
@@ -44,7 +44,7 @@ exports.getTerms = async (req, res) => {
   }
 };
 
-// PUT /api/quotations/terms — save the company's default notes & terms
+// PUT /api/quotations/terms — save the company's default terms & conditions
 exports.saveTerms = async (req, res) => {
   try {
     const data = await quotationService.saveCompanyTerms(req.user, req.body?.terms);

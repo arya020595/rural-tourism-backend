@@ -140,6 +140,11 @@ total_partime_staff}`, plus `documents` on the detail only.
   "Pendaftaran baharu / New registration: <company> (<owner name — username>)".
 - When the company is decided, its unread notifications are marked read.
 - There is **no email to the association**; the bell is the only alert.
+- Reading the bell needs `booking:read` **or** `registration:approve`
+  (`routes/notificationRoutes.js`, since 2026-11-13). Association users only have
+  `registration:approve` on staging/production, so before that their bell calls
+  were refused (403) and the bell stayed empty. The owner check still limits
+  everyone to their own notifications.
 
 The bulk insert used to fail on databases that ran the *first* version of
 `20260518000001-add-unique-index-to-notifications`. MySQL dropped that

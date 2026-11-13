@@ -57,7 +57,7 @@ const Company = sequelize.define(
       type: DataTypes.TEXT("long"),
       allowNull: true,
     },
-    // Default "Notes & Terms" for new quotations; NULL = the app's standard
+    // Default "Terms & Conditions" for new quotations; NULL = the app's standard
     // text (migration 20261030100000).
     quotation_terms: {
       type: DataTypes.TEXT,
