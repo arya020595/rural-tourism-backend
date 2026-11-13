@@ -332,7 +332,7 @@ class QuotationService {
 
     const notes = normalizeString(data.notes);
     if (notes.length > MAX_NOTES_LENGTH) {
-      throw new BadRequestError(`Notes & terms can be at most ${MAX_NOTES_LENGTH} characters.`);
+      throw new BadRequestError(`Terms & conditions can be at most ${MAX_NOTES_LENGTH} characters.`);
     }
 
     const items = await this.normalizeItems(data.items, ownCompanyId, transaction);
@@ -476,7 +476,7 @@ class QuotationService {
     });
   }
 
-  /* ── Company default notes & terms ─────────────────────────────────── */
+  /* ── Company default terms & conditions ─────────────────────────────────── */
 
   /** The user's company's saved default (null = use the standard text). */
   async getCompanyTerms(user) {
@@ -491,7 +491,7 @@ class QuotationService {
     const companyId = await this.requireCompanyId(user);
     const text = normalizeString(terms);
     if (text.length > MAX_TERMS_LENGTH) {
-      throw new BadRequestError(`Notes & terms can be at most ${MAX_TERMS_LENGTH} characters.`);
+      throw new BadRequestError(`Terms & conditions can be at most ${MAX_TERMS_LENGTH} characters.`);
     }
     const company = await Company.findByPk(companyId);
     if (!company) throw new NotFoundError("Company not found.");

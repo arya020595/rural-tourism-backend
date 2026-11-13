@@ -4,6 +4,12 @@ const notificationController = require('../controllers/notificationController');
 const { authenticate } = require('../middleware/auth');
 const { authorize, authorizeOwnership } = require('../middleware/authorize');
 
+// Reading your own notifications (the bell). Operators get booking
+// notifications (booking:read); association users get "new registration
+// awaiting approval" ones (registration:approve) but have no booking:read.
+// Either is enough; the owner check still limits it to your own notifications.
+const NOTIFICATION_READERS = ['booking:read', 'registration:approve'];
+
 // Create a new notification
 router.post(
 	'/',
@@ -16,7 +22,7 @@ router.post(
 router.get(
 	'/operator/:operator_id',
 	authenticate,
-	authorize('booking:read'),
+	authorize(NOTIFICATION_READERS),
 	authorizeOwnership('operator_id'),
 	notificationController.getNotificationsByOperator,
 );
@@ -25,7 +31,7 @@ router.get(
 router.patch(
 	'/operator/:operator_id/read-all',
 	authenticate,
-	authorize('booking:read'),
+	authorize(NOTIFICATION_READERS),
 	authorizeOwnership('operator_id'),
 	notificationController.markAllAsRead,
 );
@@ -34,7 +40,7 @@ router.patch(
 router.patch(
 	'/:id/read',
 	authenticate,
-	authorize('booking:read'),
+	authorize(NOTIFICATION_READERS),
 	notificationController.markAsRead,
 );
 
@@ -42,7 +48,7 @@ router.patch(
 router.get(
 	'/operator/:operator_id/unread-count',
 	authenticate,
-	authorize('booking:read'),
+	authorize(NOTIFICATION_READERS),
 	authorizeOwnership('operator_id'),
 	notificationController.getUnreadCount,
 );

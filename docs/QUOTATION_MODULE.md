@@ -15,7 +15,7 @@ at `docs/QUOTATION_MODULE_FRONTEND.md`; the change log for this branch is
 
 An operator prepares a **quotation** (price offer) for a customer before they
 book: customer, pax, one or more activities / accommodations with dates and
-prices, and notes & terms. The quotation is shared as a PDF. When the customer
+prices, and terms & conditions. The quotation is shared as a PDF. When the customer
 agrees it is converted, through the existing booking endpoint, into either:
 
 - **a booking** (`booked`, deposit paid later) — "Tempahan/Booking" button, or
@@ -47,7 +47,7 @@ bookings, calendar days or statement lines — only the booking made from them i
 | File | What |
 |---|---|
 | `migrations/20261029100000-create-quotations.js` | `quotations`, `quotation_items`, indexes, `quotation:*` permissions + role grants |
-| `migrations/20261030100000-add-quotation-terms-to-companies.js` | `companies.quotation_terms` (company default notes & terms) |
+| `migrations/20261030100000-add-quotation-terms-to-companies.js` | `companies.quotation_terms` (company default terms & conditions) |
 
 Both are MySQL-only, self-contained (seed what they need) and **skip objects
 that already exist** — the app's startup `sequelize.sync()` creates missing
@@ -97,7 +97,7 @@ Same shape as `booking_package_companies`, so conversion is a straight copy.
 
 ### `companies.quotation_terms`
 
-TEXT NULL. The company's saved default notes & terms; NULL = the app's
+TEXT NULL. The company's saved default terms & conditions; NULL = the app's
 standard text. Changing it never alters quotations already saved.
 
 ## 4. Permissions
@@ -236,7 +236,7 @@ Guarantees (all tested):
   **Tarikh / Masa Itinerari · Itinerary Date / Time** (activity date + 12-h
   time, no time when midnight; stays with nights), amount;
 - **JUMLAH / TOTAL** (no sub total — it was always identical);
-- notes & terms (one line per line, blanks skipped); footer "INI BUKAN RESIT /
+- terms & conditions (one line per line, blanks skipped); footer "INI BUKAN RESIT /
   THIS IS NOT A RECEIPT".
 
 All text is HTML-escaped. Cancelled quotations get no PDF (400).

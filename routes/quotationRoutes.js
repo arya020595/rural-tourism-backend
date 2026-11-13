@@ -19,7 +19,7 @@ router.post(
   asyncHandler(quotationController.create),
 );
 
-// Company default notes & terms (before "/:id" so "terms" isn't read as an id).
+// Company default terms & conditions (before "/:id" so "terms" isn't read as an id).
 router.get(
   "/terms",
   authenticate,
