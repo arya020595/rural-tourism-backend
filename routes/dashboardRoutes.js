@@ -26,4 +26,20 @@ router.get(
   asyncHandler(dashboardController.getAssociationStats),
 );
 
+// Association statistics page: the user's own association only.
+router.get(
+  "/my-association-stats",
+  authenticate,
+  authorize("association:read"),
+  asyncHandler(dashboardController.getMyAssociationStats),
+);
+
+// A member company's profile (the "i" button on the members table).
+router.get(
+  "/my-association-members/:companyId",
+  authenticate,
+  authorize("association:read"),
+  asyncHandler(dashboardController.getAssociationMember),
+);
+
 module.exports = router;

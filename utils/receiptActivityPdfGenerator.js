@@ -35,11 +35,34 @@ function formatDate(dateStr) {
   return `${day} ${month} ${year}`;
 }
 
+// activity_date is stored "as typed" (Malaysia wall-clock time in the UTC
+// fields) — read the UTC parts so the date/time is the one the operator
+// picked whatever the server's timezone.
+function formatActivityDay(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "-";
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${day} ${MONTHS_MY[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
+
+/** "9:00 AM"; "-" when no time was picked (stored as midnight). */
+function formatActivityTime(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return "-";
+  const hours = date.getUTCHours();
+  const minutes = date.getUTCMinutes();
+  if (hours === 0 && minutes === 0) return "-";
+  const suffix = hours >= 12 ? "PM" : "AM";
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, "0")} ${suffix}`;
+}
+
 function buildHtml(data, pdfUrl) {
   const {
     id, touristFullName, companyName, activityName,
     totalPax, location, status, operatorName, operatorEmail,
-    totalPrice, createdAt, companyLogoBase64,
+    totalPrice, createdAt, companyLogoBase64, activityDate,
   } = data;
 
   // "Issued By" uses the operator who created the booking, falling back to the
@@ -108,6 +131,16 @@ function buildHtml(data, pdfUrl) {
     width: 1px;
     height: 42px;
     background: #111;
+  }
+  .receipt-meta {
+    text-align: right;
+  }
+  .receipt-no {
+    font-size: 12px;
+    font-weight: bold;
+    color: #222;
+    margin-bottom: 4px;
+    white-space: nowrap;
   }
   .receipt-date {
     font-size: 18px;
@@ -200,7 +233,10 @@ function buildHtml(data, pdfUrl) {
         <div class="logo-divider"></div>
         ${companyLogoHtml}
       </div>
-      <div class="receipt-date">${dateStr}</div>
+      <div class="receipt-meta">
+        <div class="receipt-no">NO RESIT / RECEIPT NO : ${escapeHtml(String(data.receiptNo ?? data.id ?? "-"))}</div>
+        <div class="receipt-date">${dateStr}</div>
+      </div>
     </div>
 
     <div class="title">RESIT PEMBAYARAN / PAYMENT RECEIPT</div>
@@ -231,6 +267,14 @@ function buildHtml(data, pdfUrl) {
         <div class="receipt-row">
           <div class="row-label">STATUS PEMBAYARAN/<em>PAYMENT STATUS</em></div>
           <div class="row-value">${escapeHtml((status || "paid").toUpperCase())}</div>
+        </div>
+        <div class="receipt-row">
+          <div class="row-label">TARIKH AKTIVITI/<em>ACTIVITY DATE</em></div>
+          <div class="row-value">${escapeHtml(formatActivityDay(activityDate))}</div>
+        </div>
+        <div class="receipt-row">
+          <div class="row-label">MASA/<em>TIME</em></div>
+          <div class="row-value">${escapeHtml(formatActivityTime(activityDate))}</div>
         </div>
       </div>
     </div>

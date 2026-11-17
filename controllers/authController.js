@@ -32,6 +32,8 @@ exports.login = async (req, res) => {
     return res.status(statusCode).json({
       success: false,
       message: error.message || "Internal server error",
+      // e.g. { code: "REGISTRATION_PENDING" } so the app can explain why.
+      ...(error.meta || {}),
     });
   }
 };

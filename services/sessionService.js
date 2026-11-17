@@ -1,6 +1,8 @@
 const UnifiedUser = require("../models/unifiedUserModel");
 const TouristUser = require("../models/touristModel");
 const AssociationUser = require("../models/associationUserModel");
+const Company = require("../models/companyModel");
+const { registrationBlock } = require("../utils/registrationHelpers");
 const { SessionInvalidError } = require("./errors/AppError");
 
 /**
@@ -95,6 +97,16 @@ class SessionService {
         "Your password was changed. Please login again.",
         "SESSION_REVOKED",
       );
+    }
+
+    // A company switched back to pending / rejected (e.g. rejected after
+    // approval) ends its users' sessions on their next request.
+    if (user.company_id) {
+      const company = await Company.findByPk(user.company_id, {
+        attributes: ["id", "registration_status", "registration_rejection_reason"],
+      });
+      const block = registrationBlock(company);
+      if (block) throw new SessionInvalidError(block.message, block.code);
     }
 
     const { role, permissions } = await this.resolveRolePermissions(

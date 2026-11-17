@@ -28,14 +28,12 @@ module.exports = {
       },
     );
 
-    // 2. Assign booking:export to all roles
-    const rolesToAssign = [
-      "superadmin",
-      "operator_admin",
-      "operator_staff",
-      "association",
-      "tourist",
-    ];
+    // 2. Assign booking:export to operator_admin only (account statement).
+    // It used to go to every role; migration
+    // 20261028140000-restrict-booking-export-to-operator-admin removes the
+    // extra assignments on databases where this already ran. Superadmin has
+    // access through *:*.
+    const rolesToAssign = ["operator_admin"];
 
     const [roles] = await queryInterface.sequelize.query(
       `SELECT id, name FROM roles WHERE name IN (:names)`,

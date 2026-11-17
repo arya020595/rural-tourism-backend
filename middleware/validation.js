@@ -1,3 +1,8 @@
+const {
+  MIN_PASSWORD_LENGTH,
+  passwordTooShortMessage,
+} = require("../utils/passwordPolicy");
+
 /**
  * Input validation middleware using express-validator patterns
  */
@@ -38,8 +43,8 @@ const validateUserRegistration = (req, res, next) => {
     errors.push("Valid email is required");
   }
 
-  if (!password || password.length < 6) {
-    errors.push("Password must be at least 6 characters");
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    errors.push(passwordTooShortMessage());
   }
 
   if (!full_name || full_name.length < 2) {
@@ -123,8 +128,8 @@ const validateResetPassword = (req, res, next) => {
     errors.push("Valid reset token is required");
   }
 
-  if (!password || String(password).length < 6) {
-    errors.push("Password must be at least 6 characters");
+  if (!password || String(password).length < MIN_PASSWORD_LENGTH) {
+    errors.push(passwordTooShortMessage());
   }
 
   if (errors.length > 0) {

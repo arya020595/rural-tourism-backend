@@ -48,6 +48,30 @@ const BookingPackageCompany = sequelize.define(
       allowNull: true,
       field: "association_id",
     },
+    // Item type and dates (see migration 20261028120000). Nullable: older
+    // items have none and the calendar falls back to the package's date.
+    productType: {
+      type: DataTypes.ENUM("activity", "accommodation"),
+      allowNull: true,
+      field: "product_type",
+    },
+    // Stored "as typed" (Malaysia wall-clock in the UTC fields), like
+    // bookings.activity_date.
+    activityDate: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: "activity_date",
+    },
+    checkInDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      field: "check_in_date",
+    },
+    checkOutDate: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      field: "check_out_date",
+    },
   },
   {
     tableName: "booking_package_companies",

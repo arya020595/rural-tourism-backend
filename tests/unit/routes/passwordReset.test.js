@@ -140,10 +140,10 @@ describe("Password Reset Routes", () => {
       expect(mockResetPassword).not.toHaveBeenCalled();
     });
 
-    test("returns 400 when password is too short (< 6 chars)", async () => {
+    test("returns 400 when password is too short (< 8 chars)", async () => {
       const res = await request(app)
         .post("/api/password/reset-password")
-        .send({ token: validToken, password: "abc" });
+        .send({ token: validToken, password: "abc1234" });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);

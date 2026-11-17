@@ -19,6 +19,10 @@ const OPERATOR_USER = {
   },
 };
 
+// The generic "association_seed" account is no longer created (2026-10-30);
+// each association has its own account (migration
+// 20260625000002-seed-association-accounts). Kept so down() still removes it
+// from databases that have it.
 const ASSOCIATION_USER = {
   name: "Seeded Association",
   username: "association_seed",
@@ -220,83 +224,6 @@ module.exports = {
           updated_at: now,
           username: OPERATOR_USER.username,
           email: OPERATOR_USER.email,
-        },
-      },
-    );
-
-    const existingAssociation = await queryInterface.sequelize.query(
-      `SELECT id
-       FROM users
-       WHERE username = :username OR email = :email
-       ORDER BY id DESC
-       LIMIT 1`,
-      {
-        type: QueryTypes.SELECT,
-        replacements: {
-          username: ASSOCIATION_USER.username,
-          email: ASSOCIATION_USER.email,
-        },
-      },
-    );
-
-    if (!existingAssociation.length) {
-      await queryInterface.sequelize.query(
-        `INSERT INTO users (
-          name,
-          username,
-          email,
-          password,
-          confirm_password,
-          association_id,
-          role_id,
-          company_id,
-          created_at,
-          updated_at
-        ) VALUES (
-          :name,
-          :username,
-          :email,
-          :password,
-          :confirm_password,
-          :association_id,
-          :role_id,
-          :company_id,
-          :created_at,
-          :updated_at
-        )`,
-        {
-          replacements: {
-            name: ASSOCIATION_USER.name,
-            username: ASSOCIATION_USER.username,
-            email: ASSOCIATION_USER.email,
-            password: passwordHash,
-            confirm_password: passwordHash,
-            association_id: defaultAssociationId,
-            role_id: associationRoleId,
-            company_id: null,
-            created_at: now,
-            updated_at: now,
-          },
-        },
-      );
-    }
-
-    // Keep seeded association relationship data consistent across reruns.
-    await queryInterface.sequelize.query(
-      `UPDATE users
-       SET association_id = :association_id,
-           role_id = :role_id,
-           company_id = :company_id,
-           updated_at = :updated_at
-       WHERE username = :username OR email = :email`,
-      {
-        replacements: {
-          association_id: defaultAssociationId,
-          role_id: associationRoleId,
-          company_id: null,
-          updated_at: now,
-          username: ASSOCIATION_USER.username,
-          email: ASSOCIATION_USER.email,
         },
       },
     );

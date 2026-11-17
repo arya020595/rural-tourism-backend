@@ -33,14 +33,6 @@ const DEFAULT_USERS = [
     password: "tourist123",
     roleName: "tourist",
   },
-  {
-    name: "Association User",
-    username: "association_seed",
-    email: "association.seed@example.com",
-    password: "association123",
-    roleName: "association",
-    resolveAssociationId: true,
-  },
 ];
 
 /** @type {import('sequelize-cli').Migration} */

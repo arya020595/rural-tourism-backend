@@ -221,10 +221,13 @@ Error contract:
 | Method | Endpoint                                              | Auth | Permission     | Ownership |
 | ------ | ----------------------------------------------------- | ---- | -------------- | --------- |
 | POST   | /api/notifications                                    | Yes  | booking:update | -         |
-| GET    | /api/notifications/operator/:operator_id              | Yes  | booking:read   | owner     |
-| PATCH  | /api/notifications/operator/:operator_id/read-all     | Yes  | booking:read   | owner     |
-| PATCH  | /api/notifications/:id/read                           | Yes  | booking:read   | -         |
-| GET    | /api/notifications/operator/:operator_id/unread-count | Yes  | booking:read   | owner     |
+| GET    | /api/notifications/operator/:operator_id              | Yes  | booking:read or registration:approve | owner     |
+| PATCH  | /api/notifications/operator/:operator_id/read-all     | Yes  | booking:read or registration:approve | owner     |
+| PATCH  | /api/notifications/:id/read                           | Yes  | booking:read or registration:approve | owner (in controller) |
+| GET    | /api/notifications/operator/:operator_id/unread-count | Yes  | booking:read or registration:approve | owner     |
+
+`registration:approve` was added (2026-11-13) so association users, who have no
+`booking:read`, can use the bell for "new registration awaiting approval".
 
 ### /api/associations
 

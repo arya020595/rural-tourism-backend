@@ -43,7 +43,7 @@ Obtain a token via `POST /api/auth/login`:
 | `superadmin_seed`  | `superadmin123`  | `superadmin`     | `*:*` (full access)        |
 | `operator_seed`    | `operator123`    | `operator_admin` | `user:*`, resources CRUD   |
 | `tourist_seed`     | `tourist123`     | `tourist`        | `profile:*`, booking, read |
-| `association_seed` | `association123` | `association`    | `profile:*`, assoc, read   |
+| `kta` (one per association, e.g. `kobeta`, `rata`) | `password123` | `association` | `profile:*`, assoc, read |
 
 | Scenario          | Status | Response                               |
 | ----------------- | ------ | -------------------------------------- |
